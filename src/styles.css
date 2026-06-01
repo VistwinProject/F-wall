@@ -1,0 +1,29 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+body {
+  /* SYNC-SPEC §7：中文 Chiron Hei HK，數字/HUD JetBrains Mono，顯示 Space Grotesk */
+  font-family: 'Chiron Hei HK', 'Space Grotesk', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  cursor: none; /* kiosk：投影面不顯示游標 */
+}
+
+.wall-stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #06181f 0%, #02080b 60%, #000 100%);
+}
