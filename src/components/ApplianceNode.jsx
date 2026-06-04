@@ -2,10 +2,12 @@ import { motion } from 'framer-motion'
 import { COLORS } from '../config/appliances.js'
 import { getRoute, chamferPath } from '../config/routing.js'
 
-// 動畫節奏對齊桌面 SYNC-SPEC §8
-const SWEEP_DUR = 1.0 // 慧星週期（資料回流大腦）
-const COMET_OFFSETS = [0, 1 / 3, 2 / 3] // 3 顆錯開 1/3 週期
+// 動畫節奏對齊桌面 SYNC-SPEC §8（2026-05-31 調校）
+const SWEEP_DUR = 2.2 // 慧星週期（資料回流大腦）
+const COMET_OFFSETS = [0, 1 / 3, 2 / 3] // 3 段錯開 1/3 週期
+const SWEEP_SEG = 0.16 // 光段長度（佔整條路徑比例，pathLength=1）≈ 桌面 30% 線長的短段感
 const HALO_DUR = 1.4 // halo 呼吸週期
+const POWERUP = 0.45 // idle→active 充能轉場（§8）
 
 export default function ApplianceNode({ node, active }) {
   const { pts, pin } = getRoute(node.id)
@@ -16,18 +18,32 @@ export default function ApplianceNode({ node, active }) {
 
   return (
     <g>
-      {/* 連接線本體：idle 安靜細線（無流動）、active 高亮粗線 */}
+      {/* 連接線本體：idle 安靜細線（無流動）、active 粗霓虹光束（外暈 + 亮芯） */}
+      {/* active 外暈：較寬的青色模糊光暈，讓「線」本身會發光（桌面 halo 一致） */}
+      {active && (
+        <path
+          d={path}
+          fill="none"
+          stroke={COLORS.active}
+          strokeWidth="11"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.55"
+          filter="url(#glow)"
+        />
+      )}
+      {/* 線芯 */}
       <path
         id={pathId}
         d={path}
         fill="none"
         stroke={active ? COLORS.active : COLORS.idle}
-        strokeWidth={active ? 3 : 2}
+        strokeWidth={active ? 3.5 : 2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity={active ? 0.9 : 0.45}
+        opacity={active ? 1 : 0.45}
         filter={active ? 'url(#glow)' : undefined}
-        style={{ transition: 'stroke 0.3s, stroke-width 0.3s, opacity 0.3s' }}
+        style={{ transition: `stroke ${POWERUP}s ease-out, stroke-width ${POWERUP}s ease-out, opacity ${POWERUP}s ease-out` }}
       />
 
       {/* 中樞接腳焊點(pad)：電路板插腳感 */}
@@ -38,29 +54,42 @@ export default function ApplianceNode({ node, active }) {
         fill={active ? COLORS.active : COLORS.idle}
         opacity={active ? 1 : 0.35}
         filter={active ? 'url(#glow)' : undefined}
-        style={{ transition: 'r 0.3s, opacity 0.3s' }}
+        style={{ transition: `r ${POWERUP}s ease-out, opacity ${POWERUP}s ease-out` }}
       />
 
-      {/* active：3 顆慧星沿線 節點 → 中樞（§8 資料回流，週期 1s 錯開 1/3） */}
+      {/* active：短霓虹光段沿線 節點 → 中樞（§8 資料回流，dash-sweep；
+          與桌面一致——不是圓點，是一段段亮光在 path 上流動）。
+          pathLength=1 把路徑正規化，dash 長度/位移就能用 0..1 比例表示，
+          不必知道折線實際像素長度。 */}
       {active &&
         COMET_OFFSETS.map((offset, i) => (
-          <circle key={i} r="7" fill={COLORS.highlight} filter="url(#glow)">
-            <animateMotion
-              dur={`${SWEEP_DUR}s`}
-              begin={`${-offset * SWEEP_DUR}s`}
-              repeatCount="indefinite"
-            >
-              <mpath href={`#${pathId}`} />
-            </animateMotion>
-            <animate
-              attributeName="opacity"
-              dur={`${SWEEP_DUR}s`}
-              begin={`${-offset * SWEEP_DUR}s`}
-              values="0;1;1;0"
-              keyTimes="0;0.12;0.78;1"
-              repeatCount="indefinite"
-            />
-          </circle>
+          <g key={i}>
+            {/* 外暈：較寬的青色光段，模糊發光（光暈感） */}
+            <path d={path} pathLength="1"
+              fill="none"
+              stroke={COLORS.active}
+              strokeWidth="9"
+              strokeLinecap="round"
+              filter="url(#glow)"
+              opacity="0.85"
+              strokeDasharray={`${SWEEP_SEG} ${1 - SWEEP_SEG}`}>
+              <animate attributeName="stroke-dashoffset"
+                from={1 - offset} to={-offset}
+                dur={`${SWEEP_DUR}s`} repeatCount="indefinite" />
+            </path>
+            {/* 內核：細亮白光段 */}
+            <path d={path} pathLength="1"
+              fill="none"
+              stroke={COLORS.highlight}
+              strokeWidth="3"
+              strokeLinecap="round"
+              filter="url(#glow)"
+              strokeDasharray={`${SWEEP_SEG} ${1 - SWEEP_SEG}`}>
+              <animate attributeName="stroke-dashoffset"
+                from={1 - offset} to={-offset}
+                dur={`${SWEEP_DUR}s`} repeatCount="indefinite" />
+            </path>
+          </g>
         ))}
 
       {/* active：節點外圈 halo 呼吸 1.4s */}

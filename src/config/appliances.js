@@ -52,7 +52,7 @@ export const APPLIANCES = [
   // 右半（R）：面板往右開
   { id: 'curtain', label: '窗簾',   x: 1450, y: 260, w: 220, h: 200, panelDir: 'R',
     status: { code: 'CT-05', state: '開啟', tone: 'ok', rows: [['位置', '60%'], ['模式', '自動']] } },
-  { id: 'sound',   label: '音響',   x: 1470, y: 560, w: 120, h: 190, panelDir: 'R',
+  { id: 'sound',   label: '音響',   x: 1595, y: 560, w: 120, h: 190, panelDir: 'R',
     status: { code: 'SD-06', state: '播放中', tone: 'ok', rows: [['音量', '42%'], ['來源', '藍牙']] } },
   { id: 'sensor',  label: '感測器', x: 1460, y: 850, w: 70,  h: 70,  panelDir: 'R',
     status: { code: 'SEN-09', state: '偵測中', tone: 'ok', rows: [['溫濕', '24° / 55%'], ['空氣', '良好']] } },
