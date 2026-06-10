@@ -58,7 +58,7 @@ export const APPLIANCES = [
     status: { code: 'SEN-09', state: '偵測中', tone: 'ok', rows: [['溫濕', '24° / 55%'], ['空氣', '良好']] } },
   // 下方（B）：面板往下開
   { id: 'hrv',     label: '新風機', x: 720,  y: 810, w: 180, h: 140, panelDir: 'B',
-    status: { code: 'HRV-02', state: '運轉中', tone: 'warn', rows: [['濾網餘命', '18%'], ['CO₂', '620 ppm']] } },
+    status: { code: 'HRV-02', state: '運轉中', tone: 'ok', rows: [['CO₂', '620 ppm'], ['風量', '中速']] } },
   { id: 'camera',  label: '攝影機', x: 1000, y: 810, w: 90,  h: 80,  panelDir: 'B',
     status: { code: 'CAM-08', state: '監控中', tone: 'ok', rows: [['解析度', '1080P'], ['位移偵測', '靜止']] } },
   { id: 'ac',      label: '冷氣',   x: 1250, y: 840, w: 240, h: 110, panelDir: 'B',

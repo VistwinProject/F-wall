@@ -5,6 +5,10 @@ node_modules/
 dist/
 dist-ssr/
 
+# portable package: heavy/generated parts (scripts themselves are tracked)
+portable/runtime/
+portable/app/
+
 # logs
 *.log
 npm-debug.log*
