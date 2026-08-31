@@ -25,18 +25,32 @@ export const VIEWBOX = { w: 1920, h: 1080 }
 // 尺寸照實機紅框（約 540×280），中心 (960, 215)，剛好落在中樞圓環上方、不打到核心。
 export const RESERVED_SCREEN = { x: 960, y: 215, w: 540, h: 280 }
 
-// 設計 token（對齊桌面 SYNC-SPEC.md §7，主色 teal，不准用別的）
+// 設計 token —— ANLB「AI 原生建築生命體」品牌視覺（業主提供的圖面 / 影片，見 /style）
+// 業主色票：主色 #0d2058、副色 #247ed1、#67b3fe。
+// 中間層是從 Banner / Poster / 影片實際取樣補上的（色相全程鎖在 200–228°，
+// 且「越亮越去飽和」——這是柔和 bloom 的特徵，不要把亮色也拉高飽和）。
 export const COLORS = {
-  idle: '#16596e', // 微弱底噪線（idle 要安靜）
-  active: '#00dcdc', // beam-cyan 高亮
-  accent: '#009393', // 主 teal（中樞）
-  accent2: '#4dbaba', // accent-2
-  highlight: '#dcffff', // sweep 慧星亮白 rgba(220,255,255,0.95)
-  labelIdle: '#3f7283',
-  labelActive: '#9ff5f5',
-  grid: '#0a2c36', // 格線更暗，不搶戲
-  warn: '#f59e0b', // §7 amber：警告 / 即將到期
-  err: '#f43f5e', // §7 red：錯誤 / 離線
+  // ── 深藍階（背景 / 靜態）──
+  bgDeep: '#041345', // 邊角最暗（實測 #041345 / 影片 #000e42）
+  bg: '#0d2058', // 主色：背景主體
+  bgLift: '#17275e', // 背景較亮處（中樞周圍）
+  grid: '#12235a', // 格線：比背景亮一階，不搶戲
+  idle: '#1d3a7a', // 微弱底噪線（idle 要安靜）
+
+  // ── 藍光階（active / 光帶）──
+  accent: '#247ed1', // 副色 1：中樞主色
+  accent2: '#5b9fe0', // accent-2：中間調
+  active: '#67b3fe', // 副色 2：高亮走線
+  core: '#a8d8fb', // 光帶核心（實測 #a4d5fa / #ace6fc）
+  highlight: '#e8f8ff', // 最亮交會點（實測 #dcf6fe / #effcfd）
+
+  // ── 文字 ──
+  labelIdle: '#6b83bd',
+  labelActive: '#cfe6ff',
+
+  // ── 狀態（品牌圖面沒有這兩色，沿用原本的功能色）──
+  warn: '#f59e0b',
+  err: '#f43f5e',
 }
 
 // 位置刻意打散（不規則網格），框框大小≈各家電實體尺寸的相對比例。

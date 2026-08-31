@@ -9,7 +9,7 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  background: #000;
+  background: #041345;
   overflow: hidden;
 }
 
@@ -25,5 +25,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 45%, #06181f 0%, #02080b 60%, #000 100%);
+  /* ANLB 背景：navy 徑向漸層，中上偏亮、邊角壓暗（對齊 Banner / Poster 的 vignette） */
+  background:
+    radial-gradient(ellipse 75% 60% at 50% 38%, #17275e 0%, #0d2058 45%, #061648 78%, #041345 100%);
 }

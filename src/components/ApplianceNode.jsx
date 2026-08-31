@@ -259,10 +259,17 @@ function StatusPanel({ node }) {
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ duration: 0.28, ease: 'easeOut' }}
       >
-        {/* 底板 */}
-        <rect x={px} y={py} width={PW} height={PH} fill="#000" opacity="0.74" />
+        {/* 底板 —— 0.95 而非半透明：下排的面板往上開，會疊在往中樞的走線上
+            （框上方那條帶正是下排五條線匯聚的走廊，避不開，見 avoidX 註解）。
+            接近不透明才會讀成「面板疊在電路前面」，而不是亮青色透出來糊成一團。
+            背景本身接近純黑，所以沒有走線的地方看不出差別。 */}
+        {/* 底板：換 navy 底後，面板與背景的明度對比只有 1.15:1（把底色壓到近黑也只到 1.32:1，
+            因為背景本身就是深藍）——所以邊界靠「描邊」定義，不是靠加深。
+            文字對比本來就夠：資料列鍵 5.1:1、值 15:1、標題 16:1。 */}
+        <rect x={px} y={py} width={PW} height={PH} fill="#020c2e" opacity="0.95"
+          stroke={COLORS.accent} strokeWidth="1" strokeOpacity="0.5" />
         {/* 左側縱向強調條 */}
-        <rect x={px} y={py} width="3" height={PH} fill={tone} filter="url(#glow)" />
+        <rect x={px} y={py} width="3" height={PH} fill={tone} filter="url(#glowDot)" />
         {/* 角刻（右上 + 左下）*/}
         <g stroke={tone} strokeWidth="2" opacity="0.85">
           <line x1={px + PW} y1={py} x2={px + PW - tick} y2={py} />
