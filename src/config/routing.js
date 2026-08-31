@@ -3,6 +3,11 @@
 // 每個家電的腳位(pad)落在「中樞外環」上（依家電方位角放射分布），走「正交主幹 +
 // 一段八方位斜線」插進外環，視覺上真的接上中樞。立柱若會穿過鄰框，自動外推一折繞過去。
 // 家電位置改了也不用手動改線——這裡會重算。
+//
+// 手動覆寫：appliances.js 的家電可加 `route: [[x,y], ...]`，指定從框到中樞的中間
+// 路徑點（不含起點與 pad —— 起點固定用框中心，pad 固定釘在外環上，兩端不用寫）。
+// 有 route 的家電就完全照給的點走、不再自動避讓；沒有的照舊自動算。
+// dev 模式下會檢查每段是否為八方位（0/45/90），不合的在 console 提示。
 // ============================================================================
 import { APPLIANCES, HUB } from './appliances.js'
 
@@ -53,6 +58,14 @@ function buildRoutes() {
     // 插進環的最後一段：方向取「最接近徑向朝內」的八方位（讓接點看起來像放射插入）
     const d = nearestOcti(-Math.cos(a), -Math.sin(a))
     const knee = { x: pin.x - KNEE * d.x, y: pin.y - KNEE * d.y } // knee 落在環外、pad 的外側
+    // 手動指定路徑：照給的點走，不套用自動避讓
+    if (Array.isArray(n.route) && n.route.length) {
+      const pts = simplify([pt(n.x, n.y), ...n.route.map(([x, y]) => pt(x, y)), pt(pin.x, pin.y)])
+      warnNonOcti(n, pts)
+      routes[n.id] = { pts, pin }
+      continue
+    }
+
     const side = sideOf(n)
     const others = APPLIANCES.filter((m) => m.id !== n.id).map(boxOf)
     let pts
@@ -83,6 +96,22 @@ function buildRoutes() {
 
 function pt(x, y) {
   return { x, y }
+}
+
+// 手動路徑的自我檢查：每段都必須是 0° / 45° / 90°（八方位），否則線看起來不像 PCB trace。
+function warnNonOcti(n, pts) {
+  if (!import.meta.env?.DEV) return
+  for (let i = 1; i < pts.length; i++) {
+    const dx = Math.abs(pts[i].x - pts[i - 1].x)
+    const dy = Math.abs(pts[i].y - pts[i - 1].y)
+    const axis = dx < 0.5 || dy < 0.5
+    const diag = Math.abs(dx - dy) < 0.5
+    if (!axis && !diag) {
+      console.warn(
+        `[routing] ${n.label}(${n.id}) 第 ${i} 段不是八方位：` +
+        `(${pts[i - 1].x},${pts[i - 1].y}) → (${pts[i].x},${pts[i].y})  dx=${dx.toFixed(1)} dy=${dy.toFixed(1)}`)
+    }
+  }
 }
 
 // 去掉重複點與共線的中間點（例如家電正對中樞時，會塌成一條直線）

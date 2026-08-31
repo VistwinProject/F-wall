@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { COLORS } from '../config/appliances.js'
+import { APPLIANCES, COLORS, VIEWBOX } from '../config/appliances.js'
 import { getRoute, chamferPath } from '../config/routing.js'
 
 // 動畫節奏對齊桌面 SYNC-SPEC §8（2026-05-31 調校）
@@ -19,18 +19,31 @@ export default function ApplianceNode({ node, active }) {
   return (
     <g>
       {/* 連接線本體：idle 安靜細線（無流動）、active 粗霓虹光束（外暈 + 亮芯） */}
-      {/* active 外暈：較寬的青色模糊光暈，讓「線」本身會發光（桌面 halo 一致） */}
+      {/* active 外暈：兩層遞減描邊做柔邊 falloff，取代 feGaussianBlur。
+          原本是「11px 描邊 + 高斯模糊」，但寬描邊本身就是光暈形狀，再疊真模糊是重複的，
+          而這類長走線的 bbox 很大，是整個場景最貴的模糊來源（佔 43%）。
+          改成 18px@0.18 + 11px@0.5 兩層純描邊：投影距離下觀感幾乎相同，成本趨近於零。 */}
       {active && (
-        <path
-          d={path}
-          fill="none"
-          stroke={COLORS.active}
-          strokeWidth="11"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.55"
-          filter="url(#glow)"
-        />
+        <>
+          <path
+            d={path}
+            fill="none"
+            stroke={COLORS.active}
+            strokeWidth="18"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.18"
+          />
+          <path
+            d={path}
+            fill="none"
+            stroke={COLORS.active}
+            strokeWidth="11"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.5"
+          />
+        </>
       )}
       {/* 線芯 */}
       <path
@@ -42,7 +55,7 @@ export default function ApplianceNode({ node, active }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity={active ? 1 : 0.45}
-        filter={active ? 'url(#glow)' : undefined}
+        filter={active ? 'url(#glowTrace)' : undefined}
         style={{ transition: `stroke ${POWERUP}s ease-out, stroke-width ${POWERUP}s ease-out, opacity ${POWERUP}s ease-out` }}
       />
 
@@ -53,7 +66,7 @@ export default function ApplianceNode({ node, active }) {
         r={active ? 5 : 3}
         fill={active ? COLORS.active : COLORS.idle}
         opacity={active ? 1 : 0.35}
-        filter={active ? 'url(#glow)' : undefined}
+        filter={active ? 'url(#glowDot)' : undefined}
         style={{ transition: `r ${POWERUP}s ease-out, opacity ${POWERUP}s ease-out` }}
       />
 
@@ -64,14 +77,15 @@ export default function ApplianceNode({ node, active }) {
       {active &&
         COMET_OFFSETS.map((offset, i) => (
           <g key={i}>
-            {/* 外暈：較寬的青色光段，模糊發光（光暈感） */}
+            {/* 外暈：寬描邊即光暈，不再套 feGaussianBlur。
+                這層一條就是一整條走線的 bbox，而且 3 段彗星 × 9 條 = 27 個，
+                每幀都在動（dashoffset）所以模糊結果無法快取，是最貴的一類。 */}
             <path d={path} pathLength="1"
               fill="none"
               stroke={COLORS.active}
               strokeWidth="9"
               strokeLinecap="round"
-              filter="url(#glow)"
-              opacity="0.85"
+              opacity="0.8"
               strokeDasharray={`${SWEEP_SEG} ${1 - SWEEP_SEG}`}>
               <animate attributeName="stroke-dashoffset"
                 from={1 - offset} to={-offset}
@@ -83,7 +97,7 @@ export default function ApplianceNode({ node, active }) {
               stroke={COLORS.highlight}
               strokeWidth="3"
               strokeLinecap="round"
-              filter="url(#glow)"
+              filter="url(#glowTrace)"
               strokeDasharray={`${SWEEP_SEG} ${1 - SWEEP_SEG}`}>
               <animate attributeName="stroke-dashoffset"
                 from={1 - offset} to={-offset}
@@ -146,7 +160,52 @@ export default function ApplianceNode({ node, active }) {
 // ============================================================================
 const PW = 220 // 面板寬
 const PH = 116 // 面板高
+
+// 標題字級自動縮放：家電名稱長度不一（「燈」1 字 ～「12合一感測器」7 字），
+// 固定 25px 會超出面板寬。半形字（數字 / 英文）約佔全形的 0.55 寬。
+// 名稱短時維持設計值 25px，只有真的塞不下才縮。
+function fitLabelSize(label, maxW, base = 25, letterSpacing = 2) {
+  const units = [...label].reduce((n, ch) => n + (/[\x00-\x7F]/.test(ch) ? 0.55 : 1), 0)
+  if (!units) return base
+  const fit = (maxW - letterSpacing * label.length) / units
+  return Math.min(base, Math.floor(fit * 10) / 10)
+}
 const GAP = 22 // 面板離家電框的間隙
+const DODGE_MG = 8 // 避讓時與鄰框留的安全間距
+
+// 面板往上／往下開時預設以家電框中心對齊，但可能壓到別人的框
+// （例如下排的「燈」往上開會撞到中排的「除濕機」）。
+// 這裡把面板水平推開最小的距離，讓它閃過所有相交的框，並保持在畫布內。
+// 家電位置改了會自動重算，不用手動填偏移量。
+function avoidX(node, left, top, bottom) {
+  const clash = APPLIANCES.filter((o) => {
+    if (o.id === node.id) return false
+    const ol = o.x - o.w / 2, or = o.x + o.w / 2
+    const ot = o.y - o.h / 2, ob = o.y + o.h / 2
+    if (ob <= top || ot >= bottom) return false          // 垂直不相交 → 無關
+    return !(or <= left || ol >= left + PW)              // 水平相交才要避
+  })
+  if (!clash.length) return left
+
+  // 候選：推到每個相交框的右側 / 左側，取「位移最小且不再相交」的一個
+  const cands = [left]
+  for (const o of clash) {
+    cands.push(o.x + o.w / 2 + DODGE_MG)                 // 貼到該框右邊
+    cands.push(o.x - o.w / 2 - DODGE_MG - PW)            // 貼到該框左邊
+  }
+  const ok = cands.filter((cx) => {
+    if (cx < 0 || cx + PW > VIEWBOX.w) return false
+    return !APPLIANCES.some((o) => {
+      if (o.id === node.id) return false
+      const ol = o.x - o.w / 2, or = o.x + o.w / 2
+      const ot = o.y - o.h / 2, ob = o.y + o.h / 2
+      if (ob <= top || ot >= bottom) return false
+      return !(or <= cx || ol >= cx + PW)
+    })
+  })
+  if (!ok.length) return left                            // 無解就維持原位（由驗證腳本抓出來）
+  return ok.sort((a, b) => Math.abs(a - left) - Math.abs(b - left))[0]
+}
 const TONE = { ok: COLORS.accent2, warn: COLORS.warn, err: COLORS.err }
 
 function StatusPanel({ node }) {
@@ -154,6 +213,7 @@ function StatusPanel({ node }) {
   const tone = TONE[status.tone] ?? COLORS.accent2
   const bl = node.x - node.w / 2
   const br = node.x + node.w / 2
+  const bt = node.y - node.h / 2
   const bb = node.y + node.h / 2
 
   // 面板左上角 (px,py) + 引線（從家電框邊到面板邊）+ 進場位移方向
@@ -170,11 +230,17 @@ function StatusPanel({ node }) {
     from = [br, node.y]
     to = [px, py + PH / 2]
     fromOffset = { x: -24, y: 0 }
+  } else if (panelDir === 'T') {
+    py = bt - GAP - PH
+    px = avoidX(node, node.x - PW / 2, py, py + PH)
+    from = [node.x, bt]
+    to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py + PH]
+    fromOffset = { x: 0, y: 24 }
   } else {
-    px = node.x - PW / 2
     py = bb + GAP
+    px = avoidX(node, node.x - PW / 2, py, py + PH)
     from = [node.x, bb]
-    to = [px + PW / 2, py]
+    to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py]
     fromOffset = { x: 0, y: -24 }
   }
 
@@ -205,23 +271,23 @@ function StatusPanel({ node }) {
           <line x1={px} y1={py + PH} x2={px} y2={py + PH - tick} />
         </g>
 
-        {/* 標題：設備名（中文）+ 右上狀態點與狀態字 */}
-        <text x={px + 16} y={py + 31} fontSize="25" fill={COLORS.highlight}
+        {/* 標題：設備名（中文）獨占一行，用滿面板寬 —— 名稱最長 7 字（12合一感測器） */}
+        <text x={px + 16} y={py + 31} fontSize={fitLabelSize(node.label, PW - 32)} fill={COLORS.highlight}
           style={{ fontFamily: labelFont, letterSpacing: '2px' }}>
           {node.label}
         </text>
-        <circle cx={px + PW - 18} cy={py + 17} r="4.5" fill={tone} filter="url(#glow)">
-          <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite" />
-        </circle>
-        <text x={px + PW - 30} y={py + 22} textAnchor="end" fontSize="13" fill={tone}
-          style={{ fontFamily: monoFont, letterSpacing: '1px' }}>
-          {status.state}
-        </text>
 
-        {/* 設備代碼 */}
+        {/* 設備代碼（左）+ 狀態點與狀態字（右）同一行 */}
         <text x={px + 16} y={py + 50} fontSize="12.5" fill={COLORS.accent2} opacity="0.75"
           style={{ fontFamily: monoFont, letterSpacing: '2px' }}>
           {status.code}
+        </text>
+        <circle cx={px + PW - 18} cy={py + 46} r="4.5" fill={tone} filter="url(#glowDot)">
+          <animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite" />
+        </circle>
+        <text x={px + PW - 30} y={py + 51} textAnchor="end" fontSize="13" fill={tone}
+          style={{ fontFamily: monoFont, letterSpacing: '1px' }}>
+          {status.state}
         </text>
 
         {/* 分隔線 */}

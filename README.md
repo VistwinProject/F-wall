@@ -52,9 +52,11 @@ useDeskState  ──►  activeIds (Set<id>)  ──►  WallScene
 
 ## 家電節點（9 個）
 
-`door`(門) · `light`(燈) · `socket`(插座) · `curtain`(窗簾) · `sound`(音響) · `sensor`(感測器) · `hrv`(新風機) · `camera`(攝影機) · `ac`(冷氣)
+`hrv`(新風機) · `ac`(冷氣) · `dehum`(除濕機) · `purifier`(空氣清淨機) · `sensor`(12合一感測器) · `light`(燈) · `socket`(智慧插座) · `curtain`(窗簾) · `bathfan`(浴室暖風機)
 
-> ⚠ `camera` / `sensor` 為第 8、9 個節點，桌面端 SYNC-SPEC §5 目前僅列 7 個，需請桌面端補上對應的 uid-map。
+> ⚠ 桌面端 `uid-map.json` 目前只登記 5 張卡（`ac` / `hrv` / `light` / `socket` / `curtain`）。
+> `dehum` / `purifier` / `sensor` / `bathfan` 待現場拿到實體模型後補登記，未登記前這四個節點刷卡不會亮
+> （前端會先確認 `known` 才點亮）。補卡流程見 `F-table/README.md`「現場佈線」。
 
 座標 / 尺寸目前為設計值，**正式量牆後**要回 `appliances.js` 校正 `x/y/w/h`。
 

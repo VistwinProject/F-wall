@@ -90,7 +90,7 @@ export default function Hub({ activeCount }) {
       </circle>
 
       {/* 核心亮點：穩定 */}
-      <circle cx={x} cy={y} r="15" fill={COLORS.highlight} filter="url(#glow)" opacity={lit ? 1 : 0.85} />
+      <circle cx={x} cy={y} r="15" fill={COLORS.highlight} filter="url(#glowDot)" opacity={lit ? 1 : 0.85} />
     </g>
   )
 }
