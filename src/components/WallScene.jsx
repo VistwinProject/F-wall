@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { APPLIANCES, VIEWBOX, COLORS, RESERVED_SCREEN } from '../config/appliances.js'
 import ApplianceNode from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
@@ -56,7 +57,9 @@ export default function WallScene({ activeIds }) {
 
       <BackgroundGrid />
 
-      <LightRibbons />
+      {/* 背景光帶：無卡片(attract)時開到影片強度，有卡片時把亮度讓給節點與面板。
+          ?all 也算 live —— 那個模式就是要驗證內容排版。 */}
+      <LightRibbons live={showAll || activeIds.size > 0} />
 
       {/* 中樞背後的大範圍柔光，給畫面深度 */}
       <circle cx={VIEWBOX.w / 2} cy={VIEWBOX.h / 2} r="560" fill="url(#hubAura)" />
@@ -102,22 +105,32 @@ function ReservedScreen() {
 // ANLB 招牌光帶 —— 對齊 /style 的 Banner / Poster / 影片：
 // 深藍底上幾道大跨度的柔光弧線交會，亮處近白、邊緣化開。
 //
-// 刻意「不使用 feGaussianBlur」：柔邊用「同一條路徑疊多層描邊、寬度遞減 / 不透明度遞增」
-// 做出來。這類光帶 bbox 幾乎是整個畫布，若套模糊會是最貴的一類元素，
-// 會把先前把每幀模糊面積壓到 3.2× 畫布的優化整個吃掉。疊層描邊是純填色，成本趨近於零。
+// 每層 [描邊全寬, 色票, attract 不透明度, live 不透明度]。
 //
-// 每層的 [寬度, 不透明度]：外層寬而淡、內層細而亮，疊起來就是 bloom 的衰減曲線。
+// 為什麼每層要「各自的顏色」而不是共用一個漸層：把 /style 的影片抽幀量過光束的橫剖面，
+// 顏色是沿半徑在位移的，不是同一色調的不同透明度——
+//   半徑 0(芯) #c0ffe1 亮度 224 → ±8 #0083fc 128 → ±15 #0168f5 117
+//   → ±31 #003598 68 → ±62 #011d63 43 → ±124 #001858 37（已換算成 1920 尺度）
+// 亮芯青白、芯外 8 單位就跳成高飽和純藍、尾端沉成暗藍：這是 additive bloom 的指紋。
+// 共用單一漸層做不出來，所以每層帶自己的 beam 色票（見 appliances.js 的光束階）。
+// alpha 是「由外而內 src-over 疊完剛好落在實測亮度」反解出來的，殘差 ≤12/255。
+// 亮芯用 highlight 而非影片實測的 #c0ffe1：影片那個綠偏是高光把 G 通道打爆的 codec
+// 假色（三個取樣點都 G>B，而 G 早已 clip，色序不可信），照抄會把綠帶進品牌色票。
 //
-// 註：參考圖裡光帶是主角（背景全空），但這個畫面內容密集（9 個節點 + 走線 + 狀態面板），
-// 光帶只能當氛圍。所以刻意不放銳利的亮芯（原本的 12/0.30 與 4/0.55 兩層已移除），
-// 最細一層只到 40 寬、0.10 不透明——遠看是一片柔光，不會被當成雜散的線。
+// 刻意「不使用 feGaussianBlur」：柔邊靠疊層描邊。這類光帶 bbox 幾乎是整個畫布，
+// 若套模糊會是最貴的一類元素，會把先前壓到 3.2× 畫布的優化整個吃掉。疊層是純填色。
+//
+// attract / live 兩組值：參考圖裡光帶是主角（背景全空），而這個畫面有 9 個節點 + 走線
+// + 狀態面板。但牆面在感應到卡片前本來就沒有內容——那正是空舞台。所以不是取折衷值，
+// 而是分級：attract 開到影片強度（芯 227，對上實測 224），live 把亮芯幾乎全收
+// （峰值 77，比改版前的 152 還暗 75 級），亮度讓給節點。
 const RIBBON_LAYERS = [
-  [280, 0.055],
-  [186, 0.075],
-  [116, 0.10],
-  [68, 0.135],
-  [36, 0.20],
-  [14, 0.34],
+  [248, 'beamTail', 0.30, 0.15],
+  [124, 'beamFar', 0.38, 0.19],
+  [62, 'beamMid', 0.45, 0.20],
+  [30, 'beamHot', 0.55, 0.14],
+  [16, 'beamHot', 0.65, 0.07],
+  [10, 'highlight', 0.85, 0.03],
 ]
 
 // 三道弧線的控制點（viewBox 1920×1080）。走勢對齊 Poster：
@@ -138,43 +151,52 @@ const RIBBONS = [
   { id: 'rib3', d: 'M -260 1060 C 520 1120, 1420 1000, 2180 700', from: [-260, 1060], to: [2180, 700] },
 ]
 
-// 沿長度的亮度曲線：兩端全透明淡出，中段偏前方最亮（core 近白），尾段收在 accent2。
-const RIBBON_STOPS = [
-  [0, 'accent', 0],
-  [0.14, 'accent', 0.45],
-  [0.4, 'core', 1],
-  [0.58, 'accent2', 0.8],
-  [0.82, 'accent', 0.3],
-  [1, 'accent', 0],
+// 沿長度的淡出包絡（只管不透明度，顏色由分層決定）：
+// 兩端全透明避免被畫布邊緣硬切，中段偏前方最亮。
+const RIBBON_ENVELOPE = [
+  [0, 0],
+  [0.14, 0.45],
+  [0.4, 1],
+  [0.58, 0.8],
+  [0.82, 0.3],
+  [1, 0],
 ]
 
-function LightRibbons() {
+function LightRibbons({ live }) {
   return (
     <>
       <defs>
-        {RIBBONS.map((r) => (
-          <linearGradient
-            key={r.id}
-            id={r.id}
-            gradientUnits="userSpaceOnUse"
-            x1={r.from[0]} y1={r.from[1]} x2={r.to[0]} y2={r.to[1]}
-          >
-            {RIBBON_STOPS.map(([off, tok, op], k) => (
-              <stop key={k} offset={off} stopColor={COLORS[tok]} stopOpacity={op} />
-            ))}
-          </linearGradient>
-        ))}
+        {/* 每（光帶 × 分層）一個漸層：漸層只負責沿長度的淡出包絡，顏色來自該層自己的
+            色票——這才做得出橫剖面的色相位移。18 個都是靜態 def，沒有離屏緩衝，
+            每幀成本仍然只是純填色。 */}
+        {RIBBONS.flatMap((r) =>
+          RIBBON_LAYERS.map(([, token], j) => (
+            <linearGradient
+              key={`${r.id}-${j}`}
+              id={`${r.id}-${j}`}
+              gradientUnits="userSpaceOnUse"
+              x1={r.from[0]} y1={r.from[1]} x2={r.to[0]} y2={r.to[1]}
+            >
+              {RIBBON_ENVELOPE.map(([off, op], k) => (
+                <stop key={k} offset={off} stopColor={COLORS[token]} stopOpacity={op} />
+              ))}
+            </linearGradient>
+          )),
+        )}
       </defs>
       <g fill="none" strokeLinecap="round">
         {RIBBONS.map((r, i) => (
           <g key={r.id}>
-            {RIBBON_LAYERS.map(([w, o], j) => (
-              <path
+            {RIBBON_LAYERS.map(([w, , attract, onCard], j) => (
+              <motion.path
                 key={j}
                 d={r.d}
-                stroke={`url(#${r.id})`}
+                stroke={`url(#${r.id}-${j})`}
                 strokeWidth={w}
-                opacity={o * (i === 2 ? 0.7 : 1)}
+                initial={false}
+                animate={{ opacity: (live ? onCard : attract) * (i === 2 ? 0.7 : 1) }}
+                /* 收光比放光快：最後一張卡拿走時慢慢亮回來，才不會突然爆亮 */
+                transition={{ duration: live ? 0.9 : 1.6, ease: 'easeOut' }}
               />
             ))}
           </g>
