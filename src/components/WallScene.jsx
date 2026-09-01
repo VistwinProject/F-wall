@@ -1,5 +1,6 @@
+import { memo } from 'react'
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
-import { FRAME, VLINES, HLINES, LINE_W } from '../config/frame.js'
+import { FRAME, VLINES, HLINES, LINE_W, GLOW } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
@@ -26,6 +27,49 @@ export default function WallScene({ activeIds }) {
       width="100%"
       height="100%"
     >
+      <defs>
+        {/* 霓虹光暈：三層高斯（大/中/小）疊出體積感，最後把未模糊的原圖蓋回最上面
+            讓亮芯保持銳利。參數在 config/frame.js 的 GLOW。
+
+            ⚠ filterUnits 必須是 userSpaceOnUse。SVG 預設的 objectBoundingBox
+              對「完美水平／垂直的 <line>」會塌成零寬高 → 光暈整個消失且不報錯。
+              我們 12 條格線全是軸對齊直線，一定會中。（F-table 的 beam-bloom 已踩過）
+
+            ⚠ color-interpolation-filters="sRGB"：預設 linearRGB 會讓光暈中段偏亮偏濁，
+              sRGB 才是所見即所得，也省掉色彩空間轉換。
+
+            feComponentTransfer 是把高斯攤掉的亮度補回來 —— 1.5 寬的線用 σ=22 模糊後
+            峰值只剩 2.7%，不放大外暈根本看不見。 */}
+        <filter
+          id="frameGlow"
+          filterUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width={VIEWBOX.w}
+          height={VIEWBOX.h}
+          colorInterpolationFilters="sRGB"
+        >
+          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.halo.sd} result="b3" />
+          <feComponentTransfer in="b3" result="halo">
+            <feFuncA type="linear" slope={GLOW.halo.gain} />
+          </feComponentTransfer>
+
+          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.mid.sd} result="b2" />
+          <feComponentTransfer in="b2" result="mid">
+            <feFuncA type="linear" slope={GLOW.mid.gain} />
+          </feComponentTransfer>
+
+          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.near.sd} result="near" />
+
+          <feMerge>
+            <feMergeNode in="halo" />
+            <feMergeNode in="mid" />
+            <feMergeNode in="near" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
       {/* 線條框架：最底層。家電黑塊與資訊面板都疊在它前面。 */}
       <LineFrame />
 
@@ -52,10 +96,12 @@ export default function WallScene({ activeIds }) {
 
 // 大框 + 正交格線。數值全部來自 config/frame.js（業主指定），這裡只負責畫。
 // 格線整條拉到大框兩端 —— 畫面上的斷點是前面的黑塊／面板遮出來的，不在這裡算。
-function LineFrame() {
+// 完全靜態（不吃任何 prop、不隨 activeIds 變化），所以瀏覽器會把濾鏡結果柵格化後快取，
+// 三層高斯只付一次、不是每幀。memo 只是讓 activeIds 變動時不做無謂的 reconcile。
+const LineFrame = memo(function LineFrame() {
   const { x, y, w, h, r } = FRAME
   return (
-    <g stroke={COLORS.frameLine} strokeWidth={LINE_W} fill="none">
+    <g filter="url(#frameGlow)" stroke={COLORS.frameLine} strokeWidth={LINE_W} fill="none">
       {VLINES.map((vx) => (
         <line key={`v-${vx}`} x1={vx} y1={y} x2={vx} y2={y + h} />
       ))}
@@ -66,7 +112,7 @@ function LineFrame() {
       <rect x={x} y={y} width={w} height={h} rx={r} />
     </g>
   )
-}
+})
 
 // 實體電視預留位：純黑矩形挖空（之後實機螢幕就裝在這），一條細線點出邊界。
 // 與家電框同一階(lineStrong)，因為它也是實體展品的預留位。
