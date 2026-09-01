@@ -28,18 +28,21 @@ export default function WallScene({ activeIds }) {
       height="100%"
     >
       <defs>
-        {/* 霓虹光暈：三層高斯（大/中/小）疊出體積感，最後把未模糊的原圖蓋回最上面
+        {/* 霓虹光暈：三層「膨脹 → 模糊 → 衰減」，最後把未模糊的原圖蓋回最上面
             讓亮芯保持銳利。參數在 config/frame.js 的 GLOW。
 
-            ⚠ filterUnits 必須是 userSpaceOnUse。SVG 預設的 objectBoundingBox
-              對「完美水平／垂直的 <line>」會塌成零寬高 → 光暈整個消失且不報錯。
-              我們 12 條格線全是軸對齊直線，一定會中。（F-table 的 beam-bloom 已踩過）
+            ⚠ 每層都先 feMorphology dilate 再模糊，然後用 feComponentTransfer「衰減」。
+              直覺上會想「模糊細線再放大」，但 SVG 濾鏡中間緩衝是 8-bit，放大不會
+              產生新的階 —— 一條 1.5 寬的線用 σ=22 模糊後峰值只剩 7/255 階，×3.2 之後
+              仍然只有 8 個值攤在 38px 半徑上，每階約 4.8px 的平台，肉眼就是一圈圈色塊。
+              先膨脹到 15.5 寬再模糊，峰值有 85 階，再衰減到同樣亮度 → 色帶降到約 1.7px。
+              要更亮請調 slope，不要回頭去放大。
 
-            ⚠ color-interpolation-filters="sRGB"：預設 linearRGB 會讓光暈中段偏亮偏濁，
-              sRGB 才是所見即所得，也省掉色彩空間轉換。
+            ⚠ filterUnits 必須是 userSpaceOnUse。SVG 預設的 objectBoundingBox 對
+              「完美水平／垂直的 <line>」會塌成零寬高 → 光暈整個消失且不報錯。
+              12 條格線全是軸對齊直線，必中。（F-table 的 beam-bloom 已踩過）
 
-            feComponentTransfer 是把高斯攤掉的亮度補回來 —— 1.5 寬的線用 σ=22 模糊後
-            峰值只剩 2.7%，不放大外暈根本看不見。 */}
+            ⚠ color-interpolation-filters="sRGB"：預設 linearRGB 會讓光暈中段偏亮偏濁。 */}
         <filter
           id="frameGlow"
           filterUnits="userSpaceOnUse"
@@ -49,17 +52,23 @@ export default function WallScene({ activeIds }) {
           height={VIEWBOX.h}
           colorInterpolationFilters="sRGB"
         >
-          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.halo.sd} result="b3" />
+          <feMorphology in="SourceGraphic" operator="dilate" radius={GLOW.halo.dilate} result="fat3" />
+          <feGaussianBlur in="fat3" stdDeviation={GLOW.halo.sd} result="b3" />
           <feComponentTransfer in="b3" result="halo">
-            <feFuncA type="linear" slope={GLOW.halo.gain} />
+            <feFuncA type="linear" slope={GLOW.halo.slope} />
           </feComponentTransfer>
 
-          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.mid.sd} result="b2" />
+          <feMorphology in="SourceGraphic" operator="dilate" radius={GLOW.mid.dilate} result="fat2" />
+          <feGaussianBlur in="fat2" stdDeviation={GLOW.mid.sd} result="b2" />
           <feComponentTransfer in="b2" result="mid">
-            <feFuncA type="linear" slope={GLOW.mid.gain} />
+            <feFuncA type="linear" slope={GLOW.mid.slope} />
           </feComponentTransfer>
 
-          <feGaussianBlur in="SourceGraphic" stdDeviation={GLOW.near.sd} result="near" />
+          <feMorphology in="SourceGraphic" operator="dilate" radius={GLOW.near.dilate} result="fat1" />
+          <feGaussianBlur in="fat1" stdDeviation={GLOW.near.sd} result="b1" />
+          <feComponentTransfer in="b1" result="near">
+            <feFuncA type="linear" slope={GLOW.near.slope} />
+          </feComponentTransfer>
 
           <feMerge>
             <feMergeNode in="halo" />
