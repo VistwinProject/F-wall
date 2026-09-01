@@ -16,8 +16,6 @@ import { FX, FX_BLUE, LINE_W, DOTS, BEAM_LAYERS, phaseOf } from '../config/fx.js
 //      不需要另外做淡入淡出來製造封包之間的間隔。
 // ============================================================================
 
-// 中樞圓環半徑 —— 必須與 Hub.jsx 的 R、routing.js 的 RING_R 一致。
-const HUB_R = 116
 
 // 濾鏡區域 = (黑塊 bbox ∪ 走線 bbox) 外擴 FX.pad。
 //
@@ -87,10 +85,10 @@ export function FxDefs() {
       <GlowFilter
         id="fxGlow-hub"
         region={{
-          x: HUB.x - HUB_R - FX.pad,
-          y: HUB.y - HUB_R - FX.pad,
-          w: (HUB_R + FX.pad) * 2,
-          h: (HUB_R + FX.pad) * 2,
+          x: HUB.x - HUB.w / 2 - FX.pad,
+          y: HUB.y - HUB.h / 2 - FX.pad,
+          w: HUB.w + FX.pad * 2,
+          h: HUB.h + FX.pad * 2,
         }}
       />
 
@@ -237,15 +235,18 @@ export function ApplianceFx({ node, index }) {
 }
 
 // 中樞的光暈。彗星要有個會回應的終點，否則資料飛到中樞就憑空消失。
+// 幾何與 Hub.jsx 的黑塊一致（同一組 HUB.x/y/w/h + RADIUS.sm）。
 // 不做「每顆彗星抵達就漣漪一次」—— 九台同時亮時那會變成雜訊。
 // 中樞不掛閃爍：它是九條線的匯流點，跟著閃會讓整面牆一起抖。
 export function HubGlow() {
   return (
-    <circle
+    <rect
       className="fx-glow"
-      cx={HUB.x}
-      cy={HUB.y}
-      r={HUB_R}
+      x={HUB.x - HUB.w / 2}
+      y={HUB.y - HUB.h / 2}
+      width={HUB.w}
+      height={HUB.h}
+      rx={RADIUS.sm}
       fill="none"
       stroke={FX_BLUE}
       strokeWidth={LINE_W}
