@@ -3,6 +3,7 @@ import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
 import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
 import { getRoute, linePath } from '../config/routing.js'
 import { PANEL_LAYOUT } from '../config/panels.js'
+import GlassPlate, { estWidth } from './GlassPlate.jsx'
 
 // ============================================================================
 // 單一家電 = 一條走線 + 黑色挖空框 + active 時彈出的狀態面板。
@@ -78,9 +79,6 @@ function fitLabelSize(label, maxW, base = 25, letterSpacing = 2) {
   return Math.min(base, Math.floor(fit * 10) / 10)
 }
 const GAP = 22 // 面板離家電框的間隙
-// foreignObject 的外擴留白：外陰影 (0 10px 30px) 需要約 40 的空間，
-// 不留的話陰影會被 foreignObject 的邊界裁掉。
-const PAD = 40
 const DODGE_MG = 8 // 避讓時與鄰框留的安全間距
 
 // 面板往上／往下開時預設以家電框中心對齊，但可能壓到別人的框
@@ -193,6 +191,35 @@ function StatusPanel({ node, box }) {
   // 那塊背景重讀一次再模糊一次。九個面板同時進場（全部刷卡的那一刻，也就是這個
   // 互動的高潮）正好是最壞情境。位置固定、只變 alpha 的話背景取樣可以重用。
   // 視覺上玻璃「就地浮現」也比滑進來更像玻璃。
+  // ── 版面尺度（字級一律是原本的一半）────────────────────────────────────────
+  // 面板從固定 220x116 變成各種尺寸後，這些值都改成從 box 推算，不再寫死。
+  const PADX = 10
+  const S = { title: 12.5, code: 6.25, state: 6.5, key: 7.5, val: 8 }
+  const innerW = PW - PADX * 2
+  const yTitle = py + 17
+  const yMeta = py + 29
+  const yRule = py + 35
+  const rowTop = py + 46
+  const bottomPad = 9
+
+  // 資料列並排放不下就改成上下兩行（左標籤在上、數值在下）。
+  // 只要有一列放不下就整個面板都換行，避免同一塊面板混兩種排法。
+  const stacked = status.rows.some(
+    ([k, v]) => estWidth(k, S.key) + estWidth(v, S.val) + 10 > innerW
+  )
+  const lineH = stacked ? 9 : 0
+  const minRow = stacked ? 19 : 11
+
+  // 高面板不要留一大片空白、矮面板不要擠爆：
+  // 先算最多塞得下幾列，再把這幾列平均分佈到可用高度裡。
+  const avail = py + PH - bottomPad - rowTop
+  const maxRows = Math.max(1, Math.floor(avail / minRow))
+  const rows = status.rows.slice(0, maxRows)
+  const gap = rows.length > 1 ? Math.min(28, avail / rows.length) : minRow
+
+  // ⚠ 進出場只做不透明度，不做位移。
+  // 會動的 backdrop-filter 元素是最貴的情況 —— 元素每移動一格，合成器就得把底下
+  // 那塊背景重讀一次再模糊一次。九個面板同時進場正好是最壞情境。
   return (
     <motion.g
       initial={{ opacity: 0 }}
@@ -200,90 +227,50 @@ function StatusPanel({ node, box }) {
       exit={{ opacity: 0 }}
       transition={{ duration: MOTION.dur, ease: MOTION.ease }}
     >
-      {/* 引線：設備 → 面板。放在 motion.g 裡面才會跟著淡入淡出
-          （舊版在外面，所以是瞬間出現／消失，跟面板不同步）。
-          畫在玻璃之前 —— 重疊到面板的那一小段本來就該被玻璃蓋住並模糊掉。 */}
       {from && (
         <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke={COLORS.line} strokeWidth="1" />
       )}
-      {/* 毛玻璃底板。
-          用 foreignObject 包一個 div 才拿得到 backdrop-filter —— 那是 CSS box 屬性，
-          對 SVG 的 <rect> 完全無效（樣式見 styles.css 的 .panel-glass）。
-          文字仍然是 SVG <text>，疊在玻璃上面，排版邏輯完全沒動。
 
-          ⚠ foreignObject 會把內容裁切到自己的框，所以這裡刻意比面板大 PAD*2，
-             內層再用 padding 推回去，外陰影才不會被切掉。
-          ⚠ pointer-events: none —— 別讓這塊 HTML 蓋住底下的 SVG。 */}
-      <foreignObject
-        x={px - PAD}
-        y={py - PAD}
-        width={PW + PAD * 2}
-        height={PH + PAD * 2}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div style={{ width: '100%', height: '100%', padding: PAD, boxSizing: 'border-box' }}>
-          <div className="panel-glass" />
-        </div>
-      </foreignObject>
+      <GlassPlate x={px} y={py} w={PW} h={PH} />
 
-      {/* 標題：設備名（中文）獨占一行，用滿面板寬 */}
+      {/* 標題：設備名，字級自動縮到塞得下面板寬 */}
       <text
-        x={px + 16}
-        y={py + 31}
-        fontSize={fitLabelSize(node.label, PW - 32)}
+        x={px + PADX}
+        y={yTitle}
+        fontSize={fitLabelSize(node.label, innerW, S.title, 0.5)}
         fill={COLORS.text}
-        style={{ fontFamily: FONT, letterSpacing: '1px' }}
+        style={{ fontFamily: FONT, letterSpacing: '0.5px' }}
       >
         {node.label}
       </text>
 
-      {/* 設備代碼（左）+ 狀態點與狀態字（右）同一行 */}
-      <text
-        x={px + 16}
-        y={py + 51}
-        fontSize="12.5"
-        fill={COLORS.textOnGlass}
-        style={{ fontFamily: FONT, letterSpacing: '1.5px' }}
-      >
+      {/* 設備代碼（左）+ 狀態點與狀態字（右） */}
+      <text x={px + PADX} y={yMeta} fontSize={S.code} fill={COLORS.textOnGlass}
+        style={{ fontFamily: FONT, letterSpacing: '0.8px' }}>
         {status.code}
       </text>
-      <circle
-        cx={px + PW - 18}
-        cy={py + 46.5}
-        r="3.5"
-        fill={hollow ? 'none' : COLORS.text}
-        stroke={COLORS.text}
-        strokeWidth="1"
-      />
-      <text
-        x={px + PW - 30}
-        y={py + 51}
-        textAnchor="end"
-        fontSize="13"
-        fill={COLORS.text2}
-        style={{ fontFamily: FONT, letterSpacing: '0.5px' }}
-      >
+      <circle cx={px + PW - PADX - 2} cy={yMeta - 2.2} r="2" fill={hollow ? 'none' : COLORS.text}
+        stroke={COLORS.text} strokeWidth="0.7" />
+      <text x={px + PW - PADX - 8} y={yMeta} textAnchor="end" fontSize={S.state} fill={COLORS.text2}
+        style={{ fontFamily: FONT }}>
         {status.state}
       </text>
 
-      {/* 分隔線 */}
-      <line x1={px + 16} y1={py + 61} x2={px + PW - 16} y2={py + 61} stroke={COLORS.line} strokeWidth="1" />
+      <line x1={px + PADX} y1={yRule} x2={px + PW - PADX} y2={yRule} stroke={COLORS.line} strokeWidth="0.8" />
 
-      {/* 資料列：左標籤 右數值。
-          垂直節奏刻意讓最後一列的底緣離板底約 12px，跟左右內距 16px 讀起來平衡；
-          數字用 tabular-nums 對齊，換值時不會左右跳。 */}
-      {status.rows.map(([k, v], i) => {
-        const ry = py + 79 + i * 22
+      {/* 資料列。stacked = 面板太窄，標籤與數值改上下排。 */}
+      {rows.map(([k, v], i) => {
+        const ry = rowTop + i * gap + (stacked ? 6 : 8)
         return (
           <g key={i}>
-            <text x={px + 16} y={ry} fontSize="15" fill={COLORS.textOnGlass} style={{ fontFamily: FONT }}>
+            <text x={px + PADX} y={ry} fontSize={S.key} fill={COLORS.textOnGlass} style={{ fontFamily: FONT }}>
               {k}
             </text>
             <text
-              x={px + PW - 16}
-              y={ry}
-              textAnchor="end"
-              fontSize="16"
+              x={stacked ? px + PADX : px + PW - PADX}
+              y={ry + lineH}
+              textAnchor={stacked ? 'start' : 'end'}
+              fontSize={S.val}
               fill={COLORS.text}
               style={{ fontFamily: FONT, fontVariantNumeric: 'tabular-nums' }}
             >
@@ -294,4 +281,5 @@ function StatusPanel({ node, box }) {
       })}
     </motion.g>
   )
+
 }

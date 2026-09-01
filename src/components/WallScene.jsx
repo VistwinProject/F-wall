@@ -2,6 +2,8 @@ import { memo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
 import { customNode, isCustom } from '../config/panelLayout.js'
+import { CUSTOM_PANELS } from '../config/panels.js'
+import ChartPanel from './ChartPanel.jsx'
 import { FRAME, VLINES, HLINES, LINE_W, GLOW } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
@@ -113,9 +115,15 @@ export default function WallScene({ activeIds, editLayout }) {
               if (!node) return null
               return <AppliancePanel key={`p-${id}`} node={node} box={box} />
             })
-          : APPLIANCES.filter((node) => isActive(node.id) && node.status).map((node) => (
-              <AppliancePanel key={`p-${node.id}`} node={node} />
-            ))}
+          : [
+              ...APPLIANCES.filter((node) => isActive(node.id) && node.status).map((node) => (
+                <AppliancePanel key={`p-${node.id}`} node={node} />
+              )),
+              // 附屬圖表面板：跟著 spec.of 那台家電一起出現／消失
+              ...CUSTOM_PANELS.filter((c) => isActive(c.of)).map((c) => (
+                <ChartPanel key={`c-${c.id}`} spec={c} />
+              )),
+            ]}
       </AnimatePresence>
     </svg>
   )

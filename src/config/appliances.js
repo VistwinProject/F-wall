@@ -38,28 +38,28 @@ export const RESERVED_SCREEN = { x: 960, y: 215, w: 540, h: 280 }
 export const APPLIANCES = [
   // 上排（跨在電視預留區兩側）
   { id: 'hrv',     label: '新風機', x: 468,  y: 170, w: 295, h: 170, panelDir: 'L',
-    status: { code: 'HRV-02', state: '運轉中', tone: 'ok', rows: [['CO₂', '620 ppm'], ['風量', '中速']] } },
+    status: { code: 'HRV-02', state: '運轉中', tone: 'ok', rows: [['CO₂', '620 ppm'], ['風量', '中速'], ['室外溫度', '31.2°C'], ['熱交換率', '78%'], ['濾網壽命', '64%']] } },
   { id: 'ac',      label: '冷氣',   x: 1440, y: 170, w: 310, h: 140, panelDir: 'R',
-    status: { code: 'AC-07', state: '製冷中', tone: 'ok', rows: [['設定溫度', '26.5°C'], ['功率', '1.18 kW']] } },
+    status: { code: 'AC-07', state: '製冷中', tone: 'ok', rows: [['設定溫度', '26.5°C'], ['功率', '1.18 kW'], ['室溫', '27.4°C'], ['運轉模式', '自動'], ['今日耗電', '8.4 kWh']] } },
   // 中排（中樞左右）
   { id: 'dehum',   label: '除濕機', x: 468,  y: 534, w: 200, h: 325, panelDir: 'L',
-    status: { code: 'DH-01', state: '除濕中', tone: 'ok', rows: [['目前濕度', '58%'], ['水箱', '40%']] } },
+    status: { code: 'DH-01', state: '除濕中', tone: 'ok', rows: [['目前濕度', '58%'], ['水箱', '40%'], ['目標濕度', '55%'], ['今日集水', '1.8 L'], ['連續運轉', '6h 20m']] } },
   { id: 'purifier', label: '空氣清淨機', x: 1435, y: 534, w: 140, h: 370, panelDir: 'R',
-    status: { code: 'AP-06', state: '淨化中', tone: 'ok', rows: [['PM2.5', '12 µg/m³'], ['濾網壽命', '72%']] } },
+    status: { code: 'AP-06', state: '淨化中', tone: 'ok', rows: [['PM2.5', '12 µg/m³'], ['濾網壽命', '72%'], ['TVOC', '0.08 ppm'], ['風速', '2 段'], ['累積淨化', '312 m³']] } },
   // 下排（五個並排）— panelDir 'T'：面板開在框「上方」。
   //   框底已到 y≈997，下方放不下 116 高的面板（會被 1080 底邊切掉），故往上開。
   //   面板會自動水平避讓中排的高框（見 ApplianceNode.jsx 的 avoidX）。
   { id: 'sensor',  label: '12合一感測器', x: 310, y: 900, w: 225, h: 115, panelDir: 'T',
-    status: { code: 'SEN-09', state: '偵測中', tone: 'ok', rows: [['溫濕', '24° / 55%'], ['空氣', '良好']] } },
+    status: { code: 'SEN-09', state: '偵測中', tone: 'ok', rows: [['溫濕', '24° / 55%'], ['空氣', '良好'], ['CO₂', '580 ppm'], ['照度', '320 lx'], ['人體感應', '有']] } },
   { id: 'light',   label: '燈',     x: 620,  y: 900, w: 125, h: 195, panelDir: 'T',
-    status: { code: 'LT-03', state: '開啟', tone: 'ok', rows: [['亮度', '80%'], ['色溫', '4000K']] } },
+    status: { code: 'LT-03', state: '開啟', tone: 'ok', rows: [['亮度', '80%'], ['色溫', '4000K'], ['場景', '日常'], ['今日點燈', '5h 10m'], ['功率', '18 W']] } },
   { id: 'socket',  label: '智慧插座', x: 960, y: 900, w: 235, h: 125, panelDir: 'T',
-    status: { code: 'PG-04', state: '供電中', tone: 'ok', rows: [['即時負載', '340 W'], ['今日用電', '2.1 kWh']] } },
+    status: { code: 'PG-04', state: '供電中', tone: 'ok', rows: [['即時負載', '340 W'], ['今日用電', '2.1 kWh'], ['電壓', '110 V'], ['電流', '3.1 A'], ['本月累積', '48.6 kWh']] } },
   { id: 'curtain', label: '窗簾',   x: 1290, y: 900, w: 185, h: 185, panelDir: 'T',
     // 左出框 → 走 1070–1137 走廊上行 → 一條 45° 直接收進 pad
-    status: { code: 'CT-05', state: '開啟', tone: 'ok', rows: [['位置', '60%'], ['模式', '自動']] } },
+    status: { code: 'CT-05', state: '開啟', tone: 'ok', rows: [['位置', '60%'], ['模式', '自動'], ['日照連動', '開'], ['今日開合', '4 次'], ['預約', '18:30']] } },
   { id: 'bathfan', label: '浴室暖風機', x: 1600, y: 900, w: 195, h: 180, panelDir: 'T',
-    status: { code: 'BF-08', state: '暖風運轉', tone: 'ok', rows: [['模式', '暖風'], ['濕度', '62%']] } },
+    status: { code: 'BF-08', state: '暖風運轉', tone: 'ok', rows: [['模式', '暖風'], ['濕度', '62%'], ['設定溫度', '28°C'], ['剩餘時間', '12 min'], ['今日運轉', '48 min']] } },
 ]
 
 export const APPLIANCE_IDS = APPLIANCES.map((a) => a.id)
