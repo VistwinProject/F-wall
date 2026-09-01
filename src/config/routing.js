@@ -9,13 +9,17 @@
 // 有 route 的家電就完全照給的點走、不再自動避讓；沒有的照舊自動算。
 // dev 模式下會檢查每段是否為八方位（0/45/90），不合的在 console 提示。
 // ============================================================================
-import { APPLIANCES, HUB } from './appliances.js'
+import { APPLIANCES, HUB, RESERVED_SCREEN } from './appliances.js'
 
 const CX = HUB.x
 const CY = HUB.y
 const RING_R = 116 // 中樞外環半徑（需與 Hub.jsx 的 R 一致）：pad 就釘在這個環上
 const KNEE = 46 // 轉角(knee)落在環外 KNEE 處；knee→pad 是「八方位」斜線/直線，插進環（接點感）
-const DODGE_MG = 8 // 立柱遇到鄰框時，外推避讓留的安全間距
+// 走線與「別人的黑塊」之間要留的淨空。黑塊是牆上實體展品的預留位，線貼著框邊走
+// 會讀成「線黏在展品上」；投影距離下 8 這種等級根本看不出是刻意留的空隙。
+// 30 大約是狀態面板離框距離(GAP=22)的同一個量級，看起來才像有意為之。
+// 資訊面板不算障礙物 —— 線可以直接穿過面板。
+const CLEAR = 30
 
 // 依方位把家電分到 下(B)/左(L)/右(R)/上(T)——只用來決定主幹是「先垂直」還是「先水平」
 function sideOf(n) {
@@ -29,9 +33,41 @@ function boxOf(n) {
   return { x: n.x - n.w / 2, y: n.y - n.h / 2, w: n.w, h: n.h }
 }
 
+// 把框往外膨脹 CLEAR：命中測試改用膨脹框，避讓後自然就有 CLEAR 的淨空，
+// 不必再另外加 margin（舊版是「貼著框判定 + 只推 8」，所以永遠只有 8 的空隙）。
+function inflate(b, m = CLEAR) {
+  return { x: b.x - m, y: b.y - m, w: b.w + 2 * m, h: b.h + 2 * m }
+}
+
+// 電視預留區也是實體展品的預留位，而且規格明訂「不准有連線穿過」。
+// 舊版的自動佈線完全沒檢查它，只靠上排兩台剛好沒經過而已。
+const SCREEN_BOX = {
+  x: RESERVED_SCREEN.x - RESERVED_SCREEN.w / 2,
+  y: RESERVED_SCREEN.y - RESERVED_SCREEN.h / 2,
+  w: RESERVED_SCREEN.w,
+  h: RESERVED_SCREEN.h,
+}
+
 // 垂直線 x 在 [lo,hi] 這段是否穿過框 b
 function vHits(x, lo, hi, b) {
   return x > b.x && x < b.x + b.w && hi > b.y && lo < b.y + b.h
+}
+
+// 水平線 y 在 [lo,hi] 這段是否穿過框 b
+function hHits(y, lo, hi, b) {
+  return y > b.y && y < b.y + b.h && hi > b.x && lo < b.x + b.w
+}
+
+// 主幹擦過「自己的框」的兩種難看情況：
+//   (a) 落在框外但貼著邊 → 線沿著自己的框邊擦過去。
+//   (b) 落在框內但太靠近「等一下要穿出去的那條邊」→ 線從框角切出去，像削到角。
+// 乾淨的走法只有兩種：夠深入框內（從邊的中段垂直穿出），或離框至少 CLEAR。
+// 這裡把落在中間那條擦邊帶的座標，推到最近的乾淨位置。
+// 框本身不夠寬/高（跨距 < 2×CLEAR）時沒有「夠深入」可言，一律推到框外。
+function unGraze(v, lo, hi) {
+  const hasInner = hi - lo >= 2 * CLEAR
+  if (hasInner && v >= lo + CLEAR && v <= hi - CLEAR) return v
+  return v <= (lo + hi) / 2 ? Math.min(v, lo - CLEAR) : Math.max(v, hi + CLEAR)
 }
 
 // 把任意方向四捨五入到最近的「八方位」單位向量（0/45/90...）
@@ -67,29 +103,65 @@ function buildRoutes() {
     }
 
     const side = sideOf(n)
-    const others = APPLIANCES.filter((m) => m.id !== n.id).map(boxOf)
-    let pts
-    if (side === 'B' || side === 'T') {
-      // 上/下：先水平到 knee 的 x（家電自己那一列空白），再垂直到 knee，最後八方位插進環
-      pts = [pt(n.x, n.y), pt(knee.x, n.y), pt(knee.x, knee.y), pt(pin.x, pin.y)]
-    } else {
-      // 左/右：先垂直（待在家電自己那一欄）再水平到 knee；立柱若撞鄰框就外推一折繞過去
-      let rx = n.x
-      const lo = Math.min(n.y, knee.y)
-      const hi = Math.max(n.y, knee.y)
-      for (let it = 0; it < 5; it++) {
+    const own = boxOf(n)
+    // 障礙物 = 其他八個黑塊 + 電視預留區，全部先膨脹 CLEAR。
+    // 自己的框不算障礙（線本來就從框中心長出來），改用 unGraze 處理擦邊。
+    // 資訊面板刻意不算障礙 —— 線可以直接穿過面板。
+    const obstacles = [
+      ...APPLIANCES.filter((m) => m.id !== n.id).map((m) => inflate(boxOf(m))),
+      inflate(SCREEN_BOX),
+    ]
+
+    // 把主幹座標 v 推出所有命中的膨脹框。toward 決定往哪個方向推（朝中樞那側）。
+    // hits 是 vHits(垂直主幹) 或 hHits(水平主幹)；lo/hi 是主幹另一軸的跨距。
+    const push = (v, span, hits, lower) => {
+      for (let it = 0; it < 8; it++) {
         let moved = false
-        for (const b of others) {
-          if (vHits(rx, lo, hi, b)) {
-            moved = true
-            rx = side === 'R' ? Math.min(rx, b.x - DODGE_MG) : Math.max(rx, b.x + b.w + DODGE_MG)
-          }
+        for (const b of obstacles) {
+          if (!hits(v, span()[0], span()[1], b)) continue
+          moved = true
+          const nb = hits === vHits ? [b.x, b.x + b.w] : [b.y, b.y + b.h]
+          v = lower ? Math.min(v, nb[0] - 0.01) : Math.max(v, nb[1] + 0.01)
         }
         if (!moved) break
       }
-      pts = [pt(n.x, n.y), pt(rx, n.y), pt(rx, knee.y), pt(knee.x, knee.y), pt(pin.x, pin.y)]
+      return v
     }
-    routes[n.id] = { pts: simplify(pts), pin }
+
+    let pts
+    if (side === 'B' || side === 'T') {
+      // 上/下排：先垂直離開框(到 ry)，再水平到主幹 x(kx)，再垂直到 knee，最後八方位插進環。
+      // 兩條主幹都要「避開障礙」也「不擦到自己的框」，而兩者會互相推翻，所以來回收斂幾輪。
+      let ry = n.y
+      let kx = knee.x
+      const upward = side === 'B' // 下排的水平主幹往上挪，上排往下挪（都是朝中樞那側）
+      for (let round = 0; round < 6; round++) {
+        const before = `${ry},${kx}`
+        ry = push(ry, () => [Math.min(n.x, kx), Math.max(n.x, kx)], hHits, upward)
+        ry = unGraze(ry, own.y, own.y + own.h)
+        kx = push(kx, () => [Math.min(ry, knee.y), Math.max(ry, knee.y)], vHits, kx < CX)
+        kx = unGraze(kx, own.x, own.x + own.w)
+        if (`${ry},${kx}` === before) break
+      }
+      pts = [pt(n.x, n.y), pt(n.x, ry), pt(kx, ry), pt(kx, knee.y), pt(knee.x, knee.y), pt(pin.x, pin.y)]
+    } else {
+      // 左/右排：先水平離開框(到 rx)，再垂直到主幹 y(ry)，再水平到 knee，最後八方位插進環。
+      let rx = n.x
+      let ry = knee.y
+      const leftward = side === 'R' // 右排的垂直主幹往左挪，左排往右挪（都是朝中樞那側）
+      for (let round = 0; round < 6; round++) {
+        const before = `${rx},${ry}`
+        rx = push(rx, () => [Math.min(n.y, ry), Math.max(n.y, ry)], vHits, leftward)
+        rx = unGraze(rx, own.x, own.x + own.w)
+        ry = push(ry, () => [Math.min(rx, knee.x), Math.max(rx, knee.x)], hHits, ry < CY)
+        ry = unGraze(ry, own.y, own.y + own.h)
+        if (`${rx},${ry}` === before) break
+      }
+      pts = [pt(n.x, n.y), pt(rx, n.y), pt(rx, ry), pt(knee.x, ry), pt(knee.x, knee.y), pt(pin.x, pin.y)]
+    }
+    const out = simplify(pts)
+    warnNonOcti(n, out)
+    routes[n.id] = { pts: out, pin }
   }
   return routes
 }

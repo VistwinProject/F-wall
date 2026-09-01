@@ -1,6 +1,6 @@
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
 import { COLORS } from '../config/theme.js'
-import ApplianceNode from './ApplianceNode.jsx'
+import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
 
 // ============================================================================
@@ -27,11 +27,21 @@ export default function WallScene({ activeIds }) {
     >
       <ReservedScreen />
 
+      {/* 分三層畫，不是「一個家電畫完換下一個」：
+          走線 → 黑塊 → 狀態面板。走線可以穿過面板，但要讀成面板疊在線前面；
+          若照家電逐一畫，排在後面的家電的線會蓋到前面家電的面板文字上。 */}
       {APPLIANCES.map((node) => (
-        <ApplianceNode key={node.id} node={node} active={showAll || activeIds.has(node.id)} />
+        <ApplianceTrace key={`t-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
+      ))}
+      {APPLIANCES.map((node) => (
+        <ApplianceBlock key={`b-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
       ))}
 
       <Hub activeCount={activeIds.size} />
+
+      {APPLIANCES.map((node) => (
+        <AppliancePanel key={`p-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
+      ))}
     </svg>
   )
 }

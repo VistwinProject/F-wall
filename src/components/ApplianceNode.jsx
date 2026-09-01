@@ -4,53 +4,57 @@ import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
 import { getRoute, linePath } from '../config/routing.js'
 
 // ============================================================================
-// 單一家電節點 = 一條走線 + 黑色挖空框 + active 時彈出的狀態面板。
+// 單一家電 = 一條走線 + 黑色挖空框 + active 時彈出的狀態面板。
+// ============================================================================
+// ----------------------------------------------------------------------------
+// 刻意拆成三個「圖層」元件，讓 WallScene 分三批畫：先所有走線 → 所有黑塊 → 所有面板。
+// 舊版是「一個家電畫完自己的走線+黑塊+面板」再換下一個，於是排在後面的家電，
+// 走線會蓋在前面家電的面板文字上（例如浴室暖風機的線橫切過窗簾的面板）。
+// 走線穿過面板是可以的，但要讀成「面板疊在線前面」，所以順序必須是全域分層。
+// ----------------------------------------------------------------------------
+
+// 走線：idle 極細灰線 → active 白高光。
+// 幾何沿用 routing.js 的八方位佈線（含與黑塊的 CLEAR 淨空與避讓）。
+export function ApplianceTrace({ node, active }) {
+  const { pts } = getRoute(node.id)
+  const t = `${MOTION.dur}s ${MOTION.easeCss}`
+  return (
+    <path
+      d={linePath(pts)}
+      fill="none"
+      stroke={active ? COLORS.lineActive : COLORS.line}
+      strokeWidth={active ? 1.5 : 1}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transition: `stroke ${t}, stroke-width ${t}` }}
+    />
+  )
+}
+
+// 黑色矩形 = 實體立方體模型的投影挖空區。
 //
-// ⚠ 黑框的 x/y/w/h 是「牆上實體展品的預留位」，不是版面裝飾：
+// ⚠ x/y/w/h 是「牆上實體展品的預留位」，不是版面裝飾：
 //    rect 以 node.x/node.y 為【中心】，所以是 x - w/2, y - h/2。
 //    改成左上角錨點而不轉換資料，每個框會位移半個自身尺寸，現場就對不上。
 //    fill="#000" 同理 —— 投影機的黑 = 不出光，實體展品才不會被打亮。
-// ============================================================================
-export default function ApplianceNode({ node, active }) {
-  // 走線幾何完全沿用舊的八方位佈線（含手動 route 覆寫與避讓），
-  // 只是不再倒角、不再發光、不再有彗星 —— 就一條極細灰線。
-  const { pts } = getRoute(node.id)
-  const path = linePath(pts)
-  const hw = node.w / 2
-  const hh = node.h / 2
+//
+// idle 用 lineStrong 而不是 line —— 這九個框是牆上實體展品的位置，
+// attract 狀態（還沒有人刷卡）觀眾走近時就該看得到。投影機的黑會被環境光墊高，
+// 0.10 那一階在現場幾乎看不見，所以框跟走線在這裡刻意分兩階。
+export function ApplianceBlock({ node, active }) {
   const t = `${MOTION.dur}s ${MOTION.easeCss}`
-
   return (
-    <g>
-      {/* 連線：idle 灰 hairline → active 白高光 */}
-      <path
-        d={path}
-        fill="none"
-        stroke={active ? COLORS.lineActive : COLORS.line}
-        strokeWidth={active ? 1.5 : 1}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ transition: `stroke ${t}, stroke-width ${t}` }}
-      />
-
-      {/* 黑色矩形 = 實體立方體模型的投影挖空區。
-          idle 用 lineStrong 而不是 line —— 這九個框是牆上實體展品的位置，
-          attract 狀態（還沒有人刷卡）觀眾走近時就該看得到。投影機的黑會被環境光墊高，
-          0.10 那一階在現場幾乎看不見，所以框跟走線在這裡刻意分兩階。 */}
-      <rect
-        x={node.x - hw}
-        y={node.y - hh}
-        width={node.w}
-        height={node.h}
-        rx={RADIUS.sm}
-        fill="#000"
-        stroke={active ? COLORS.lineActive : COLORS.lineStrong}
-        strokeWidth={active ? 1.5 : 1}
-        style={{ transition: `stroke ${t}, stroke-width ${t}` }}
-      />
-
-      {active && node.status && <StatusPanel node={node} />}
-    </g>
+    <rect
+      x={node.x - node.w / 2}
+      y={node.y - node.h / 2}
+      width={node.w}
+      height={node.h}
+      rx={RADIUS.sm}
+      fill="#000"
+      stroke={active ? COLORS.lineActive : COLORS.lineStrong}
+      strokeWidth={active ? 1.5 : 1}
+      style={{ transition: `stroke ${t}, stroke-width ${t}` }}
+    />
   )
 }
 
@@ -108,6 +112,12 @@ function avoidX(node, left, top, bottom) {
   return ok.sort((a, b) => Math.abs(a - left) - Math.abs(b - left))[0]
 }
 
+// active 時在家電旁彈出的狀態面板（第三層，畫在所有走線與黑塊之上）。
+export function AppliancePanel({ node, active }) {
+  if (!active || !node.status) return null
+  return <StatusPanel node={node} />
+}
+
 function StatusPanel({ node }) {
   const { status, panelDir = 'B' } = node
   const bl = node.x - node.w / 2
@@ -156,9 +166,11 @@ function StatusPanel({ node }) {
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ duration: MOTION.dur, ease: MOTION.ease }}
       >
-        {/* 底板：接近不透明 —— 下排的面板往上開會疊在往中樞的走線上（那條走廊避不開，
-            見 avoidX 註解），夠不透明才會讀成「面板疊在線前面」而不是糊在一起。
-            背景本身是純黑，所以沒有走線的地方看不出差別。 */}
+        {/* 底板兩層：黑色遮擋層 + 一層極淡的白（毛玻璃感）。
+            遮擋層 0.9 而不是更透 —— 走線可以穿過面板（那是刻意允許的，
+            否則佈線要為了繞面板而繞得很醜），但穿過時必須讀成「面板疊在線前面」。
+            0.72 會讓 active 的白線直接透過來橫切資料列，投影距離下數字就看不清。
+            背景本身是純黑，所以沒有走線的地方看不出這層存在。 */}
         <rect
           x={px}
           y={py}
@@ -166,7 +178,7 @@ function StatusPanel({ node }) {
           height={PH}
           rx={RADIUS.md}
           fill="#000"
-          opacity="0.72"
+          opacity="0.9"
         />
         <rect
           x={px}
