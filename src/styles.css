@@ -9,23 +9,27 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  background: #041345;
+  /* 純黑：投影機的黑 = 不出光，牆上的實體展品才不會被打亮。這不是配色偏好。 */
+  background: #000;
   overflow: hidden;
 }
 
 body {
-  /* SYNC-SPEC §7：中文 Chiron Hei HK，數字/HUD JetBrains Mono，顯示 Space Grotesk */
-  font-family: 'Chiron Hei HK', 'Space Grotesk', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  /* Latin / 數字走系統字，CJK 用 Chiron Hei HK 並補完整 fallback（展場可能離線）。
+     與 src/config/theme.js 的 FONT 保持一致。 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+    'Chiron Hei HK', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-variant-numeric: tabular-nums;
   cursor: none; /* kiosk：投影面不顯示游標 */
 }
 
+/* ⚠ 結構性：fixed + inset 0 + flex 置中 決定了 SVG viewBox 如何映射到螢幕。
+   加任何 padding / border / header 都會整體縮放，九個黑框會離開牆上的預留位。 */
 .wall-stage {
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* ANLB 背景：navy 徑向漸層，中上偏亮、邊角壓暗（對齊 Banner / Poster 的 vignette） */
-  background:
-    radial-gradient(ellipse 75% 60% at 50% 38%, #17275e 0%, #0d2058 45%, #061648 78%, #041345 100%);
+  background: #000;
 }

@@ -148,6 +148,16 @@ export function getRoute(id) {
   return ROUTES[id] ?? { pts: [pt(CX, CY)], pin: { x: CX, y: CY } }
 }
 
+// 直接把折點串成 polyline —— 極簡版走線用這個。
+// 路徑幾何（buildRoutes 的八方位佈線、避讓、pad 落點）完全沿用，
+// 只是不再把轉角切成 45° 斜邊，因為倒角正是「電路板」的招牌特徵。
+export function linePath(pts) {
+  if (!pts.length) return ''
+  return pts.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')
+}
+
+// ⚠ 以下 chamferPath 目前沒有任何元件在用（極簡版改用 linePath）。
+//    保留匯出是因為佈線幾何本身沒變，之後若要把倒角外觀加回來可以直接切換。
 // 把「直角(90°)轉折」切成 45° 斜角（電路板 trace 招牌外觀）。
 // 只切「兩段互相垂直、且都是水平/垂直」的轉角——切出來剛好是 45° 斜邊，仍是八方位；
 // 其餘轉角（已經是 45° 斜線的接點）保持尖角不動，避免切出非八方位的線段。
