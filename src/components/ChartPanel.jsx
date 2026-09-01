@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { COLORS, FONT, MOTION } from '../config/theme.js'
 import GlassPlate from './GlassPlate.jsx'
+import MiniBars from './MiniBars.jsx'
 
 // ============================================================================
 // 圖表面板 —— 掛在某台家電旁邊的附屬面板（插座用電、除濕機集水、冷氣耗電）
@@ -25,10 +26,8 @@ export default function ChartPanel({ spec }) {
   const chartY = inline ? y + 12 : y + 30
   const chartH = (inline ? h - 20 : h - 44) - (labels ? 9 : 0)
 
-  const max = Math.max(...data) || 1
   const n = data.length
   const slot = chartW / n
-  const bw = Math.max(2, slot * 0.62)
 
   return (
     <motion.g
@@ -60,33 +59,7 @@ export default function ChartPanel({ spec }) {
         </text>
       )}
 
-      {/* 基準線 */}
-      <line
-        x1={chartX}
-        y1={chartY + chartH}
-        x2={chartX + chartW}
-        y2={chartY + chartH}
-        stroke={COLORS.line}
-        strokeWidth="0.8"
-      />
-
-      {/* 長條：最後一根（今天）用高光，其餘退到次一階 */}
-      {data.map((v, i) => {
-        const bh = Math.max(1, (v / max) * chartH)
-        const bx = chartX + i * slot + (slot - bw) / 2
-        const on = hi === undefined ? i === n - 1 : i === hi
-        return (
-          <rect
-            key={i}
-            x={bx}
-            y={chartY + chartH - bh}
-            width={bw}
-            height={bh}
-            fill={on ? COLORS.text : COLORS.textOnGlass}
-            rx={Math.min(1.5, bw / 3)}
-          />
-        )
-      })}
+      <MiniBars x={chartX} y={chartY} w={chartW} h={chartH} data={data} hi={hi} />
 
       {/* 橫軸標籤（矮面板不畫，放不下） */}
       {labels &&
