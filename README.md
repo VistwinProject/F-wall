@@ -40,11 +40,29 @@ useDeskState  ──►  activeIds (Set<id>)  ──►  WallScene
 - 協議四種訊息：`reader-connected` / `reader-disconnected` / `tag-present` / `tag-remove`。
 - `tag-remove` 只給 `slot_index` 不給 `id`，故 hook 自記 `slot → id`（最後一次 `tag-present` 看到的 `data.id`），拿走卡片時才知道熄滅哪個家電。slot↔家電為動態綁定（方案 A）。
 
+## 線條框架（`config/frame.js`）
+
+業主指定數值，白色線段、粗細 2，畫在**最底層**——家電黑塊與資訊面板都疊在它前面。
+
+| 項目 | 值 |
+| --- | --- |
+| 大框 | 中心 (955, 540)、1610×985、四邊倒角 65 → 邊界 x 150→1760 / y 47.5→1032.5 |
+| 垂直格線 X | 307 / 386 / 466 / 760 / 1150 / 1285 / 1445 / 1605 |
+| 水平格線 Y | 335 / 550 / 770 / 900 |
+| 線寬 | 2（`LINE_W`） |
+| 線色 | `COLORS.frameLine` = `#ffffff` |
+
+- 格線一律**整條**拉到大框兩端。畫面上看起來斷斷續續是黑塊／面板遮出來的，不是去算線段
+  該在哪裡斷 —— 之後改黑塊座標，斷點會自己跟著跑。
+- 大框已確認包住九個黑塊(x 197.5→1697.5, y 75→997.5)與電視預留區，且沒有格線落在倒角範圍內。
+- Y=900 正好是下排五台的中心；X=1285 正好壓在冷氣左緣。
+
 ## 畫面結構
 
 | 元件 | 職責 |
 | --- | --- |
-| `WallScene.jsx` | SVG 根（viewBox / preserveAspectRatio **結構性，不可動**）、電視預留位、家電節點列表 |
+| `WallScene.jsx` | SVG 根（viewBox / preserveAspectRatio **結構性，不可動**）、線條框架、電視預留位、家電三層 |
+| `config/frame.js` | 大框與格線的數值（**要調線就改這裡**） |
 | `Hub.jsx` | 中央 AI 中樞（單圈 hairline + 標題），半徑 `R = 116` **必須與 `routing.js` 的 `RING_R` 一致** |
 | `ApplianceNode.jsx` | 單一家電：極細走線、黑色挖空框（**牆上展品預留位**）、狀態面板（`avoidX` 自動避讓） |
 | `config/appliances.js` | **幾何 + 內容**：9 家電的 id / label / 座標 / 尺寸 / 面板方向 / 狀態，以及 HUB、預留螢幕區。配色已移出到 `config/theme.js` |

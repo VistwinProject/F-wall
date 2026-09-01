@@ -18,6 +18,11 @@ export const COLORS = {
   surface: 'rgba(255,255,255,0.04)', // 資訊面板底
   surfaceHi: 'rgba(255,255,255,0.08)', // active 面板底
 
+  // ── 線條框架（業主指定：白色線段，粗細 2；線寬在 config/frame.js 的 LINE_W）──
+  // 純白 2px 拉滿整個畫面，會比家電走線(idle 1px @0.10)搶眼很多 —— 那是指定的呈現，
+  // 想壓下來把這裡改成 rgba(255,255,255,0.5) 之類即可，其他都不用動。
+  frameLine: '#ffffff',
+
   // ── 線 / 邊框（分層就靠這三階）──
   line: 'rgba(255,255,255,0.10)', // 極細灰線、hairline、idle 走線
   lineStrong: 'rgba(255,255,255,0.22)', // 面板外框、分隔線

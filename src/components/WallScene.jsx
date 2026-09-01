@@ -1,4 +1,5 @@
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
+import { FRAME, VLINES, HLINES, LINE_W } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
@@ -25,6 +26,9 @@ export default function WallScene({ activeIds }) {
       width="100%"
       height="100%"
     >
+      {/* 線條框架：最底層。家電黑塊與資訊面板都疊在它前面。 */}
+      <LineFrame />
+
       <ReservedScreen />
 
       {/* 分三層畫，不是「一個家電畫完換下一個」：
@@ -43,6 +47,24 @@ export default function WallScene({ activeIds }) {
         <AppliancePanel key={`p-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
       ))}
     </svg>
+  )
+}
+
+// 大框 + 正交格線。數值全部來自 config/frame.js（業主指定），這裡只負責畫。
+// 格線整條拉到大框兩端 —— 畫面上的斷點是前面的黑塊／面板遮出來的，不在這裡算。
+function LineFrame() {
+  const { x, y, w, h, r } = FRAME
+  return (
+    <g stroke={COLORS.frameLine} strokeWidth={LINE_W} fill="none">
+      {VLINES.map((vx) => (
+        <line key={`v-${vx}`} x1={vx} y1={y} x2={vx} y2={y + h} />
+      ))}
+      {HLINES.map((hy) => (
+        <line key={`h-${hy}`} x1={x} y1={hy} x2={x + w} y2={hy} />
+      ))}
+      {/* 大框畫在格線之後，四邊與倒角才會是完整連續的一圈 */}
+      <rect x={x} y={y} width={w} height={h} rx={r} />
+    </g>
   )
 }
 
