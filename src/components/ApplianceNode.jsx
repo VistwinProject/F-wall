@@ -118,39 +118,67 @@ function avoidX(node, left, top, bottom) {
 // active 時在家電旁彈出的狀態面板（第三層，畫在所有走線與黑塊之上）。
 // ⚠ 不再自己判斷 active —— 掛載／卸載由 WallScene 的 AnimatePresence 決定，
 //    退場動畫才跑得起來（元件自己 return null 會直接消失，沒有淡出）。
-export function AppliancePanel({ node }) {
-  return <StatusPanel node={node} />
+export function AppliancePanel({ node, box }) {
+  return <StatusPanel node={node} box={box ?? panelBox(node)} />
 }
 
-function StatusPanel({ node }) {
-  const { status, panelDir = 'B' } = node
+// 從 rect 中心朝 (tx,ty) 射出，回傳與 rect 邊界的交點。
+// 引線兩端都用它算 —— 面板被拖到任意位置時，引線仍然會接在兩個框最靠近的邊上。
+function edgePoint(rect, tx, ty) {
+  const cx = rect.x + rect.w / 2
+  const cy = rect.y + rect.h / 2
+  const dx = tx - cx
+  const dy = ty - cy
+  if (!dx && !dy) return { x: cx, y: cy }
+  const sx = dx ? rect.w / 2 / Math.abs(dx) : Infinity
+  const sy = dy ? rect.h / 2 / Math.abs(dy) : Infinity
+  const s = Math.min(sx, sy)
+  return { x: cx + dx * s, y: cy + dy * s }
+}
+
+// 面板的預設位置：依 panelDir 開在家電框外側，並用 avoidX 水平避開鄰框。
+// ⚠ 這是「自動版面」的唯一來源。編輯器(?edit)會用自己存的 box 覆蓋它，
+//    但正式投影一律走這裡算出來的值。
+export function panelBox(node) {
+  const { panelDir = 'B' } = node
   const bl = node.x - node.w / 2
   const br = node.x + node.w / 2
   const bt = node.y - node.h / 2
   const bb = node.y + node.h / 2
-
-  // 面板左上角 (px,py) + 引線（從家電框邊到面板邊）+ 進場位移方向
-  let px, py, from, to
+  let px, py
   if (panelDir === 'L') {
     px = bl - GAP - PW
     py = node.y - PH / 2
-    from = [bl, node.y]
-    to = [px + PW, py + PH / 2]
   } else if (panelDir === 'R') {
     px = br + GAP
     py = node.y - PH / 2
-    from = [br, node.y]
-    to = [px, py + PH / 2]
   } else if (panelDir === 'T') {
     py = bt - GAP - PH
     px = avoidX(node, node.x - PW / 2, py, py + PH)
-    from = [node.x, bt]
-    to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py + PH]
   } else {
     py = bb + GAP
     px = avoidX(node, node.x - PW / 2, py, py + PH)
-    from = [node.x, bb]
-    to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py]
+  }
+  return { x: px, y: py, w: PW, h: PH }
+}
+
+function StatusPanel({ node, box }) {
+  const { status } = node
+  // 用 box 的尺寸遮蔽模組常數 —— 底下整段排版程式碼因此完全不用改，
+  // 面板被編輯器改大改小時文字也會跟著對齊。
+  const { x: px, y: py, w: PW, h: PH } = box
+
+  // 引線：家電框邊 → 面板邊。node 為 null 時（編輯器新增的自訂面板）不畫。
+  let from = null
+  let to = null
+  if (node.w && node.h) {
+    const blockRect = { x: node.x - node.w / 2, y: node.y - node.h / 2, w: node.w, h: node.h }
+    const cx = px + PW / 2
+    const cy = py + PH / 2
+    const a = edgePoint(blockRect, cx, cy)
+    const b = edgePoint({ x: px, y: py, w: PW, h: PH }, node.x, node.y)
+    from = [a.x, a.y]
+    to = [b.x, b.y]
   }
 
   // 狀態圓點：ok = 實心、warn/err = 空心。語意靠形狀不靠顏色。
@@ -171,7 +199,9 @@ function StatusPanel({ node }) {
       {/* 引線：設備 → 面板。放在 motion.g 裡面才會跟著淡入淡出
           （舊版在外面，所以是瞬間出現／消失，跟面板不同步）。
           畫在玻璃之前 —— 重疊到面板的那一小段本來就該被玻璃蓋住並模糊掉。 */}
-      <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke={COLORS.line} strokeWidth="1" />
+      {from && (
+        <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke={COLORS.line} strokeWidth="1" />
+      )}
       {/* 毛玻璃底板。
           用 foreignObject 包一個 div 才拿得到 backdrop-filter —— 那是 CSS box 屬性，
           對 SVG 的 <rect> 完全無效（樣式見 styles.css 的 .panel-glass）。

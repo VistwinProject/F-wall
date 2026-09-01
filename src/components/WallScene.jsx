@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
+import { customNode, isCustom } from '../config/panelLayout.js'
 import { FRAME, VLINES, HLINES, LINE_W, GLOW } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
@@ -16,7 +17,7 @@ import Hub from './Hub.jsx'
 //   3. 黑框與電視預留區的 fill="#000" —— 投影機的黑 = 不出光，實體展品才不會被打亮。
 //      這不是配色選擇，不要因為「純黑太重」而改成深灰。
 // ============================================================================
-export default function WallScene({ activeIds }) {
+export default function WallScene({ activeIds, editLayout }) {
   // ?all 除錯用：強制所有家電 active（驗證面板/連線排版不打架），正式不會帶這參數。
   // portable/測試-全部亮.bat 靠這個參數，不要拿掉。
   const showAll =
@@ -99,11 +100,22 @@ export default function WallScene({ activeIds }) {
       <Hub activeCount={activeIds.size} />
 
       {/* 面板層。用 AnimatePresence 掛載／卸載，拿走卡片時才有淡出 ——
-          舊版是元件自己 return null，會瞬間消失。 */}
+          舊版是元件自己 return null，會瞬間消失。
+
+          editLayout 只有 ?edit 會傳進來：那時全部面板一律顯示、位置吃編輯器的值。
+          正式投影 editLayout 是 undefined，走的還是 panelBox() 的自動版面。 */}
       <AnimatePresence>
-        {APPLIANCES.filter((node) => isActive(node.id) && node.status).map((node) => (
-          <AppliancePanel key={`p-${node.id}`} node={node} />
-        ))}
+        {editLayout
+          ? Object.entries(editLayout).map(([id, box]) => {
+              const node = isCustom(id)
+                ? customNode(id, box.label)
+                : APPLIANCES.find((a) => a.id === id)
+              if (!node) return null
+              return <AppliancePanel key={`p-${id}`} node={node} box={box} />
+            })
+          : APPLIANCES.filter((node) => isActive(node.id) && node.status).map((node) => (
+              <AppliancePanel key={`p-${node.id}`} node={node} />
+            ))}
       </AnimatePresence>
     </svg>
   )
