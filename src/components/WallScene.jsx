@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { APPLIANCES, VIEWBOX, RESERVED_SCREEN } from '../config/appliances.js'
 import { FRAME, VLINES, HLINES, LINE_W, GLOW } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
@@ -20,6 +21,7 @@ export default function WallScene({ activeIds }) {
   // portable/測試-全部亮.bat 靠這個參數，不要拿掉。
   const showAll =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('all')
+  const isActive = (id) => showAll || activeIds.has(id)
   return (
     <svg
       viewBox={`0 0 ${VIEWBOX.w} ${VIEWBOX.h}`}
@@ -88,17 +90,21 @@ export default function WallScene({ activeIds }) {
           走線 → 黑塊 → 狀態面板。走線可以穿過面板，但要讀成面板疊在線前面；
           若照家電逐一畫，排在後面的家電的線會蓋到前面家電的面板文字上。 */}
       {APPLIANCES.map((node) => (
-        <ApplianceTrace key={`t-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
+        <ApplianceTrace key={`t-${node.id}`} node={node} active={isActive(node.id)} />
       ))}
       {APPLIANCES.map((node) => (
-        <ApplianceBlock key={`b-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
+        <ApplianceBlock key={`b-${node.id}`} node={node} active={isActive(node.id)} />
       ))}
 
       <Hub activeCount={activeIds.size} />
 
-      {APPLIANCES.map((node) => (
-        <AppliancePanel key={`p-${node.id}`} node={node} active={showAll || activeIds.has(node.id)} />
-      ))}
+      {/* 面板層。用 AnimatePresence 掛載／卸載，拿走卡片時才有淡出 ——
+          舊版是元件自己 return null，會瞬間消失。 */}
+      <AnimatePresence>
+        {APPLIANCES.filter((node) => isActive(node.id) && node.status).map((node) => (
+          <AppliancePanel key={`p-${node.id}`} node={node} />
+        ))}
+      </AnimatePresence>
     </svg>
   )
 }

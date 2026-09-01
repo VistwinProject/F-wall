@@ -77,6 +77,9 @@ function fitLabelSize(label, maxW, base = 25, letterSpacing = 2) {
   return Math.min(base, Math.floor(fit * 10) / 10)
 }
 const GAP = 22 // 面板離家電框的間隙
+// foreignObject 的外擴留白：外陰影 (0 10px 30px) 需要約 40 的空間，
+// 不留的話陰影會被 foreignObject 的邊界裁掉。
+const PAD = 40
 const DODGE_MG = 8 // 避讓時與鄰框留的安全間距
 
 // 面板往上／往下開時預設以家電框中心對齊，但可能壓到別人的框
@@ -113,8 +116,9 @@ function avoidX(node, left, top, bottom) {
 }
 
 // active 時在家電旁彈出的狀態面板（第三層，畫在所有走線與黑塊之上）。
-export function AppliancePanel({ node, active }) {
-  if (!active || !node.status) return null
+// ⚠ 不再自己判斷 active —— 掛載／卸載由 WallScene 的 AnimatePresence 決定，
+//    退場動畫才跑得起來（元件自己 return null 會直接消失，沒有淡出）。
+export function AppliancePanel({ node }) {
   return <StatusPanel node={node} />
 }
 
@@ -157,107 +161,102 @@ function StatusPanel({ node }) {
   const hollow = status.tone === 'warn' || status.tone === 'err'
 
   return (
-    <g>
-      {/* 引線：設備 → 面板 */}
+    <motion.g
+      initial={{ opacity: 0, x: fromOffset.x, y: fromOffset.y }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      exit={{ opacity: 0, x: fromOffset.x, y: fromOffset.y }}
+      transition={{ duration: MOTION.dur, ease: MOTION.ease }}
+    >
+      {/* 引線：設備 → 面板。放在 motion.g 裡面才會跟著淡入淡出
+          （舊版在外面，所以是瞬間出現／消失，跟面板不同步）。
+          畫在玻璃之前 —— 重疊到面板的那一小段本來就該被玻璃蓋住並模糊掉。 */}
       <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke={COLORS.line} strokeWidth="1" />
+      {/* 毛玻璃底板。
+          用 foreignObject 包一個 div 才拿得到 backdrop-filter —— 那是 CSS box 屬性，
+          對 SVG 的 <rect> 完全無效（樣式見 styles.css 的 .panel-glass）。
+          文字仍然是 SVG <text>，疊在玻璃上面，排版邏輯完全沒動。
 
-      <motion.g
-        initial={{ opacity: 0, x: fromOffset.x, y: fromOffset.y }}
-        animate={{ opacity: 1, x: 0, y: 0 }}
-        transition={{ duration: MOTION.dur, ease: MOTION.ease }}
+          ⚠ foreignObject 會把內容裁切到自己的框，所以這裡刻意比面板大 PAD*2，
+             內層再用 padding 推回去，外陰影才不會被切掉。
+          ⚠ pointer-events: none —— 別讓這塊 HTML 蓋住底下的 SVG。 */}
+      <foreignObject
+        x={px - PAD}
+        y={py - PAD}
+        width={PW + PAD * 2}
+        height={PH + PAD * 2}
+        style={{ pointerEvents: 'none' }}
       >
-        {/* 底板兩層：純黑遮擋層 + 一層極淡的白（毛玻璃感）。
-            遮擋層是「完全不透明」而不是半透明 —— 業主指定線條框架要放在資訊面板【後面】，
-            而框架是純白 2px、整條拉滿畫面，只要留一點透光就會有白線橫切過資料列
-            （0.9 時 10% 的殘影就足以把數字劃掉）。既然指定要被面板遮住，就遮乾淨。
-            背景是純黑，所以沒有線經過的地方看不出這層存在。
-            想讓面板重新帶一點透明感：把第一層的 fill 改成 rgba(0,0,0,0.9) 之類即可。 */}
-        <rect
-          x={px}
-          y={py}
-          width={PW}
-          height={PH}
-          rx={RADIUS.md}
-          fill="#000"
-        />
-        <rect
-          x={px}
-          y={py}
-          width={PW}
-          height={PH}
-          rx={RADIUS.md}
-          fill={COLORS.surface}
-          stroke={COLORS.lineStrong}
-          strokeWidth="1"
-        />
+        <div style={{ width: '100%', height: '100%', padding: PAD, boxSizing: 'border-box' }}>
+          <div className="panel-glass" />
+        </div>
+      </foreignObject>
 
-        {/* 標題：設備名（中文）獨占一行，用滿面板寬 */}
-        <text
-          x={px + 16}
-          y={py + 31}
-          fontSize={fitLabelSize(node.label, PW - 32)}
-          fill={COLORS.text}
-          style={{ fontFamily: FONT, letterSpacing: '1px' }}
-        >
-          {node.label}
-        </text>
+      {/* 標題：設備名（中文）獨占一行，用滿面板寬 */}
+      <text
+        x={px + 16}
+        y={py + 31}
+        fontSize={fitLabelSize(node.label, PW - 32)}
+        fill={COLORS.text}
+        style={{ fontFamily: FONT, letterSpacing: '1px' }}
+      >
+        {node.label}
+      </text>
 
-        {/* 設備代碼（左）+ 狀態點與狀態字（右）同一行 */}
-        <text
-          x={px + 16}
-          y={py + 51}
-          fontSize="12.5"
-          fill={COLORS.text3}
-          style={{ fontFamily: FONT, letterSpacing: '1.5px' }}
-        >
-          {status.code}
-        </text>
-        <circle
-          cx={px + PW - 18}
-          cy={py + 46.5}
-          r="3.5"
-          fill={hollow ? 'none' : COLORS.text}
-          stroke={COLORS.text}
-          strokeWidth="1"
-        />
-        <text
-          x={px + PW - 30}
-          y={py + 51}
-          textAnchor="end"
-          fontSize="13"
-          fill={COLORS.text2}
-          style={{ fontFamily: FONT, letterSpacing: '0.5px' }}
-        >
-          {status.state}
-        </text>
+      {/* 設備代碼（左）+ 狀態點與狀態字（右）同一行 */}
+      <text
+        x={px + 16}
+        y={py + 51}
+        fontSize="12.5"
+        fill={COLORS.textOnGlass}
+        style={{ fontFamily: FONT, letterSpacing: '1.5px' }}
+      >
+        {status.code}
+      </text>
+      <circle
+        cx={px + PW - 18}
+        cy={py + 46.5}
+        r="3.5"
+        fill={hollow ? 'none' : COLORS.text}
+        stroke={COLORS.text}
+        strokeWidth="1"
+      />
+      <text
+        x={px + PW - 30}
+        y={py + 51}
+        textAnchor="end"
+        fontSize="13"
+        fill={COLORS.text2}
+        style={{ fontFamily: FONT, letterSpacing: '0.5px' }}
+      >
+        {status.state}
+      </text>
 
-        {/* 分隔線 */}
-        <line x1={px + 16} y1={py + 61} x2={px + PW - 16} y2={py + 61} stroke={COLORS.line} strokeWidth="1" />
+      {/* 分隔線 */}
+      <line x1={px + 16} y1={py + 61} x2={px + PW - 16} y2={py + 61} stroke={COLORS.line} strokeWidth="1" />
 
-        {/* 資料列：左標籤 右數值。
-            垂直節奏刻意讓最後一列的底緣離板底約 12px，跟左右內距 16px 讀起來平衡；
-            數字用 tabular-nums 對齊，換值時不會左右跳。 */}
-        {status.rows.map(([k, v], i) => {
-          const ry = py + 79 + i * 22
-          return (
-            <g key={i}>
-              <text x={px + 16} y={ry} fontSize="15" fill={COLORS.text3} style={{ fontFamily: FONT }}>
-                {k}
-              </text>
-              <text
-                x={px + PW - 16}
-                y={ry}
-                textAnchor="end"
-                fontSize="16"
-                fill={COLORS.text}
-                style={{ fontFamily: FONT, fontVariantNumeric: 'tabular-nums' }}
-              >
-                {v}
-              </text>
-            </g>
-          )
-        })}
-      </motion.g>
-    </g>
+      {/* 資料列：左標籤 右數值。
+          垂直節奏刻意讓最後一列的底緣離板底約 12px，跟左右內距 16px 讀起來平衡；
+          數字用 tabular-nums 對齊，換值時不會左右跳。 */}
+      {status.rows.map(([k, v], i) => {
+        const ry = py + 79 + i * 22
+        return (
+          <g key={i}>
+            <text x={px + 16} y={ry} fontSize="15" fill={COLORS.textOnGlass} style={{ fontFamily: FONT }}>
+              {k}
+            </text>
+            <text
+              x={px + PW - 16}
+              y={ry}
+              textAnchor="end"
+              fontSize="16"
+              fill={COLORS.text}
+              style={{ fontFamily: FONT, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {v}
+            </text>
+          </g>
+        )
+      })}
+    </motion.g>
   )
 }
