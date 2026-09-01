@@ -10,6 +10,7 @@
 // dev 模式下會檢查每段是否為八方位（0/45/90），不合的在 console 提示。
 // ============================================================================
 import { APPLIANCES, HUB, RESERVED_SCREEN } from './appliances.js'
+import { FX } from './fx.js'
 
 const CX = HUB.x
 const CY = HUB.y
@@ -214,14 +215,94 @@ function simplify(pts) {
   return out
 }
 
+// ============================================================================
+// 倒圓角
+// ----------------------------------------------------------------------------
+// 走線的轉折處磨成圓弧。轉角 i 的切線長 t = r · tan(δ/2)，δ 是轉向角
+// （90° → t = r，45° → t = 0.414r），弧長 = rEff · δ。
+//
+// ⚠ 半徑必須【逐個轉角】夾限，不能全域取一個安全值：除濕機與空氣清淨機的第一段
+//   只有 4.6 單位，全域統一就會被卡在 4.5，九條線全部看不出圓角。逐角夾限之後，
+//   那個角收成 2.3（而且它落在黑塊正中央，本來就看不見），其餘可見轉角照拿 18。
+//
+// ⚠ 用 A（真圓弧）而不是 Q（二次貝茲）：弧長算得出精確值，彗星的等速換算才準。
+// ============================================================================
+const TAU_EPS = 1e-6
+
+export function roundPath(pts, r) {
+  if (pts.length < 2) return { d: '', length: 0 }
+  if (pts.length === 2) {
+    return { d: `M ${f(pts[0].x)} ${f(pts[0].y)} L ${f(pts[1].x)} ${f(pts[1].y)}`, length: polylineLength(pts) }
+  }
+
+  const seg = []
+  for (let i = 1; i < pts.length; i++) seg.push(Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
+
+  // 每個轉角先算自己的切線長，再夾到「不吃掉相鄰段一半」——
+  // 取一半是保守但夠用：即使兩端的轉角都要吃，也不會互相重疊。
+  const corner = []
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = pts[i - 1], b = pts[i], c = pts[i + 1]
+    const a1 = Math.atan2(b.y - a.y, b.x - a.x)
+    const a2 = Math.atan2(c.y - b.y, c.x - b.x)
+    let delta = a2 - a1
+    while (delta > Math.PI) delta -= 2 * Math.PI
+    while (delta < -Math.PI) delta += 2 * Math.PI
+    const abs = Math.abs(delta)
+    if (abs < TAU_EPS || Math.abs(abs - Math.PI) < TAU_EPS) { corner.push(null); continue } // 直線或原路折返
+    const k = Math.tan(abs / 2)
+    const t = Math.min(r * k, seg[i - 1] / 2, seg[i] / 2)
+    corner.push({ t, rEff: t / k, delta, abs, sweep: delta > 0 ? 1 : 0 })
+  }
+
+  let d = ''
+  let length = 0
+  let cur = pts[0]
+  for (let i = 1; i < pts.length - 1; i++) {
+    const cn = corner[i - 1]
+    const b = pts[i]
+    if (!cn) continue
+    const inLen = Math.hypot(b.x - cur.x, b.y - cur.y)
+    const ux = (b.x - cur.x) / inLen, uy = (b.y - cur.y) / inLen
+    const entry = { x: b.x - ux * cn.t, y: b.y - uy * cn.t }
+
+    const c = pts[i + 1]
+    const outLen = Math.hypot(c.x - b.x, c.y - b.y)
+    const vx = (c.x - b.x) / outLen, vy = (c.y - b.y) / outLen
+    const exit = { x: b.x + vx * cn.t, y: b.y + vy * cn.t }
+
+    d += (d ? '' : `M ${f(cur.x)} ${f(cur.y)}`) + ` L ${f(entry.x)} ${f(entry.y)}`
+    d += ` A ${f(cn.rEff)} ${f(cn.rEff)} 0 0 ${cn.sweep} ${f(exit.x)} ${f(exit.y)}`
+    length += Math.hypot(entry.x - cur.x, entry.y - cur.y) + cn.rEff * cn.abs
+    cur = exit
+  }
+  const last = pts[pts.length - 1]
+  if (!d) d = `M ${f(pts[0].x)} ${f(pts[0].y)}`
+  d += ` L ${f(last.x)} ${f(last.y)}`
+  length += Math.hypot(last.x - cur.x, last.y - cur.y)
+  return { d, length }
+}
+
+function f(v) {
+  return Math.round(v * 100) / 100
+}
+
+// 倒角後的走線。核心線、光暈裡的走線複本、彗星的 animateMotion、能量光帶
+// 【四個地方都必須吃這同一條 d】—— 任何一個自己再算一次，彗星就會脫離線飛。
+const ROUNDED = {}
+export function roundedRoute(id) {
+  if (!ROUNDED[id]) ROUNDED[id] = roundPath(getRoute(id).pts, FX.corner)
+  return ROUNDED[id]
+}
+
 const ROUTES = buildRoutes()
 
 export function getRoute(id) {
   return ROUTES[id] ?? { pts: [pt(CX, CY)], pin: { x: CX, y: CY } }
 }
 
-// 折線總長度。彗星靠它換算飛行時間（等速：九條線速度一樣，長線就飛久一點）。
-export function routeLength(pts) {
+// 折線總長度。倒角後的長度由 roundedRoute 另外算（弧比直角短），這裡只給折線用。
+function polylineLength(pts) {
   let L = 0
   for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
   return L

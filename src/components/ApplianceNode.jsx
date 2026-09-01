@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
 import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
 import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
-import { getRoute, linePath } from '../config/routing.js'
+import { roundedRoute } from '../config/routing.js'
 import { PANEL_LAYOUT } from '../config/panels.js'
+import { FX, phaseOf } from '../config/fx.js'
 import GlassPlate, { estWidth } from './GlassPlate.jsx'
 import MiniBars from './MiniBars.jsx'
 
@@ -16,21 +17,43 @@ import MiniBars from './MiniBars.jsx'
 // 走線穿過面板是可以的，但要讀成「面板疊在線前面」，所以順序必須是全域分層。
 // ----------------------------------------------------------------------------
 
-// 走線：idle 極細灰線 → active 白高光。
-// 幾何沿用 routing.js 的八方位佈線（含與黑塊的 CLEAR 淨空與避讓）。
-export function ApplianceTrace({ node, active }) {
-  const { pts } = getRoute(node.id)
-  const t = `${MOTION.dur}s ${MOTION.easeCss}`
+// 走線的白亮芯。【只有 active 時才存在】—— 沒感應到卡片的時候牆上不該有這條線。
+// 幾何沿用 routing.js 的八方位佈線（含與黑塊的 CLEAR 淨空與避讓），轉折處倒圓角。
+//
+// ⚠ 掛載／卸載由 WallScene 的 AnimatePresence 決定，不是「一直掛著、opacity 0/1」——
+//   CSS animation 只在掛載或換 class 時重跑，一直掛著的話卡片拿走再放回去，
+//   「射向中樞」的 draw-on 不會重播。
+//
+// ⚠ 這條線不受 ?nofx 管。?nofx 關的是特效（光暈 / 彗星 / 光帶 / 閃爍），
+//   「感應才亮起連接線」是這次要的行為本身，不是可以關掉的裝飾。
+export function ApplianceTrace({ node, index = 0 }) {
+  const { d, length } = roundedRoute(node.id)
   return (
-    <path
-      d={linePath(pts)}
-      fill="none"
-      stroke={active ? COLORS.lineActive : COLORS.line}
-      strokeWidth={active ? 1.5 : 1}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ transition: `stroke ${t}, stroke-width ${t}` }}
-    />
+    <motion.g
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: MOTION.dur, ease: MOTION.ease }}
+    >
+      <path
+        className="fx-core"
+        d={d}
+        fill="none"
+        stroke={COLORS.lineActive}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          // 進場：整條線從家電端「射」向中樞（dasharray = 全長 → 一段實線一段等長的空白，
+          // dashoffset 從 length 收到 0 就是把實線推進來）。長線自然跑久一點。
+          strokeDasharray: length.toFixed(2),
+          '--draw-len': length.toFixed(2),
+          // 兩個動畫：fx-draw（一次性）與 fx-flicker-core（無限）。動的屬性不同，不打架。
+          animationDuration: `${(length / FX.drawSpeed).toFixed(3)}s, ${FX.flickerDur}s`,
+          animationDelay: `0s, ${(-phaseOf(index) * FX.flickerDur).toFixed(3)}s`,
+        }}
+      />
+    </motion.g>
   )
 }
 

@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion'
 import { APPLIANCES, HUB } from '../config/appliances.js'
-import { getRoute, linePath, routeLength } from '../config/routing.js'
+import { getRoute, roundedRoute } from '../config/routing.js'
 import { MOTION, RADIUS } from '../config/theme.js'
 import { FX, FX_BLUE, DOTS, phaseOf } from '../config/fx.js'
 
 // ============================================================================
-// NFC 感應特效：黑塊白框 + 走線的淡藍光暈（呼吸），以及沿著走線飛向中樞的彗星。
+// NFC 感應特效：黑塊白框 + 走線的淡藍光暈（呼吸 × 閃爍）、沿線掃過的能量光帶、
+// 以及飛向中樞的彗星。核心白線不在這裡 —— 那是 ApplianceNode 的 ApplianceTrace，
+// 因為它不受 ?nofx 管（「感應才亮起連接線」是行為本身，不是可以關掉的裝飾）。
 //
 // ⚠ 這一層必須畫在「走線之後、黑塊之前」（見 WallScene 的分層註解）：
 //   1. 光暈是對稱擴散的，往框內溢的那半截要被黑塊的 fill="#000" 蓋掉，
@@ -25,6 +27,8 @@ const HUB_R = 116
 //
 // ⚠ 也不能改用 objectBoundingBox 省事：socket 的走線是完美垂直線（960,900→960,656），
 //   bbox 寬 0 → 濾鏡塌成零尺寸，光暈整個消失而且不報錯。frameGlow 已經記過這個坑。
+//
+// 用未倒角的折點算 bbox 就夠 —— 圓角只會讓路徑往內縮，不會超出折線的外框。
 function regionOf(node) {
   const { pts } = getRoute(node.id)
   const xs = [node.x - node.w / 2, node.x + node.w / 2, ...pts.map((p) => p.x)]
@@ -35,7 +39,7 @@ function regionOf(node) {
 }
 
 // 兩層「膨脹 → 模糊 → 衰減」，輸出【只有光暈、不含 SourceGraphic】。
-// 亮芯由既有的 ApplianceTrace / ApplianceBlock 提供，這裡不重畫；
+// 亮芯由 ApplianceTrace / ApplianceBlock 提供，這裡不重畫；
 // 光暈疊在白亮芯上約 0.2 alpha 的淡藍，剛好就是「白芯 + 淡藍外暈」。
 function GlowFilter({ id, region }) {
   const { near, outer } = FX.glow
@@ -92,7 +96,7 @@ export function FxDefs() {
 
       {/* 彗星光點：用漸層而不是模糊濾鏡。漸層由 Chrome 直接光柵化並會抖動，
           天生沒有色帶，而且成本接近零 —— 一顆會動的元素若掛濾鏡，濾鏡就得跟著動。 */}
-      {/* ⚠ 亮的部分要夠寬：拖尾是一串間距 5.9 單位的光點，若亮芯只有 2 單位寬，
+      {/* ⚠ 亮的部分要夠寬：拖尾是一串間距 4.2 單位的光點，若亮芯只有 2 單位寬，
           它們就會讀成「一排跑動的圓點」而不是一道連續的彗尾。這裡讓 α≥0.6 的區域
           撐到半徑的 55%（頭 r=6.5 → 直徑約 7.2 > 間距），前後才連得起來。 */}
       <radialGradient id="fxDot">
@@ -107,19 +111,64 @@ export function FxDefs() {
   )
 }
 
+// 能量光帶：一段亮帶沿整條線緩慢掃過（比彗星慢一半），做出能量湧過導線的感覺。
+//
+// dasharray = 「亮帶長, 其餘全部」→ 整條線上永遠只有一段亮帶；
+// dashoffset 從 length 掃到 0 時，亮帶就從家電端往中樞端跑。
+//
+// ⚠ 不能塞進 .fx-glow 的濾鏡群組。濾鏡之所以便宜是因為內容完全靜態、結果被柵格化快取；
+//   放一個每幀在動的東西進去，兩層高斯就變成每幀重跑。
+//
+// ⚠ 這是這一版唯一「每幀重繪路徑 bbox」的成本。掉幀先關 FX.beam.on。
+function EnergyBeam({ d, length, index }) {
+  const dur = length / FX.beam.speed
+  // 短線（socket 只有 244）容不下 200 的長帶，整組【等比】縮 ——
+  // 逐層各自 clamp 的話最寬的兩層會撞成一樣長，錐形就沒了。
+  const scale = Math.min(1, (length * 0.55) / FX.beam.layers[0].band)
+  const head = FX.beam.layers[0].band * scale
+  return (
+    <g className="fx-beam">
+      {FX.beam.layers.map((L, i) => {
+        const band = L.band * scale
+        // 窄帶要落在寬帶正中，否則各層會對齊在前緣、看起來像一支箭頭而不是一團光
+        const shift = (head - band) / 2
+        return (
+          <path
+            key={i}
+            d={d}
+            fill="none"
+            stroke={L.c}
+            strokeWidth={L.w}
+            strokeOpacity={L.o}
+            strokeLinecap="round"
+            style={{
+              strokeDasharray: `${band.toFixed(2)} ${Math.max(1, length - band).toFixed(2)}`,
+              animationDuration: `${dur.toFixed(3)}s`,
+              animationDelay: `${(-phaseOf(index) * dur).toFixed(3)}s`,
+              '--beam-from': (length - shift).toFixed(2),
+              '--beam-to': (-shift).toFixed(2),
+            }}
+          />
+        )
+      })}
+    </g>
+  )
+}
+
 // 一台家電的感應特效。只在 active 時掛載（WallScene 用 AnimatePresence 包）。
 //
-// ⚠ 進退場的 opacity 一定要放在外層 motion.g、呼吸放在內層 g.fx-glow ——
-//   CSS animation 的層級高於 inline style，兩者掛同一個元素的話
-//   framer-motion 的 exit={{opacity:0}} 會被呼吸動畫吃掉，退場完全看不見。
+// ⚠ 進退場的 opacity 一定要放在外層 motion.g，呼吸／閃爍放在內層的 g ——
+//   CSS animation 的層級高於 inline style，掛同一個元素的話
+//   framer-motion 的 exit={{opacity:0}} 會被動畫吃掉，退場完全看不見。
+//   三層 opacity（進退場 × 閃爍 × 呼吸）相乘。
 export function ApplianceFx({ node, index }) {
-  const { pts } = getRoute(node.id)
-  const d = linePath(pts)
+  const { d, length } = roundedRoute(node.id)
 
   // 等速：九條線速度一律 FX.speed，長線就飛久一點。
+  // ⚠ 長度要用【倒角後】的，不是折線長度（每個 90° 角短約 0.43r，三個角差 16 單位）。
   // ⚠ 不要反過來用固定週期去縮放飛行時間 —— 走線長度差 3.4 倍
-  //   （socket 244、sensor 833），那樣 socket 會比 sensor 快三倍多。
-  const travel = routeLength(pts) / FX.speed
+  //   （socket 244、sensor 817），那樣 socket 會比 sensor 快三倍多。
+  const travel = length / FX.speed
   const cycle = Math.max(travel / FX.duty, FX.minCycle)
   const travelFrac = travel / cycle
 
@@ -135,24 +184,35 @@ export function ApplianceFx({ node, index }) {
       exit={{ opacity: 0 }}
       transition={{ duration: MOTION.dur, ease: MOTION.ease }}
     >
+      {/* ⚠ 九條的閃爍相位一定要錯開。九條線同時忽明忽暗會讀成投影機壞掉，不是能量感。 */}
       <g
-        className="fx-glow"
-        filter={`url(#fxGlow-${node.id})`}
-        stroke={FX_BLUE}
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        className="fx-flicker"
+        style={{
+          animationDuration: `${FX.flickerDur}s`,
+          animationDelay: `${(-phaseOf(index) * FX.flickerDur).toFixed(3)}s`,
+        }}
       >
-        <rect
-          x={node.x - node.w / 2}
-          y={node.y - node.h / 2}
-          width={node.w}
-          height={node.h}
-          rx={RADIUS.sm}
-        />
-        <path d={d} />
+        <g
+          className="fx-glow"
+          filter={`url(#fxGlow-${node.id})`}
+          stroke={FX_BLUE}
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect
+            x={node.x - node.w / 2}
+            y={node.y - node.h / 2}
+            width={node.w}
+            height={node.h}
+            rx={RADIUS.sm}
+          />
+          <path d={d} />
+        </g>
       </g>
+
+      {FX.beam.on && <EnergyBeam d={d} length={length} index={index} />}
 
       <g className="fx-comet">
         {DOTS.map((dot, i) => (
@@ -178,6 +238,7 @@ export function ApplianceFx({ node, index }) {
 
 // 中樞的光暈。彗星要有個會回應的終點，否則資料飛到中樞就憑空消失。
 // 不做「每顆彗星抵達就漣漪一次」—— 九台同時亮時那會變成雜訊。
+// 中樞不掛閃爍：它是九條線的匯流點，跟著閃會讓整面牆一起抖。
 export function HubGlow() {
   return (
     <circle

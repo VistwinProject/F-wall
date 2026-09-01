@@ -100,10 +100,16 @@ export default function WallScene({ activeIds, editLayout }) {
 
       {/* 分層畫，不是「一個家電畫完換下一個」：
           走線 → 感應特效 → 黑塊 → 中樞 → 狀態面板。走線可以穿過面板，但要讀成面板疊在線前面；
-          若照家電逐一畫，排在後面的家電的線會蓋到前面家電的面板文字上。 */}
-      {APPLIANCES.map((node) => (
-        <ApplianceTrace key={`t-${node.id}`} node={node} active={isActive(node.id)} />
-      ))}
+          若照家電逐一畫，排在後面的家電的線會蓋到前面家電的面板文字上。
+
+          走線【只有 active 時才存在】—— 沒卡片的時候牆上只有框架、九個黑塊與中樞環。
+          用 AnimatePresence 掛載／卸載（不是 opacity 0/1），拿走卡片再放回去時
+          「射向中樞」的 draw-on 才會重播。這一層不受 ?nofx 管。 */}
+      <AnimatePresence>
+        {APPLIANCES.map((node, i) =>
+          isActive(node.id) ? <ApplianceTrace key={`t-${node.id}`} node={node} index={i} /> : null
+        )}
+      </AnimatePresence>
 
       {/* NFC 感應特效層。⚠ 位置在「走線之後、黑塊之前」是功能性的，不是隨便排的：
           光暈往框內溢的那半截要被下面黑塊的 fill="#000" 蓋掉，才會只剩「外圍」在發光；

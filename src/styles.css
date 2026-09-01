@@ -84,6 +84,75 @@ body {
   50% { opacity: 1; }
 }
 
+/* 走線的白亮芯。感應瞬間從家電端「射」向中樞，之後只剩很淺的閃爍。
+   ⚠ stroke-dashoffset 本來就上不了合成器，所以這裡用 var() 沒有代價
+      —— 上面那條「keyframes 不要用 var()」講的是 opacity。
+   ⚠ 兩個動畫並列：fx-draw 一次性 + forwards（跑完停在畫滿），fx-flicker-core 無限。
+      duration / delay 由元件用 inline style 給（每條線長度不同、相位也要錯開）。 */
+@keyframes fx-draw {
+  from { stroke-dashoffset: var(--draw-len); }
+  to { stroke-dashoffset: 0; }
+}
+.fx-core {
+  animation-name: fx-draw, fx-flicker-core;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1), linear;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: forwards, none;
+}
+.nofx .fx-core {
+  /* 逃生開關只關特效，線還是要射出來 */
+  animation-name: fx-draw;
+}
+
+/* 不規則、非正弦的閃爍。平滑的正弦讀起來像節拍器，不像不穩定的電流。
+   1.6s 與呼吸的 2.4s 刻意不成倍數，兩者永遠不會重新對齊，看起來才有機。
+   ⚠ 九台的 animation-delay 由元件錯開 —— 九條線同時忽明忽暗會讀成投影機壞掉。 */
+@keyframes fx-flicker {
+  0% { opacity: 1; }
+  6% { opacity: 0.55; }
+  11% { opacity: 0.95; }
+  19% { opacity: 0.42; }
+  25% { opacity: 1; }
+  38% { opacity: 0.62; }
+  44% { opacity: 0.98; }
+  57% { opacity: 0.5; }
+  63% { opacity: 1; }
+  78% { opacity: 0.7; }
+  84% { opacity: 0.95; }
+  92% { opacity: 0.48; }
+  100% { opacity: 1; }
+}
+.fx-flicker {
+  animation-name: fx-flicker;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: opacity;
+}
+
+/* 亮芯用振幅小很多的版本：光暈狂閃、雷射核心穩定，讀成「穩定的光束被不穩定的能量場包住」。
+   核心跟著狂閃就變成整條線在斷訊了。 */
+@keyframes fx-flicker-core {
+  0% { opacity: 1; }
+  19% { opacity: 0.82; }
+  25% { opacity: 1; }
+  57% { opacity: 0.86; }
+  63% { opacity: 1; }
+  92% { opacity: 0.84; }
+  100% { opacity: 1; }
+}
+
+/* 能量光帶：一段亮帶沿整條線緩慢掃過（見 NodeFx 的 EnergyBeam）。
+   dasharray 與 --beam-from/to 由元件依各線長度給，這裡只定義動作。 */
+@keyframes fx-beam-run {
+  from { stroke-dashoffset: var(--beam-from); }
+  to { stroke-dashoffset: var(--beam-to); }
+}
+.fx-beam path {
+  animation-name: fx-beam-run;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 /* 走線 / 黑塊白框 / 中樞圓環的淡藍光暈（見 components/NodeFx.jsx）。
    ⚠ 這個 class 不能跟 framer-motion 的 exit={{opacity:0}} 掛在同一個元素上 ——
       CSS animation 的層級高於 inline style，退場會被吃掉。外層 motion.g 管進退場，
