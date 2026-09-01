@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
 import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
 import { getRoute, linePath } from '../config/routing.js'
+import { PANEL_LAYOUT } from '../config/panels.js'
 
 // ============================================================================
 // 單一家電 = 一條走線 + 黑色挖空框 + active 時彈出的狀態面板。
@@ -140,6 +141,9 @@ function edgePoint(rect, tx, ty) {
 // ⚠ 這是「自動版面」的唯一來源。編輯器(?edit)會用自己存的 box 覆蓋它，
 //    但正式投影一律走這裡算出來的值。
 export function panelBox(node) {
+  // 編輯器調出來的絕對座標優先（config/panels.js）。
+  // 沒有登記的才回退到下面「依 panelDir 開在家電旁 + avoidX」的自動算法。
+  if (PANEL_LAYOUT[node.id]) return { ...PANEL_LAYOUT[node.id] }
   const { panelDir = 'B' } = node
   const bl = node.x - node.w / 2
   const br = node.x + node.w / 2
