@@ -47,6 +47,7 @@ export default function PanelEditor({ layout, setLayout }) {
     e.preventDefault()
     e.stopPropagation()
     setSel(id)
+    if (!layout[id]) return
     const p = toVB(e)
     drag.current = { id, mode, start: p, box: { ...layout[id] } }
     // 抓住指標，之後的 move/up 一定回到這個元素，不會因為滑出去而漏掉
@@ -104,7 +105,7 @@ export default function PanelEditor({ layout, setLayout }) {
       const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key]
       if (!d) return
       e.preventDefault()
-      setLayout((L) => ({ ...L, [sel]: { ...L[sel], x: L[sel].x + d[0], y: L[sel].y + d[1] } }))
+      setLayout((L) => (L[sel] ? { ...L, [sel]: { ...L[sel], x: L[sel].x + d[0], y: L[sel].y + d[1] } } : L))
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
@@ -118,12 +119,17 @@ export default function PanelEditor({ layout, setLayout }) {
     setSel(id)
   }
 
-  const del = (id) =>
+  const del = (id) => {
+    // ⚠ 一定要一起清掉 sel。少了這行，sel 還指著已刪掉的 id，
+    //    下面工具列讀 layout[sel].x 就會炸掉整個編輯器（症狀是「刪不掉」，
+    //    實際上是整個 PanelEditor 崩潰卸載）。
+    setSel(null)
     setLayout((L) => {
       const n = { ...L }
       delete n[id]
       return n
     })
+  }
 
   const reset = () => {
     clearLayout()
@@ -134,7 +140,10 @@ export default function PanelEditor({ layout, setLayout }) {
   }
 
   const ids = Object.keys(layout)
-  const b = sel ? layout[sel] : null
+  // 只有「sel 存在且 layout 裡真的有這筆」才算有效選取。
+  // 這層防呆讓任何殘留的 sel 都不會再炸畫面。
+  const b = sel && layout[sel] ? layout[sel] : null
+  const hasSel = !!b
 
   return (
     <>
@@ -173,7 +182,7 @@ export default function PanelEditor({ layout, setLayout }) {
         <strong>面板編輯器</strong>
         <span className="pe-dim">{ids.length} 個面板</span>
         <button onClick={addPanel}>＋ 新增面板</button>
-        <button onClick={() => sel && del(sel)} disabled={!sel}>
+        <button onClick={() => hasSel && del(sel)} disabled={!hasSel}>
           刪除選取
         </button>
         <button onClick={reset}>重設為預設</button>
@@ -188,7 +197,7 @@ export default function PanelEditor({ layout, setLayout }) {
           匯出
         </button>
         <span className="pe-dim">
-          {sel ? `選取：${sel}　${Math.round(b.x)},${Math.round(b.y)}　${Math.round(b.w)}×${Math.round(b.h)}` : '點面板選取'}
+          {hasSel ? `選取：${sel}　${Math.round(b.x)},${Math.round(b.y)}　${Math.round(b.w)}×${Math.round(b.h)}` : '點面板選取'}
         </span>
         <span className="pe-dim">拖曳移動｜右下角縮放｜方向鍵微調(Shift×10)｜Alt 關閉吸附</span>
       </div>
