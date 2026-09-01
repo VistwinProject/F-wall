@@ -1,6 +1,7 @@
 import { HUB } from '../config/appliances.js'
 import { COLORS, FONT, MOTION } from '../config/theme.js'
 import { HubGlow } from './NodeFx.jsx'
+import { LINE_W_IDLE } from '../config/fx.js'
 
 // ⚠ R 必須與 routing.js 的 RING_R 一致 —— 走線的接點(pad)就落在這個半徑上。
 const R = 116
@@ -23,7 +24,7 @@ export default function Hub({ activeCount = 0, fx = true }) {
         r={R}
         fill="none"
         stroke={live ? COLORS.lineActive : COLORS.lineStrong}
-        strokeWidth="1"
+        strokeWidth={LINE_W_IDLE}
         style={{ transition: `stroke ${MOTION.dur}s ${MOTION.easeCss}` }}
       />
       <text

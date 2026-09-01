@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { APPLIANCES, HUB } from '../config/appliances.js'
 import { getRoute, roundedRoute } from '../config/routing.js'
 import { MOTION, RADIUS } from '../config/theme.js'
-import { FX, FX_BLUE, DOTS, phaseOf } from '../config/fx.js'
+import { FX, FX_BLUE, LINE_W, DOTS, BEAM_LAYERS, phaseOf } from '../config/fx.js'
 
 // ============================================================================
 // NFC 感應特效：黑塊白框 + 走線的淡藍光暈（呼吸 × 閃爍）、沿線掃過的能量光帶、
@@ -124,11 +124,11 @@ function EnergyBeam({ d, length, index }) {
   const dur = length / FX.beam.speed
   // 短線（socket 只有 244）容不下 200 的長帶，整組【等比】縮 ——
   // 逐層各自 clamp 的話最寬的兩層會撞成一樣長，錐形就沒了。
-  const scale = Math.min(1, (length * 0.55) / FX.beam.layers[0].band)
-  const head = FX.beam.layers[0].band * scale
+  const scale = Math.min(1, (length * 0.55) / BEAM_LAYERS[0].band)
+  const head = BEAM_LAYERS[0].band * scale
   return (
     <g className="fx-beam">
-      {FX.beam.layers.map((L, i) => {
+      {BEAM_LAYERS.map((L, i) => {
         const band = L.band * scale
         // 窄帶要落在寬帶正中，否則各層會對齊在前緣、看起來像一支箭頭而不是一團光
         const shift = (head - band) / 2
@@ -196,7 +196,7 @@ export function ApplianceFx({ node, index }) {
           className="fx-glow"
           filter={`url(#fxGlow-${node.id})`}
           stroke={FX_BLUE}
-          strokeWidth="1.5"
+          strokeWidth={LINE_W}
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -248,7 +248,7 @@ export function HubGlow() {
       r={HUB_R}
       fill="none"
       stroke={FX_BLUE}
-      strokeWidth="1.5"
+      strokeWidth={LINE_W}
       filter="url(#fxGlow-hub)"
     />
   )

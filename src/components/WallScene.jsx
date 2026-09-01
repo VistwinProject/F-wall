@@ -9,6 +9,7 @@ import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
 import { FxDefs, ApplianceFx } from './NodeFx.jsx'
+import { LINE_W_IDLE } from '../config/fx.js'
 
 const hasFlag = (name) =>
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
@@ -187,7 +188,7 @@ function ReservedScreen() {
       height={h}
       fill="#000"
       stroke={COLORS.lineStrong}
-      strokeWidth="1"
+      strokeWidth={LINE_W_IDLE}
     />
   )
 }

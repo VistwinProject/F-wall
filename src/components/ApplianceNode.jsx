@@ -3,7 +3,7 @@ import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
 import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
 import { roundedRoute } from '../config/routing.js'
 import { PANEL_LAYOUT } from '../config/panels.js'
-import { FX, phaseOf } from '../config/fx.js'
+import { FX, LINE_W, LINE_W_IDLE, phaseOf } from '../config/fx.js'
 import GlassPlate, { estWidth } from './GlassPlate.jsx'
 import MiniBars from './MiniBars.jsx'
 
@@ -40,7 +40,7 @@ export function ApplianceTrace({ node, index = 0 }) {
         d={d}
         fill="none"
         stroke={COLORS.lineActive}
-        strokeWidth="1.5"
+        strokeWidth={LINE_W}
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{
@@ -78,7 +78,7 @@ export function ApplianceBlock({ node, active }) {
       rx={RADIUS.sm}
       fill="#000"
       stroke={active ? COLORS.lineActive : COLORS.lineStrong}
-      strokeWidth={active ? 1.5 : 1}
+      strokeWidth={active ? LINE_W : LINE_W_IDLE}
       style={{ transition: `stroke ${t}, stroke-width ${t}` }}
     />
   )
