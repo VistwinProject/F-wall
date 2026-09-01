@@ -9,6 +9,7 @@ import { isEditMode } from './config/panelLayout.js'
 //   ?all      強制所有家電 active
 //   ?fps      左下角顯示幀率 / 最長幀 / 掉幀數
 //   ?noglass  面板換成不透明底板（毛玻璃掉幀時的逃生開關）
+//   ?nofx     關掉 NFC 感應特效：光暈 / 彗星 / 面板邊緣高光（掉幀時的第一道降級）
 //   ?edit     面板版面編輯器（暫時性工具，見 components/PanelEditor.jsx）
 const flag = (name) =>
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
@@ -16,13 +17,15 @@ const flag = (name) =>
 export default function App() {
   const { activeIds } = useDeskState()
   const noGlass = flag('noglass')
+  const noFx = flag('nofx')
   const edit = isEditMode()
   const [layout, setLayout] = useState(() => (edit ? buildInitialLayout() : null))
 
   useEffect(() => {
     document.documentElement.classList.toggle('noglass', noGlass)
+    document.documentElement.classList.toggle('nofx', noFx)
     document.documentElement.classList.toggle('edit-mode', edit)
-  }, [noGlass, edit])
+  }, [noGlass, noFx, edit])
 
   return (
     <div className="wall-stage">

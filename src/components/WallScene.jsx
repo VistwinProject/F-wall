@@ -8,6 +8,10 @@ import { FRAME, VLINES, HLINES, LINE_W, GLOW } from '../config/frame.js'
 import { COLORS } from '../config/theme.js'
 import { ApplianceTrace, ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
+import { FxDefs, ApplianceFx } from './NodeFx.jsx'
+
+const hasFlag = (name) =>
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
 
 // ============================================================================
 // 牆面場景根節點。
@@ -22,9 +26,11 @@ import Hub from './Hub.jsx'
 export default function WallScene({ activeIds, editLayout }) {
   // ?all 除錯用：強制所有家電 active（驗證面板/連線排版不打架），正式不會帶這參數。
   // portable/測試-全部亮.bat 靠這個參數，不要拿掉。
-  const showAll =
-    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('all')
+  const showAll = hasFlag('all')
   const isActive = (id) => showAll || activeIds.has(id)
+  // ?nofx 現場逃生開關：關掉所有 NFC 感應特效（光暈 / 彗星 / 面板邊緣高光），
+  // 回到「只換色」的已知良好狀態。掉幀時的第一道降級，不用改程式碼、不用重 build。
+  const fxOn = !hasFlag('nofx')
   return (
     <svg
       viewBox={`0 0 ${VIEWBOX.w} ${VIEWBOX.h}`}
@@ -82,6 +88,9 @@ export default function WallScene({ activeIds, editLayout }) {
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+
+        {/* 九台家電 + 中樞的感應光暈濾鏡，以及彗星光點的漸層 */}
+        <FxDefs />
       </defs>
 
       {/* 線條框架：最底層。家電黑塊與資訊面板都疊在它前面。 */}
@@ -89,17 +98,28 @@ export default function WallScene({ activeIds, editLayout }) {
 
       <ReservedScreen />
 
-      {/* 分三層畫，不是「一個家電畫完換下一個」：
-          走線 → 黑塊 → 狀態面板。走線可以穿過面板，但要讀成面板疊在線前面；
+      {/* 分層畫，不是「一個家電畫完換下一個」：
+          走線 → 感應特效 → 黑塊 → 中樞 → 狀態面板。走線可以穿過面板，但要讀成面板疊在線前面；
           若照家電逐一畫，排在後面的家電的線會蓋到前面家電的面板文字上。 */}
       {APPLIANCES.map((node) => (
         <ApplianceTrace key={`t-${node.id}`} node={node} active={isActive(node.id)} />
       ))}
+
+      {/* NFC 感應特效層。⚠ 位置在「走線之後、黑塊之前」是功能性的，不是隨便排的：
+          光暈往框內溢的那半截要被下面黑塊的 fill="#000" 蓋掉，才會只剩「外圍」在發光；
+          彗星等待時停在起點（＝黑塊中心）也剛好被蓋住。詳見 NodeFx.jsx 的註解。 */}
+      <AnimatePresence>
+        {fxOn &&
+          APPLIANCES.map((node, i) =>
+            isActive(node.id) ? <ApplianceFx key={`fx-${node.id}`} node={node} index={i} /> : null
+          )}
+      </AnimatePresence>
+
       {APPLIANCES.map((node) => (
         <ApplianceBlock key={`b-${node.id}`} node={node} active={isActive(node.id)} />
       ))}
 
-      <Hub activeCount={activeIds.size} />
+      <Hub activeCount={showAll ? APPLIANCES.length : activeIds.size} fx={fxOn} />
 
       {/* 面板層。用 AnimatePresence 掛載／卸載，拿走卡片時才有淡出 ——
           舊版是元件自己 return null，會瞬間消失。

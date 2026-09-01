@@ -220,6 +220,13 @@ export function getRoute(id) {
   return ROUTES[id] ?? { pts: [pt(CX, CY)], pin: { x: CX, y: CY } }
 }
 
+// 折線總長度。彗星靠它換算飛行時間（等速：九條線速度一樣，長線就飛久一點）。
+export function routeLength(pts) {
+  let L = 0
+  for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+  return L
+}
+
 // 直接把折點串成 polyline —— 極簡版走線用這個。
 // 路徑幾何（buildRoutes 的八方位佈線、避讓、pad 落點）完全沿用，
 // 只是不再把轉角切成 45° 斜邊，因為倒角正是「電路板」的招牌特徵。

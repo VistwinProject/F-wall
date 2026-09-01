@@ -49,6 +49,7 @@ body {
    ⚠ foreignObject 會把內容裁切到自己的框，所以外陰影需要外層預留 PAD 的留白，
       否則陰影會被切掉（PAD 定義在 ApplianceNode.jsx）。 */
 .panel-glass {
+  position: relative; /* 供 .panel-glass-rim 定位 */
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -61,6 +62,62 @@ body {
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.55), /* 外陰影：把面板浮離牆面 */
     inset 0 1px 0 rgba(255, 255, 255, 0.42); /* 上緣鏡面高光 */
+}
+
+/* ── NFC 感應特效 ─────────────────────────────────────────────────────────────
+   感應瞬間先「點火」閃一下，之後轉成緩慢呼吸。用兩個 animation 接力：
+   fx-breathe 帶 .45s 延遲，延遲期間它不套用、由 fx-ignite 負責；延遲結束後
+   （動畫清單中較後者優先）換 fx-breathe 接手。兩者都在 .55 交棒，所以不會跳。
+
+   ⚠ 每幀只有 opacity 在變，這是刻意的 —— 光暈的內容（濾鏡輸出）完全靜態，
+      瀏覽器可以柵格化後快取，不必每幀重跑 feMorphology / feGaussianBlur。
+   ⚠ keyframes 裡的數值一律寫死，不要換成 var()：keyframes 出現 var() 會讓 Chrome
+      放棄把 opacity 動畫交給合成器，這個設計最想要的那件事就沒了。
+      節奏的唯一來源就是這裡（config/fx.js 只管彗星與濾鏡參數）。 */
+@keyframes fx-ignite {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+@keyframes fx-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* 走線 / 黑塊白框 / 中樞圓環的淡藍光暈（見 components/NodeFx.jsx）。
+   ⚠ 這個 class 不能跟 framer-motion 的 exit={{opacity:0}} 掛在同一個元素上 ——
+      CSS animation 的層級高於 inline style，退場會被吃掉。外層 motion.g 管進退場，
+      這一層只管呼吸，兩層 opacity 相乘。 */
+.fx-glow {
+  animation:
+    fx-ignite 0.45s ease-out,
+    fx-breathe 2.4s ease-in-out 0.45s infinite;
+  will-change: opacity;
+}
+
+/* 毛玻璃面板的邊緣高光。是 .panel-glass 的子元素（＝畫在玻璃之上），
+   所以不屬於玻璃的 backdrop，opacity 動起來不會觸發 backdrop-filter 重算。
+   box-shadow 本身靜態，每幀只變 opacity。 */
+.panel-glass-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid rgba(220, 239, 255, 0.6);
+  box-shadow:
+    0 0 14px rgba(160, 216, 255, 0.42), /* 外緣光暈 */
+    inset 0 0 12px rgba(255, 255, 255, 0.1); /* 內緣霧光 */
+  animation:
+    fx-ignite 0.45s ease-out,
+    fx-breathe 2.4s ease-in-out 0.45s infinite;
+  will-change: opacity;
+}
+
+/* ?nofx —— 現場逃生開關的第一道降級：關掉所有感應特效，回到「只換色」。
+   光暈與彗星是在 WallScene 就不 render（SMIL 就算 display:none 也還在跑），
+   這裡只需要處理面板邊緣高光。 */
+.nofx .panel-glass-rim {
+  display: none;
 }
 
 /* ?fps 的量測浮層（見 components/FpsMeter.jsx）。正式投影不會帶這個參數。 */

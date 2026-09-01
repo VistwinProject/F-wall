@@ -18,7 +18,12 @@ export default function GlassPlate({ x, y, w, h }) {
       style={{ pointerEvents: 'none' }}
     >
       <div style={{ width: '100%', height: '100%', padding: PLATE_PAD, boxSizing: 'border-box' }}>
-        <div className="panel-glass" />
+        <div className="panel-glass">
+          {/* NFC 感應時的邊緣高光。放在玻璃【裡面】（＝畫在玻璃之上）是刻意的：
+              它就不屬於玻璃的 backdrop，opacity 動起來不會害 backdrop-filter 每幀重算。
+              外暈 14px 遠小於 PLATE_PAD，不會被 foreignObject 裁掉。 */}
+          <div className="panel-glass-rim" />
+        </div>
       </div>
     </foreignObject>
   )
