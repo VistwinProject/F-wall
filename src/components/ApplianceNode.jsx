@@ -130,41 +130,42 @@ function StatusPanel({ node }) {
   const bb = node.y + node.h / 2
 
   // 面板左上角 (px,py) + 引線（從家電框邊到面板邊）+ 進場位移方向
-  let px, py, from, to, fromOffset
+  let px, py, from, to
   if (panelDir === 'L') {
     px = bl - GAP - PW
     py = node.y - PH / 2
     from = [bl, node.y]
     to = [px + PW, py + PH / 2]
-    fromOffset = { x: 12, y: 0 }
   } else if (panelDir === 'R') {
     px = br + GAP
     py = node.y - PH / 2
     from = [br, node.y]
     to = [px, py + PH / 2]
-    fromOffset = { x: -12, y: 0 }
   } else if (panelDir === 'T') {
     py = bt - GAP - PH
     px = avoidX(node, node.x - PW / 2, py, py + PH)
     from = [node.x, bt]
     to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py + PH]
-    fromOffset = { x: 0, y: 12 }
   } else {
     py = bb + GAP
     px = avoidX(node, node.x - PW / 2, py, py + PH)
     from = [node.x, bb]
     to = [Math.max(px + 20, Math.min(node.x, px + PW - 20)), py]
-    fromOffset = { x: 0, y: -12 }
   }
 
   // 狀態圓點：ok = 實心、warn/err = 空心。語意靠形狀不靠顏色。
   const hollow = status.tone === 'warn' || status.tone === 'err'
 
+  // ⚠ 進出場只做不透明度，不做位移。
+  // 會動的 backdrop-filter 元素是最貴的情況 —— 元素每移動一格，合成器就得把底下
+  // 那塊背景重讀一次再模糊一次。九個面板同時進場（全部刷卡的那一刻，也就是這個
+  // 互動的高潮）正好是最壞情境。位置固定、只變 alpha 的話背景取樣可以重用。
+  // 視覺上玻璃「就地浮現」也比滑進來更像玻璃。
   return (
     <motion.g
-      initial={{ opacity: 0, x: fromOffset.x, y: fromOffset.y }}
-      animate={{ opacity: 1, x: 0, y: 0 }}
-      exit={{ opacity: 0, x: fromOffset.x, y: fromOffset.y }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: MOTION.dur, ease: MOTION.ease }}
     >
       {/* 引線：設備 → 面板。放在 motion.g 裡面才會跟著淡入淡出
