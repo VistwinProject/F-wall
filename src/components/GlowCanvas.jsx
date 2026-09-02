@@ -111,7 +111,7 @@ export default function GlowCanvas({ activeIds }) {
       // ⚠ 它【不呼吸】：九條線的匯流點跟著明暗，會讓整面牆一起抖。
       const anyOn = state.reduce((m, s) => Math.max(m, s.on), 0)
       outlines.items.hub.uniforms.uGain.value =
-        FX.frame.blockIdle + (FX.frame.blockOn - FX.frame.blockIdle) * anyOn
+        FX.frame.hubIdle + (FX.frame.blockOn - FX.frame.hubIdle) * anyOn
 
       stage.render()
 

@@ -132,15 +132,15 @@ export function createFrame() {
 export function createBlockOutlines() {
   const group = new THREE.Group()
   const items = {}
-  const make = (cx, cy, w, h, r, key) => {
-    const mat = material(FX.frame.blockIdle)
+  const make = (cx, cy, w, h, r, key, gain) => {
+    const mat = material(gain)
     const m = new THREE.Mesh(ribbon(roundedRectPoints(cx, cy, w, h, r), FX.frame.width, true), mat)
     m.frustumCulled = false
     m.renderOrder = 1
     group.add(m)
     items[key] = mat
   }
-  for (const n of APPLIANCES) make(n.x, n.y, n.w, n.h, RADIUS.sm, n.id)
-  make(HUB.x, HUB.y, HUB.w, HUB.h, RADIUS.sm, 'hub')
+  for (const n of APPLIANCES) make(n.x, n.y, n.w, n.h, RADIUS.sm, n.id, FX.frame.blockIdle)
+  make(HUB.x, HUB.y, HUB.w, HUB.h, RADIUS.sm, 'hub', FX.frame.hubIdle)
   return { group, items }
 }
