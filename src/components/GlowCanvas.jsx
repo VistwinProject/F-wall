@@ -5,7 +5,6 @@ import { FX } from '../config/fx.js'
 import { createStage, contentRect } from '../webgl/stage.js'
 import { createBeam } from '../webgl/TraceBeam.js'
 import { createFrame, createBlockOutlines } from '../webgl/FrameLines.js'
-import { createSparks } from '../webgl/Sparks.js'
 
 // ============================================================================
 // 牆面的「光」全部畫在這張 canvas 上：框架格線、家電框外圈、走線光束、彗星、微粒，
@@ -40,29 +39,24 @@ export default function GlowCanvas({ activeIds }) {
 
     const frame = createFrame()
     const outlines = createBlockOutlines()
-    const sparks = createSparks()
-    stage.scene.add(frame.group, outlines.group, sparks.points)
+    stage.scene.add(frame.group, outlines.group)
 
     const beams = APPLIANCES.map((n, i) => createBeam(n, i))
     for (const b of beams) stage.scene.add(b.mesh)
 
     // 每條線的狀態：on = 淡入淡出、progress = 射到哪了
-    const state = beams.map((b) => ({ on: 0, progress: b.range.start, lastSpark: 0 }))
+    const state = beams.map((b) => ({ on: 0, progress: b.range.start }))
 
     let raf = 0
     let running = false
     let t0 = performance.now()
     let time = 0
-    let pixelScale = 1
 
     const resize = () => {
       const r = contentRect(window.innerWidth, window.innerHeight)
       canvas.style.left = `${r.left}px`
       canvas.style.top = `${r.top}px`
       stage.resize(r.width, r.height)
-      // 內部緩衝固定 1920×1080×dpr，所以「世界單位 → 緩衝像素」的比例是常數。
-      pixelScale = FX.dpr
-      sparks.mat.uniforms.uPixelScale.value = pixelScale
       request()
     }
 
@@ -74,6 +68,12 @@ export default function GlowCanvas({ activeIds }) {
 
       const set = activeRef.current
       let busy = false
+
+      // 呼吸：走線底光與 active 的家電框共用同一個值 —— 九台同相位，
+      // 讀起來是「一個系統在運轉」，而不是九個各自閃各自的。
+      // 想讓九台錯開就把 time 換成 time + phaseOf(i) * period。
+      const bt = (time * 2 * Math.PI) / FX.breathe.period
+      const breathe = FX.breathe.lo + (1 - FX.breathe.lo) * (0.5 + 0.5 * Math.cos(bt))
 
       for (let i = 0; i < beams.length; i++) {
         const b = beams[i]
@@ -93,37 +93,30 @@ export default function GlowCanvas({ activeIds }) {
         b.mat.uniforms.uTime.value = time
         b.mat.uniforms.uOn.value = s.on
         b.mat.uniforms.uProgress.value = s.progress
+        b.mat.uniforms.uBreathe.value = breathe
 
-        const gain = FX.frame.blockIdle + (FX.frame.blockOn - FX.frame.blockIdle) * s.on
-        if (outlines.items[b.id]) outlines.items[b.id].uniforms.uGain.value = gain
-
-        if (s.on > 0.01) {
-          busy = true
-          // 微粒：只在彗星頭真的在飛、而且已經跑出黑塊之後才灑
-          const ph = (time / b.cycle + b.phase) % 1
-          const head = Math.max(0, ph - (1 - b.travel)) / b.travel
-          if (head > b.range.start && head < 1 && time - s.lastSpark > FX.sparks.every) {
-            s.lastSpark = time
-            const p = b.curve.getPointAt(Math.min(0.999, head))
-            sparks.spawn(p.x, p.y, time)
-          }
+        // 家電框：idle 時與格線同亮（背景框架是同一套東西），active 時提亮並跟著呼吸。
+        const on = FX.frame.blockOn * breathe
+        if (outlines.items[b.id]) {
+          outlines.items[b.id].uniforms.uGain.value =
+            FX.frame.blockIdle + (on - FX.frame.blockIdle) * s.on
         }
+
+        if (s.on > 0.01) busy = true
       }
 
-      // 核心框跟著「有沒有任何一張卡」亮
+      // 核心框跟著「有沒有任何一張卡」亮。
+      // ⚠ 它【不呼吸】：九條線的匯流點跟著明暗，會讓整面牆一起抖。
       const anyOn = state.reduce((m, s) => Math.max(m, s.on), 0)
       outlines.items.hub.uniforms.uGain.value =
         FX.frame.blockIdle + (FX.frame.blockOn - FX.frame.blockIdle) * anyOn
 
-      sparks.mat.uniforms.uTime.value = time
       stage.render()
 
       if (busy) {
         raf = requestAnimationFrame(tick)
       } else {
-        // 全部熄了：再畫一幀乾淨的（微粒清掉），然後停住
-        sparks.clear(time)
-        stage.render()
+        // 全部熄了：畫面停在靜態框架，rAF 停住（idle 不燒 GPU）
         running = false
         raf = 0
       }
@@ -150,7 +143,7 @@ export default function GlowCanvas({ activeIds }) {
 
     apiRef.current = { request }
     // dev 用的除錯把手：主控台可以即時改參數再 __glow.render()
-    if (import.meta.env?.DEV) window.__glow = { stage, beams, state, frame, outlines, sparks, THREE, render: () => stage.render() }
+    if (import.meta.env?.DEV) window.__glow = { stage, beams, state, frame, outlines, THREE, render: () => stage.render() }
 
     return () => {
       cancelAnimationFrame(raf)

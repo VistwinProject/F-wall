@@ -87,7 +87,14 @@ function material(gain = 1) {
     // ⚠ 必須 DoubleSide：正交相機是 y 向下（top<bottom），投影矩陣的 y 為負，
     //    三角形環繞方向整個翻過來，用 FrontSide 會一個像素都畫不出來。
     side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
+    // ⚠ 框架用 MAX 混色，不是加法。
+    //   八條垂直 × 四條水平 = 32 個交叉點，加法會讓每個交叉點亮兩倍、
+    //   格線與大框、格線與家電框重疊處也一樣 —— 整片背景框架的亮度就不統一了。
+    //   MAX 取兩者較亮的那個，重疊處與單獨一條線一樣亮，而且與繪製順序無關。
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.MaxEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
     depthWrite: false,
     depthTest: false,
     uniforms: {

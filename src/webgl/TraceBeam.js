@@ -35,6 +35,8 @@ const FRAG = /* glsl */ `
   uniform float uOn;         // 整條的淡入淡出
   uniform float uTailLen;
   uniform float uBase;
+  uniform float uBaseSoft;
+  uniform float uBreathe;   // 呼吸倍率（每幀由 CPU 餵，九台共用同一個值）
   uniform float uPeak;
   uniform float uHeadBoost;
   uniform float uCoreSharp;
@@ -69,9 +71,14 @@ const FRAG = /* glsl */ `
     vec3 col = mix(uTail, uBody, smoothstep(0.0, 0.35, trail));
     col = mix(col, uHead, smoothstep(0.55, 1.0, trail));
 
+    // 底光：感應期間整條線持續亮著，並隨呼吸緩慢明暗。
+    // 亮芯 + 一點柔邊，只有柔邊的話整條線會糊成一條霧、看不出是「線」。
+    float baseLit = uBase * uBreathe * (core + uBaseSoft * soft);
+
     // 頭部把亮度推過 1.0 —— 這一項就是 bloom 的來源，SVG 濾鏡做不到的地方。
+    // ⚠ 彗星不乘呼吸：它是資料封包，跟著明暗會讀成訊號不穩。
     float amount =
-      uBase * soft +
+      baseLit +
       uPeak * core * trail +
       uHeadBoost * core * pow(trail, 16.0);
 
@@ -150,6 +157,8 @@ export function createBeam(node, index) {
       uOn: { value: 0 },
       uTailLen: { value: FX.beam.tailLen },
       uBase: { value: FX.beam.base },
+      uBaseSoft: { value: FX.beam.baseSoft },
+      uBreathe: { value: 1 },
       uPeak: { value: FX.beam.peak },
       uHeadBoost: { value: FX.beam.headBoost },
       uCoreSharp: { value: FX.beam.coreSharp },
