@@ -77,6 +77,8 @@ export function createStage(canvas) {
     FX.bloom.radius,
     FX.bloom.threshold
   )
+  // ⚠ 預設 0.01 等於硬切，呼吸時泛光會一頓一頓地冒出來。見 FX.bloom.softKnee。
+  bloom.highPassUniforms.smoothWidth.value = FX.bloom.softKnee
   composer.addPass(bloom)
   composer.addPass(new OutputPass())
 

@@ -37,6 +37,9 @@ export function ApplianceBlock({ node, active }) {
       fill="#000"
       stroke={active ? COLORS.lineActive : COLORS.lineStrong}
       strokeWidth={active ? LINE_W : LINE_W_IDLE}
+      // active 時跟著 WebGL 那層同一個呼吸值（GlowCanvas 每幀寫進 --fx-breathe）。
+      // 沒有 canvas（?nofx）時變數不存在，退回 1 = 恆亮。
+      strokeOpacity={active ? 'var(--fx-breathe, 1)' : 1}
       style={{ transition: `stroke ${t}, stroke-width ${t}` }}
     />
   )

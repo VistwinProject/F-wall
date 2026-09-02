@@ -38,7 +38,7 @@ export const FX = {
 
     // 導線底光：感應期間【整條線持續亮著】，不是只有彗星掃過時才看得到。
     // 這一項會乘上呼吸（見下面 breathe），所以它是「最亮時」的值。
-    base: 0.42,
+    base: 0.75,
     baseSoft: 0.35, // 底光有多少比例攤在柔邊上（其餘給亮芯）。太高整條線會糊，太低就只剩一條硬線
     peak: 1.1, // 彗星身部的亮度
     headBoost: 3.2, // 頭部再往上加多少 —— 這一項超過 1.0 就是 bloom 的來源
@@ -50,7 +50,7 @@ export const FX = {
   // 把 GlowCanvas 裡算 breathe 的 time 加上 phaseOf(i) * period 就好。
   // ⚠ 彗星本身不呼吸：它是資料封包，跟著明暗會讀成訊號不穩。
   breathe: {
-    period: 2.0, // 秒／一輪
+    period: 1.0, // 秒／一輪
     lo: 0.72, // 最暗時的倍率（1 = 最亮）
   },
 
@@ -74,7 +74,10 @@ export const FX = {
   // threshold：只有超過這個亮度的像素才泛光。調高 → 只有彗星頭發亮；
   //            調低 → 連底光與格線都糊成一片。
   // strength ：泛光強度。radius：擴散半徑（0~1）。
-  bloom: { strength: 1.15, radius: 0.62, threshold: 0.58 },
+  // softKnee：門檻的「軟硬」。UnrealBloomPass 預設 0.01 幾乎是硬切 ——
+  // 亮度一跨過 threshold 泛光就整個冒出來，呼吸時看起來就是一頓一頓的，不柔順。
+  // 拉寬之後泛光是隨亮度漸漸長出來的，呼吸才會滑順。
+  bloom: { strength: 1.15, radius: 0.62, threshold: 0.5, softKnee: 0.55 },
 
   // ⚠ 渲染解析度鎖 1，不用裝置的 devicePixelRatio。
   //   bloom 本來就是模糊，降採樣幾乎看不出來，但成本差四倍 —— 這是效能的第一道保險。

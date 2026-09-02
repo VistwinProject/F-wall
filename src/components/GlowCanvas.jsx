@@ -51,6 +51,7 @@ export default function GlowCanvas({ activeIds }) {
     let running = false
     let t0 = performance.now()
     let time = 0
+    const root = document.documentElement
 
     const resize = () => {
       const r = contentRect(window.innerWidth, window.innerHeight)
@@ -74,6 +75,11 @@ export default function GlowCanvas({ activeIds }) {
       // 想讓九台錯開就把 time 換成 time + phaseOf(i) * period。
       const bt = (time * 2 * Math.PI) / FX.breathe.period
       const breathe = FX.breathe.lo + (1 - FX.breathe.lo) * (0.5 + 0.5 * Math.cos(bt))
+      // ⚠ 同一個值也要餵給 SVG 那層的銳利白框。
+      //   只讓 canvas 的光暈呼吸的話，上面壓著一條恆亮的硬白線 —— 主體不動，
+      //   整體就讀成「光暈在旁邊閃」而不是「這個框在呼吸」，看起來很僵硬。
+      //   用 CSS 變數傳，節奏的唯一來源仍然是這裡（不會又變成 CSS 與 JS 各有一份）。
+      root.style.setProperty('--fx-breathe', breathe.toFixed(4))
 
       for (let i = 0; i < beams.length; i++) {
         const b = beams[i]
@@ -117,6 +123,7 @@ export default function GlowCanvas({ activeIds }) {
         raf = requestAnimationFrame(tick)
       } else {
         // 全部熄了：畫面停在靜態框架，rAF 停住（idle 不燒 GPU）
+        root.style.setProperty('--fx-breathe', '1')
         running = false
         raf = 0
       }
