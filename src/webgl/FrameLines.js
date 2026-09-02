@@ -110,6 +110,20 @@ function material(gain = 1) {
 
 const V = (x, y) => new THREE.Vector3(x, y, 0)
 
+// 軸對齊的線要對齊到同一個像素相位，否則同樣的設定會畫出兩種粗細與亮度。
+//
+// ⚠ 實測踩過：大框的上下緣在 y=47.5 / 1032.5（半整數）＝ 正好落在【像素中心】，
+//   峰值全部集中在一個像素上（剖面 81 / 263 / 742 / 263 / 81）；
+//   而格線與大框左右緣都是整數 ＝ 落在【像素邊界】，峰值被兩個像素平分
+//   （剖面 141 / 493 / 493 / 141）。於是只有上下兩條看起來又亮又銳利。
+//   這不是亮度設定的問題，是取樣相位的問題 —— 所以在這裡統一四捨五入到整數，
+//   讓所有線都跟格線同一個相位。
+// ⚠ 內部緩衝固定 1920×1080（FX.dpr = 1），所以「整數 = 像素邊界」成立。
+//   dpr 改成非 1 的話這裡要跟著換算。
+// ⚠ 只有大框與格線這樣做。家電框／核心框的外圈不能動 —— 它們必須與 SVG 黑塊
+//   的邊界對齊，差 0.5 就會露出來。
+const snap = (v) => Math.round(v)
+
 // 大框 + 正交格線。完全靜態。
 export function createFrame() {
   const group = new THREE.Group()
@@ -121,9 +135,10 @@ export function createFrame() {
     m.renderOrder = 0
     group.add(m)
   }
-  for (const vx of VLINES) add([V(vx, y), V(vx, y + h)])
-  for (const hy of HLINES) add([V(x, hy), V(x + w, hy)])
-  add(roundedRectPoints(x + w / 2, y + h / 2, w, h, r), true)
+  const x0 = snap(x), y0 = snap(y), x1 = snap(x + w), y1 = snap(y + h)
+  for (const vx of VLINES) add([V(snap(vx), y0), V(snap(vx), y1)])
+  for (const hy of HLINES) add([V(x0, snap(hy)), V(x1, snap(hy))])
+  add(roundedRectPoints((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0, r), true)
   return { group, mat }
 }
 

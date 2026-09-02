@@ -6,7 +6,7 @@ import ChartPanel from './ChartPanel.jsx'
 import { COLORS } from '../config/theme.js'
 import { ApplianceBlock, AppliancePanel } from './ApplianceNode.jsx'
 import Hub from './Hub.jsx'
-import { LINE_W_IDLE } from '../config/fx.js'
+import { FX, LINE_W_IDLE } from '../config/fx.js'
 
 const hasFlag = (name) =>
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
@@ -85,7 +85,8 @@ function ReservedScreen() {
       width={w}
       height={h}
       fill="#000"
-      stroke={COLORS.lineStrong}
+      // 與十一個黑塊同一個開關：關掉之後只剩純黑，沒有任何輪廓。
+      stroke={FX.svgBlockStroke ? COLORS.lineStrong : 'none'}
       strokeWidth={LINE_W_IDLE}
     />
   )
