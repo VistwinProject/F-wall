@@ -107,11 +107,11 @@ export default function GlowCanvas({ activeIds }) {
         if (s.on > 0.01) busy = true
       }
 
-      // 核心框跟著「有沒有任何一張卡」亮。
-      // ⚠ 它【不呼吸】：九條線的匯流點跟著明暗，會讓整面牆一起抖。
+      // 核心框跟著「有沒有任何一張卡」亮，並與九台同相位一起呼吸。
+      // 沒感應時 hubIdle = 0 ＝ 全暗。
       const anyOn = state.reduce((m, s) => Math.max(m, s.on), 0)
       outlines.items.hub.uniforms.uGain.value =
-        FX.frame.hubIdle + (FX.frame.blockOn - FX.frame.hubIdle) * anyOn
+        FX.frame.hubIdle + (FX.frame.blockOn * breathe - FX.frame.hubIdle) * anyOn
 
       stage.render()
 

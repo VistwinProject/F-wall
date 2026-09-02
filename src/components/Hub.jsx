@@ -1,6 +1,6 @@
 import { HUB } from '../config/appliances.js'
 import { COLORS, MOTION, RADIUS } from '../config/theme.js'
-import { LINE_W, LINE_W_IDLE } from '../config/fx.js'
+import { FX, LINE_W, LINE_W_IDLE } from '../config/fx.js'
 
 // ============================================================================
 // 中央 AI 核心。與九個家電同一個性質，所以畫法也一模一樣：
@@ -24,7 +24,9 @@ export default function Hub({ activeCount = 0 }) {
         height={h}
         rx={RADIUS.sm}
         fill="#000"
-        stroke={live ? COLORS.lineActive : COLORS.lineStrong}
+        // 與九個家電框同一個開關：關掉之後框完全交給 canvas 上的發光外圈，
+        // 沒感應時就是全暗的一塊黑。黑底本身不能拿掉（要蓋住往框內溢的 bloom）。
+        stroke={FX.svgBlockStroke ? (live ? COLORS.lineActive : COLORS.lineStrong) : 'none'}
         strokeWidth={live ? LINE_W : LINE_W_IDLE}
         style={{
           transition: `stroke ${MOTION.dur}s ${MOTION.easeCss}, stroke-width ${MOTION.dur}s ${MOTION.easeCss}`,
