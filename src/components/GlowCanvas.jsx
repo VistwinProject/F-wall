@@ -73,8 +73,12 @@ export default function GlowCanvas({ activeIds }) {
       // 呼吸：走線底光與 active 的家電框共用同一個值 —— 九台同相位，
       // 讀起來是「一個系統在運轉」，而不是九個各自閃各自的。
       // 想讓九台錯開就把 time 換成 time + phaseOf(i) * period。
-      const bt = (time * 2 * Math.PI) / FX.breathe.period
-      const breathe = FX.breathe.lo + (1 - FX.breathe.lo) * (0.5 + 0.5 * Math.cos(bt))
+      const wave = (period, lo) =>
+        lo + (1 - lo) * (0.5 + 0.5 * Math.cos((time * 2 * Math.PI) / period))
+      const breathe = wave(FX.breathe.period, FX.breathe.lo)
+      // 背景框架自己一組呼吸（3 秒），與家電／核心那組（1.5 秒）分開。
+      // 兩者是 2:1，會週期性地對齊，讀起來像「快的疊在慢的上面」而不是各走各的。
+      frame.mat.uniforms.uGain.value = wave(FX.frame.breathe.period, FX.frame.breathe.lo)
       // ⚠ 同一個值也要餵給 SVG 那層的銳利白框。
       //   只讓 canvas 的光暈呼吸的話，上面壓著一條恆亮的硬白線 —— 主體不動，
       //   整體就讀成「光暈在旁邊閃」而不是「這個框在呼吸」，看起來很僵硬。
@@ -115,14 +119,11 @@ export default function GlowCanvas({ activeIds }) {
 
       stage.render()
 
-      if (busy) {
-        raf = requestAnimationFrame(tick)
-      } else {
-        // 全部熄了：畫面停在靜態框架，rAF 停住（idle 不燒 GPU）
-        root.style.setProperty('--fx-breathe', '1')
-        running = false
-        raf = 0
-      }
+      // ⚠ 背景框架會一直呼吸，所以 rAF 不能再停 —— 以前「idle 就停住不燒 GPU」
+      //   那個性質沒了。idle 時場景只剩框架（沒有光束、沒有彗星），實測仍是 60fps。
+      //   真的要省，把 FX.frame.breathe.period 設成 0 再把這裡改回會停的版本。
+      if (!busy) root.style.setProperty('--fx-breathe', '1')
+      raf = requestAnimationFrame(tick)
     }
 
     const request = () => {
