@@ -330,25 +330,7 @@ export function roundPath(pts, r) {
     return { d: `M ${f(pts[0].x)} ${f(pts[0].y)} L ${f(pts[1].x)} ${f(pts[1].y)}`, length: polylineLength(pts) }
   }
 
-  const seg = []
-  for (let i = 1; i < pts.length; i++) seg.push(Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
-
-  // 每個轉角先算自己的切線長，再夾到「不吃掉相鄰段一半」——
-  // 取一半是保守但夠用：即使兩端的轉角都要吃，也不會互相重疊。
-  const corner = []
-  for (let i = 1; i < pts.length - 1; i++) {
-    const a = pts[i - 1], b = pts[i], c = pts[i + 1]
-    const a1 = Math.atan2(b.y - a.y, b.x - a.x)
-    const a2 = Math.atan2(c.y - b.y, c.x - b.x)
-    let delta = a2 - a1
-    while (delta > Math.PI) delta -= 2 * Math.PI
-    while (delta < -Math.PI) delta += 2 * Math.PI
-    const abs = Math.abs(delta)
-    if (abs < TAU_EPS || Math.abs(abs - Math.PI) < TAU_EPS) { corner.push(null); continue } // 直線或原路折返
-    const k = Math.tan(abs / 2)
-    const t = Math.min(r * k, seg[i - 1] / 2, seg[i] / 2)
-    corner.push({ t, rEff: t / k, delta, abs, sweep: delta > 0 ? 1 : 0 })
-  }
+  const corner = cornersOf(pts, r)
 
   let d = ''
   let length = 0
@@ -378,12 +360,100 @@ export function roundPath(pts, r) {
   return { d, length }
 }
 
+// 每個轉角先算自己的切線長，再夾到「不吃掉相鄰段一半」——
+// 取一半是保守但夠用：即使兩端的轉角都要吃，也不會互相重疊。
+// ⚠ roundPath（給 SVG 的 d）與 samplePath（給 WebGL 的點）必須吃同一份轉角資料，
+//   否則畫出來的線跟光束會差幾個單位。
+function cornersOf(pts, r) {
+  const seg = []
+  for (let i = 1; i < pts.length; i++) seg.push(Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
+  const corner = []
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = pts[i - 1], b = pts[i], c = pts[i + 1]
+    const a1 = Math.atan2(b.y - a.y, b.x - a.x)
+    const a2 = Math.atan2(c.y - b.y, c.x - b.x)
+    let delta = a2 - a1
+    while (delta > Math.PI) delta -= 2 * Math.PI
+    while (delta < -Math.PI) delta += 2 * Math.PI
+    const abs = Math.abs(delta)
+    if (abs < TAU_EPS || Math.abs(abs - Math.PI) < TAU_EPS) { corner.push(null); continue } // 直線或原路折返
+    const k = Math.tan(abs / 2)
+    const t = Math.min(r * k, seg[i - 1] / 2, seg[i] / 2)
+    corner.push({ t, rEff: t / k, delta, abs, sweep: delta > 0 ? 1 : 0 })
+  }
+  return corner
+}
+
+// 倒角後的路徑取樣成點陣列 —— WebGL 那邊拿這個去長 CatmullRomCurve3 與 ribbon。
+// 圓弧按弧長細分，直線段只要兩端點（Catmull-Rom 在直線上不會亂跑）。
+export function samplePath(pts, r = FX.corner, arcStep = 3, lineStep = 24) {
+  // 直線段也要細分：CatmullRom 只吃到兩個相距很遠的控制點時，接在圓弧後面容易微微鼓出去。
+  const dense = (a, b, into) => {
+    const L = Math.hypot(b.x - a.x, b.y - a.y)
+    const n = Math.max(1, Math.ceil(L / lineStep))
+    for (let k = 1; k < n; k++) into.push({ x: a.x + (b.x - a.x) * (k / n), y: a.y + (b.y - a.y) * (k / n) })
+  }
+  if (pts.length < 2) return pts.map((p) => ({ ...p }))
+  const out = [{ ...pts[0] }]
+  if (pts.length === 2) {
+    dense(pts[0], pts[1], out)
+    return [...out, { ...pts[1] }]
+  }
+
+  const corner = cornersOf(pts, r)
+  let cur = pts[0]
+  for (let i = 1; i < pts.length - 1; i++) {
+    const cn = corner[i - 1]
+    if (!cn) continue
+    const b = pts[i]
+    const inLen = Math.hypot(b.x - cur.x, b.y - cur.y)
+    const ux = (b.x - cur.x) / inLen, uy = (b.y - cur.y) / inLen
+    const entry = { x: b.x - ux * cn.t, y: b.y - uy * cn.t }
+
+    const c = pts[i + 1]
+    const outLen = Math.hypot(c.x - b.x, c.y - b.y)
+    const vx = (c.x - b.x) / outLen, vy = (c.y - b.y) / outLen
+    const exit = { x: b.x + vx * cn.t, y: b.y + vy * cn.t }
+
+    dense(cur, entry, out)
+    out.push(entry)
+    // 圓心：從進入點沿著「入向的法線」偏 rEff，偏哪一邊看轉向的正負。
+    const sgn = Math.sign(cn.delta)
+    const cx = entry.x + -uy * cn.rEff * sgn
+    const cy = entry.y + ux * cn.rEff * sgn
+    const a0 = Math.atan2(entry.y - cy, entry.x - cx)
+    const steps = Math.max(2, Math.ceil((cn.rEff * cn.abs) / arcStep))
+    for (let k = 1; k < steps; k++) {
+      const a = a0 + sgn * cn.abs * (k / steps)
+      out.push({ x: cx + cn.rEff * Math.cos(a), y: cy + cn.rEff * Math.sin(a) })
+    }
+    out.push(exit)
+    cur = exit
+  }
+  const last = pts[pts.length - 1]
+  dense(cur, last, out)
+  out.push({ ...last })
+  return out
+}
+
 function f(v) {
   return Math.round(v * 100) / 100
 }
 
 // 倒角後的走線。核心線、光暈裡的走線複本、彗星的 animateMotion、能量光帶
 // 【四個地方都必須吃這同一條 d】—— 任何一個自己再算一次，彗星就會脫離線飛。
+// WebGL 用的取樣點（與 roundedRoute / cometRoute 同一組幾何，只是換成點陣列）。
+const SAMPLED = {}
+export function sampledRoute(id) {
+  if (!SAMPLED[id]) SAMPLED[id] = samplePath(getRoute(id).pts)
+  return SAMPLED[id]
+}
+const SAMPLED_FULL = {}
+export function sampledCometRoute(id) {
+  if (!SAMPLED_FULL[id]) SAMPLED_FULL[id] = samplePath(getRoute(id).full)
+  return SAMPLED_FULL[id]
+}
+
 const ROUNDED = {}
 export function roundedRoute(id) {
   if (!ROUNDED[id]) ROUNDED[id] = roundPath(getRoute(id).pts, FX.corner)

@@ -1,6 +1,5 @@
 import { HUB } from '../config/appliances.js'
 import { COLORS, MOTION, RADIUS } from '../config/theme.js'
-import { HubGlow } from './NodeFx.jsx'
 import { LINE_W, LINE_W_IDLE } from '../config/fx.js'
 
 // ============================================================================
@@ -9,16 +8,15 @@ import { LINE_W, LINE_W_IDLE } from '../config/fx.js'
 //
 // ⚠ x/y 是【中心】，rect 要自己減半 —— 與 ApplianceBlock 同一個約定。
 // ⚠ fill="#000" 不是配色選擇：投影機的黑 = 不出光，這塊是實體展品的預留位。
-//    所以這裡【不放任何文字】。原本置中的「AI 大腦」四個字會直接把光打在展品上。
+//    所以這裡【不放任何文字】。置中的字會直接把投影光打在展品上。
 // ============================================================================
-export default function Hub({ activeCount = 0, fx = true }) {
+export default function Hub({ activeCount = 0 }) {
   const { x, y, w, h } = HUB
   const live = activeCount > 0
   return (
     <g>
-      {/* 光暈畫在黑塊【之前】：往框內溢的那半截要被 fill="#000" 蓋掉，
-          才會只剩外圍在發光。與 NodeFx 的分層理由相同。 */}
-      {live && fx && <HubGlow />}
+      {/* 發光的外圈畫在底下那張 WebGL canvas 上（見 webgl/FrameLines.js）；
+          這裡只負責把往框內溢的光蓋掉，並疊一圈銳利白框。 */}
       <rect
         x={x - w / 2}
         y={y - h / 2}

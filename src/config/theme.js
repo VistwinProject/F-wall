@@ -18,7 +18,7 @@ export const COLORS = {
   surface: 'rgba(255,255,255,0.04)', // 資訊面板底
   surfaceHi: 'rgba(255,255,255,0.08)', // active 面板底
 
-  // ── 線條框架（發光霓虹：淺藍亮芯 + 三層光暈，見 config/frame.js 的 GLOW）──
+  // ── 線條框架與走線的光（現在畫在 WebGL canvas 上，見 config/fx.js 的 color.line）──
   frameLine: '#A0D8FF',
 
   // 底色改深灰而不是純黑 —— 外暈最外圈那幾階在純黑上會直接沉進去，

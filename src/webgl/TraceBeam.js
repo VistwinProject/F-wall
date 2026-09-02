@@ -1,0 +1,169 @@
+import * as THREE from 'three'
+import { col } from './stage.js'
+import { FX } from '../config/fx.js'
+import { curveOf, visibleRange } from './curves.js'
+
+// ============================================================================
+// 一條走線 = 一片沿曲線鋪出來的三角帶（ribbon），整條的外觀由 fragment shader 決定。
+//
+// 為什麼是 ribbon 而不是 Line：要在「橫剖面」上做柔邊（中心緊、邊緣散），
+// bloom 才有東西可以吃。單純的線只有一個像素寬的核心，泛出來會很扁。
+//
+// ⚠ ribbon 蓋在【完整路徑】上（兩端伸進黑塊）。SVG 的黑塊畫在 canvas 之上會把兩端蓋掉，
+//   所以彗星在等待期是隱形的（＝封包之間的間隔），抵達核心後也會被吃掉。
+// ============================================================================
+
+const VERT = /* glsl */ `
+  attribute float aT;
+  attribute float aSide;
+  varying float vT;
+  varying float vSide;
+  void main() {
+    vT = aT;
+    vSide = aSide;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const FRAG = /* glsl */ `
+  precision highp float;
+  uniform float uTime;
+  uniform float uCycle;      // 一輪幾秒
+  uniform float uTravel;     // 飛行佔一輪的比例，其餘時間停在起點（藏在黑塊底下）
+  uniform float uPhase;      // 九條線錯開用
+  uniform float uProgress;   // 「射向中樞」畫到哪了：0~1
+  uniform float uOn;         // 整條的淡入淡出
+  uniform float uTailLen;
+  uniform float uBase;
+  uniform float uPeak;
+  uniform float uHeadBoost;
+  uniform float uCoreSharp;
+  uniform float uSoftSharp;
+  uniform vec3  uHead;
+  uniform vec3  uBody;
+  uniform vec3  uTail;
+  varying float vT;
+  varying float vSide;
+
+  void main() {
+    // ── 彗星頭現在跑到哪 ────────────────────────────────────────────────────
+    // 前段停在起點（＝家電框心，黑塊底下），後段等速掃完全程。
+    // 這就是封包與封包之間的間隔，不用另外做淡入淡出。
+    float ph = fract(uTime / uCycle + uPhase);
+    float head = max(0.0, ph - (1.0 - uTravel)) / uTravel;
+
+    // ── 拖尾：指數漸隱，並減掉一個底以確保真的收斂到 0 ──────────────────────
+    float d = head - vT;                       // > 0 表示在頭部後方
+    float trail = 0.0;
+    if (d >= 0.0) {
+      trail = (exp(-d / uTailLen) - 0.04) / 0.96;
+      trail = max(trail, 0.0);
+    }
+
+    // ── 橫剖面：中心緊、邊緣柔 ──────────────────────────────────────────────
+    float cross = max(0.0, 1.0 - abs(vSide));
+    float core = pow(cross, uCoreSharp);
+    float soft = pow(cross, uSoftSharp);
+
+    // ── 三階顏色：深藍 → 青 → 白 ───────────────────────────────────────────
+    vec3 col = mix(uTail, uBody, smoothstep(0.0, 0.35, trail));
+    col = mix(col, uHead, smoothstep(0.55, 1.0, trail));
+
+    // 頭部把亮度推過 1.0 —— 這一項就是 bloom 的來源，SVG 濾鏡做不到的地方。
+    float amount =
+      uBase * soft +
+      uPeak * core * trail +
+      uHeadBoost * core * pow(trail, 16.0);
+
+    amount *= step(vT, uProgress) * uOn;
+    gl_FragColor = vec4(col * amount, 1.0);
+  }
+`
+
+export function createBeam(node, index) {
+  const curve = curveOf(node.id)
+  const range = visibleRange(node.id, node)
+  const N = FX.beam.segments
+  const pts = curve.getSpacedPoints(N)
+
+  const half = FX.beam.width / 2
+  const pos = new Float32Array((N + 1) * 2 * 3)
+  const aT = new Float32Array((N + 1) * 2)
+  const aSide = new Float32Array((N + 1) * 2)
+
+  for (let i = 0; i <= N; i++) {
+    const p = pts[i]
+    const a = pts[Math.max(0, i - 1)]
+    const b = pts[Math.min(N, i + 1)]
+    let tx = b.x - a.x
+    let ty = b.y - a.y
+    const L = Math.hypot(tx, ty) || 1
+    tx /= L
+    ty /= L
+    const nx = -ty // 法線
+    const ny = tx
+    const t = i / N
+    for (const s of [0, 1]) {
+      const sign = s === 0 ? 1 : -1
+      const k = (i * 2 + s) * 3
+      pos[k] = p.x + nx * half * sign
+      pos[k + 1] = p.y + ny * half * sign
+      pos[k + 2] = 0
+      aT[i * 2 + s] = t
+      aSide[i * 2 + s] = sign
+    }
+  }
+
+  const idx = []
+  for (let i = 0; i < N; i++) {
+    const a = i * 2
+    idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  geo.setAttribute('aT', new THREE.BufferAttribute(aT, 1))
+  geo.setAttribute('aSide', new THREE.BufferAttribute(aSide, 1))
+  geo.setIndex(idx)
+
+  // 等速：九條線一律 FX.beam.speed，長線就飛久一點。短線靠 minCycle 拉長等待，
+  // 不是把飛行時間拉長 —— 那樣短線會比長線慢。
+  const travelSec = range.fullLen / FX.beam.speed
+  const cycle = Math.max(travelSec / 0.7, FX.beam.minCycle)
+
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+    transparent: true,
+    // ⚠ 必須 DoubleSide：正交相機是 y 向下（top<bottom），投影矩陣的 y 為負，
+    //    三角形環繞方向整個翻過來，用 FrontSide 會一個像素都畫不出來。
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    depthTest: false,
+    uniforms: {
+      uTime: { value: 0 },
+      uCycle: { value: cycle },
+      uTravel: { value: travelSec / cycle },
+      uPhase: { value: (index * 0.37) % 1 },
+      uProgress: { value: 0 },
+      uOn: { value: 0 },
+      uTailLen: { value: FX.beam.tailLen },
+      uBase: { value: FX.beam.base },
+      uPeak: { value: FX.beam.peak },
+      uHeadBoost: { value: FX.beam.headBoost },
+      uCoreSharp: { value: FX.beam.coreSharp },
+      uSoftSharp: { value: FX.beam.softSharp },
+      uHead: { value: col(FX.color.head) },
+      uBody: { value: col(FX.color.body) },
+      uTail: { value: col(FX.color.tail) },
+    },
+  })
+
+  const mesh = new THREE.Mesh(geo, mat)
+  mesh.frustumCulled = false
+  mesh.renderOrder = 2
+  return { id: node.id, mesh, mat, curve, range, cycle, travel: travelSec / cycle,
+    phase: (index * 0.37) % 1,
+    drawSec: ((1 - range.start) * range.fullLen) / FX.drawSpeed }
+}

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import WallScene from './components/WallScene.jsx'
+import GlowCanvas from './components/GlowCanvas.jsx'
 import FpsMeter from './components/FpsMeter.jsx'
 import PanelEditor, { buildInitialLayout } from './components/PanelEditor.jsx'
 import { useDeskState } from './hooks/useDeskState.js'
+import { APPLIANCE_IDS } from './config/appliances.js'
 import { isEditMode } from './config/panelLayout.js'
 
 // 現場／開發用的 debug flag（正式投影都不帶）：
 //   ?all      強制所有家電 active
 //   ?fps      左下角顯示幀率 / 最長幀 / 掉幀數
 //   ?noglass  面板換成不透明底板（毛玻璃掉幀時的逃生開關）
-//   ?nofx     關掉 NFC 感應特效：光暈 / 彗星 / 面板邊緣高光（掉幀時的第一道降級）
+//   ?nofx     完全不掛 WebGL 發光層（掉幀或 GPU 有問題時的逃生開關）
 //   ?edit     面板版面編輯器（暫時性工具，見 components/PanelEditor.jsx）
 const flag = (name) =>
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
@@ -27,8 +29,14 @@ export default function App() {
     document.documentElement.classList.toggle('edit-mode', edit)
   }, [noGlass, noFx, edit])
 
+  // ?all 時把九台都餵給發光層（WallScene 自己也讀這個 flag）
+  const glowIds = flag('all') ? new Set(APPLIANCE_IDS) : activeIds
+
   return (
     <div className="wall-stage">
+      {/* ⚠ canvas 要排在 SVG【之前】＝畫在底下。bloom 一定會往黑塊裡面溢，
+          靠上層 SVG 的 fill="#000" 蓋掉 —— 投影機的黑 = 不出光。 */}
+      {!noFx && <GlowCanvas activeIds={glowIds} />}
       <WallScene activeIds={activeIds} editLayout={edit ? layout : undefined} />
       {edit && <PanelEditor layout={layout} setLayout={setLayout} />}
       {flag('fps') && <FpsMeter />}

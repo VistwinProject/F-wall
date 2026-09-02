@@ -64,104 +64,24 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.42); /* 上緣鏡面高光 */
 }
 
-/* ── NFC 感應特效 ─────────────────────────────────────────────────────────────
-   感應瞬間先「點火」閃一下，之後轉成緩慢呼吸。用兩個 animation 接力：
-   fx-breathe 帶 .45s 延遲，延遲期間它不套用、由 fx-ignite 負責；延遲結束後
-   （動畫清單中較後者優先）換 fx-breathe 接手。兩者都在 .55 交棒，所以不會跳。
+/* ── 發光層的 canvas ──────────────────────────────────────────────────────────
+   牆面所有的「光」都畫在這張 canvas 上（框架格線、家電框外圈、走線光束、彗星、
+   微粒，最後過 UnrealBloomPass）；SVG 疊在它【之上】只畫擋光的黑塊與銳利的文字／面板。
 
-   ⚠ 每幀只有 opacity 在變，這是刻意的 —— 光暈的內容（濾鏡輸出）完全靜態，
-      瀏覽器可以柵格化後快取，不必每幀重跑 feMorphology / feGaussianBlur。
-   ⚠ keyframes 裡的數值一律寫死，不要換成 var()：keyframes 出現 var() 會讓 Chrome
-      放棄把 opacity 動畫交給合成器，這個設計最想要的那件事就沒了。
-      節奏的唯一來源就是這裡（config/fx.js 只管彗星與濾鏡參數）。 */
-@keyframes fx-ignite {
-  0% { opacity: 0; }
-  18% { opacity: 1; }
-  100% { opacity: 0.55; }
-}
-@keyframes fx-breathe {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
+   ⚠ left / top / 寬高由 GlowCanvas.jsx 依「SVG 的內容框」算好（xMidYMid meet 會 letterbox），
+      這裡只給定位與層級，不要在這裡寫 width / height。
+   ⚠ 不要加 mix-blend-mode：canvas 是不透明的（框架也在裡面，底下不需要透出東西），
+      這正是避開「透明 canvas 上做 bloom 會被寫成不透明黑」那個坑的作法。 */
+.glow-canvas {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
 }
 
-/* 走線的白亮芯。感應瞬間從家電端「射」向中樞，之後只剩很淺的閃爍。
-   ⚠ stroke-dashoffset 本來就上不了合成器，所以這裡用 var() 沒有代價
-      —— 上面那條「keyframes 不要用 var()」講的是 opacity。
-   ⚠ 兩個動畫並列：fx-draw 一次性 + forwards（跑完停在畫滿），fx-flicker-core 無限。
-      duration / delay 由元件用 inline style 給（每條線長度不同、相位也要錯開）。 */
-@keyframes fx-draw {
-  from { stroke-dashoffset: var(--draw-len); }
-  to { stroke-dashoffset: 0; }
-}
-.fx-core {
-  animation-name: fx-draw, fx-flicker-core;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1), linear;
-  animation-iteration-count: 1, infinite;
-  animation-fill-mode: forwards, none;
-}
-.nofx .fx-core {
-  /* 逃生開關只關特效，線還是要射出來 */
-  animation-name: fx-draw;
-}
-
-/* 不規則、非正弦的閃爍。平滑的正弦讀起來像節拍器，不像不穩定的電流。
-   1.6s 與呼吸的 2.4s 刻意不成倍數，兩者永遠不會重新對齊，看起來才有機。
-   ⚠ 九台的 animation-delay 由元件錯開 —— 九條線同時忽明忽暗會讀成投影機壞掉。 */
-@keyframes fx-flicker {
-  0% { opacity: 1; }
-  6% { opacity: 0.55; }
-  11% { opacity: 0.95; }
-  19% { opacity: 0.42; }
-  25% { opacity: 1; }
-  38% { opacity: 0.62; }
-  44% { opacity: 0.98; }
-  57% { opacity: 0.5; }
-  63% { opacity: 1; }
-  78% { opacity: 0.7; }
-  84% { opacity: 0.95; }
-  92% { opacity: 0.48; }
-  100% { opacity: 1; }
-}
-.fx-flicker {
-  animation-name: fx-flicker;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: opacity;
-}
-
-/* 亮芯用振幅小很多的版本：光暈狂閃、雷射核心穩定，讀成「穩定的光束被不穩定的能量場包住」。
-   核心跟著狂閃就變成整條線在斷訊了。 */
-@keyframes fx-flicker-core {
-  0% { opacity: 1; }
-  19% { opacity: 0.82; }
-  25% { opacity: 1; }
-  57% { opacity: 0.86; }
-  63% { opacity: 1; }
-  92% { opacity: 0.84; }
-  100% { opacity: 1; }
-}
-
-/* 能量光帶：一段亮帶沿整條線緩慢掃過（見 NodeFx 的 EnergyBeam）。
-   dasharray 與 --beam-from/to 由元件依各線長度給，這裡只定義動作。 */
-@keyframes fx-beam-run {
-  from { stroke-dashoffset: var(--beam-from); }
-  to { stroke-dashoffset: var(--beam-to); }
-}
-.fx-beam path {
-  animation-name: fx-beam-run;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-/* 走線 / 黑塊白框 / 中樞圓環的淡藍光暈（見 components/NodeFx.jsx）。
-   ⚠ 這個 class 不能跟 framer-motion 的 exit={{opacity:0}} 掛在同一個元素上 ——
-      CSS animation 的層級高於 inline style，退場會被吃掉。外層 motion.g 管進退場，
-      這一層只管呼吸，兩層 opacity 相乘。 */
-.fx-glow {
-  animation:
-    fx-ignite 0.45s ease-out,
-    fx-breathe 2.4s ease-in-out 0.45s infinite;
-  will-change: opacity;
+/* SVG 一定要疊在 canvas 之上 —— 黑塊要蓋掉往框內溢的 bloom。 */
+.wall-stage svg {
+  position: relative;
+  z-index: 1;
 }
 
 /* 毛玻璃面板的邊緣高光。是 .panel-glass 的子元素（＝畫在玻璃之上），
@@ -176,15 +96,11 @@ body {
   box-shadow:
     0 0 14px rgba(160, 216, 255, 0.42), /* 外緣光暈 */
     inset 0 0 12px rgba(255, 255, 255, 0.1); /* 內緣霧光 */
-  animation:
-    fx-ignite 0.45s ease-out,
-    fx-breathe 2.4s ease-in-out 0.45s infinite;
-  will-change: opacity;
+  /* 本輪把呼吸／閃爍全部拿掉了，這圈高光改成靜態。 */
+  opacity: 0.8;
 }
 
-/* ?nofx —— 現場逃生開關的第一道降級：關掉所有感應特效，回到「只換色」。
-   光暈與彗星是在 WallScene 就不 render（SMIL 就算 display:none 也還在跑），
-   這裡只需要處理面板邊緣高光。 */
+/* ?nofx —— 現場逃生開關：完全不掛 WebGL 發光層（見 App.jsx），面板邊緣高光也一起關。 */
 .nofx .panel-glass-rim {
   display: none;
 }
