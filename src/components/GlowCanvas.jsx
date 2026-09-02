@@ -45,7 +45,7 @@ export default function GlowCanvas({ activeIds }) {
     for (const b of beams) stage.scene.add(b.mesh)
 
     // 每條線的狀態：on = 淡入淡出、progress = 射到哪了
-    const state = beams.map((b) => ({ on: 0, progress: b.range.start }))
+    const state = beams.map(() => ({ on: 0, progress: 0 }))
 
     let raf = 0
     let running = false
@@ -89,12 +89,8 @@ export default function GlowCanvas({ activeIds }) {
         // ⚠ 門檻要比下面 busy 的判斷（> 0.01）鬆，不然會停在 0.01 留下一絲永遠不熄的殘影
         if (Math.abs(want - s.on) < 0.02) s.on = want
 
-        // 射向中樞：等速 FX.drawSpeed，從可見段的起點開始（前面那截藏在黑塊裡）
-        if (want) {
-          s.progress = Math.min(1, s.progress + dt / b.drawSec)
-        } else {
-          s.progress = b.range.start
-        }
+        // 射向中樞：等速 FX.drawSpeed，從家電框邊緣掃到核心框邊緣
+        s.progress = want ? Math.min(1, s.progress + dt / b.drawSec) : 0
 
         b.mat.uniforms.uTime.value = time
         b.mat.uniforms.uOn.value = s.on

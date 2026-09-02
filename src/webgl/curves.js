@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { sampledRoute, sampledCometRoute } from '../config/routing.js'
+import { sampledRoute } from '../config/routing.js'
 import { APPLIANCES, HUB } from '../config/appliances.js'
 import { FX } from '../config/fx.js'
 
@@ -11,35 +11,25 @@ import { FX } from '../config/fx.js'
 //   ribbon 的寬度與彗星的速度才會沿線一致（直接用原始取樣點的話疏密不均）。
 //   輸入點已經很密（圓弧每 3 單位、直線每 24 單位），內插誤差實測 < 0.02%。
 //
-// ⚠ ribbon 蓋在【完整路徑】上（兩端伸進黑塊），不是可見路徑：
-//   SVG 的黑塊畫在 canvas 之上，會把兩端蓋掉，所以彗星在等待期自動是隱形的
-//   （＝封包之間的間隔，不用另外做淡入淡出），抵達核心後也會被吃掉。
+// ⚠ ribbon 只蓋【可見路徑】：家電黑塊邊緣 → 核心黑塊邊緣，兩端都不伸進黑塊。
+//
+//   舊版是蓋在完整路徑上、讓黑塊把兩端蓋掉（彗星就有地方躲）。問題是
+//   **黑塊只蓋得住畫面，蓋不住 bloom** —— 躲在核心黑塊裡的彗星仍然會泛光，
+//   那圈光會從黑塊四周漏出來，看起來就像有東西在黑塊後面繼續跑。
+//   現在路徑本身就到邊緣為止，彗星的生滅改由 shader 的相位控制（見 TraceBeam）。
 // ============================================================================
 
 export function curveOf(id) {
-  const pts = sampledCometRoute(id).map((p) => new THREE.Vector3(p.x, p.y, 0))
+  const pts = sampledRoute(id).map((p) => new THREE.Vector3(p.x, p.y, 0))
   return new THREE.CatmullRomCurve3(pts, false, 'centripetal')
 }
 
-// 完整路徑上「可見段從哪裡開始」的比例。
-// ⚠ 不能拿可見路徑的第一個點去比對：兩邊的取樣點不見得剛好落在同一個位置。
-//   直接沿完整路徑走，第一次離開家電黑塊的地方就是可見起點。
-export function visibleRange(id, node) {
-  const full = sampledCometRoute(id)
-  const len = (a) => {
-    let L = 0
-    for (let i = 1; i < a.length; i++) L += Math.hypot(a[i].x - a[i - 1].x, a[i].y - a[i - 1].y)
-    return L
-  }
-  const fullLen = len(full)
-  const inBlock = (p) =>
-    Math.abs(p.x - node.x) <= node.w / 2 + 0.01 && Math.abs(p.y - node.y) <= node.h / 2 + 0.01
-  let lead = 0
-  for (let i = 1; i < full.length; i++) {
-    if (!inBlock(full[i])) break
-    lead += Math.hypot(full[i].x - full[i - 1].x, full[i].y - full[i - 1].y)
-  }
-  return { fullLen, visibleLen: len(sampledRoute(id)), start: lead / fullLen }
+// 可見路徑的長度（＝畫出來那條線的長度）。彗星速度與 draw-on 都用它換算。
+export function visibleLength(id) {
+  const pts = sampledRoute(id)
+  let L = 0
+  for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+  return L
 }
 
 // 圓角矩形的外框點（家電黑塊、核心黑塊、大框都用它）

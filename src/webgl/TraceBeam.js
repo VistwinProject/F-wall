@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { col } from './stage.js'
 import { FX } from '../config/fx.js'
-import { curveOf, visibleRange } from './curves.js'
+import { curveOf, visibleLength } from './curves.js'
 
 // ============================================================================
 // 一條走線 = 一片沿曲線鋪出來的三角帶（ribbon），整條的外觀由 fragment shader 決定。
@@ -29,8 +29,10 @@ const FRAG = /* glsl */ `
   precision highp float;
   uniform float uTime;
   uniform float uCycle;      // 一輪幾秒
-  uniform float uTravel;     // 飛行佔一輪的比例，其餘時間停在起點（藏在黑塊底下）
+  uniform float uTravel;     // 飛行佔一輪的比例，其餘時間整顆彗星在線外（不畫）
   uniform float uPhase;      // 九條線錯開用
+  uniform float uTailSpan;   // 拖尾完全消失需要走多長（以路徑長為 1）
+  uniform float uEndFade;    // 兩端各淡出多少（以路徑長為 1）
   uniform float uProgress;   // 「射向中樞」畫到哪了：0~1
   uniform float uOn;         // 整條的淡入淡出
   uniform float uTailLen;
@@ -47,19 +49,27 @@ const FRAG = /* glsl */ `
   varying float vT;
   varying float vSide;
 
-  void main() {
-    // ── 彗星頭現在跑到哪 ────────────────────────────────────────────────────
-    // 前段停在起點（＝家電框心，黑塊底下），後段等速掃完全程。
-    // 這就是封包與封包之間的間隔，不用另外做淡入淡出。
-    float ph = fract(uTime / uCycle + uPhase);
-    float head = max(0.0, ph - (1.0 - uTravel)) / uTravel;
+  // 一顆彗星在位置 vT 的亮度。
+  //
+  // prog < 0 = 這一輪還沒發射 → 整顆不畫（不是停在起點！路徑兩端就是黑塊邊緣，
+  // 停在起點會變成一顆亮點杵在家電框邊上）。
+  // 頭部從 0 掃到 1 + uTailSpan：掃過 1 之後頭已經出了核心邊緣不再畫，
+  // 尾巴繼續往前掃出去，整條尾巴才會乾淨地沒入核心，而不是突然消失。
+  float cometAt(float ph, float t) {
+    float prog = (ph - (1.0 - uTravel)) / uTravel;
+    if (prog < 0.0) return 0.0;
+    float d = prog * (1.0 + uTailSpan) - t;    // > 0 表示在頭部後方
+    if (d < 0.0) return 0.0;
+    return max(0.0, (exp(-d / uTailLen) - 0.04) / 0.96);
+  }
 
-    // ── 拖尾：指數漸隱，並減掉一個底以確保真的收斂到 0 ──────────────────────
-    float d = head - vT;                       // > 0 表示在頭部後方
+  void main() {
+    // 同一條線上跑 COMETS 顆，相位平均錯開。取 max 而不是相加 ——
+    // 兩顆疊在一起時相加會爆掉，看起來像一團白。
+    float base = uTime / uCycle + uPhase;
     float trail = 0.0;
-    if (d >= 0.0) {
-      trail = (exp(-d / uTailLen) - 0.04) / 0.96;
-      trail = max(trail, 0.0);
+    for (int i = 0; i < COMETS; i++) {
+      trail = max(trail, cometAt(fract(base + float(i) / float(COMETS)), vT));
     }
 
     // ── 橫剖面：中心緊、邊緣柔 ──────────────────────────────────────────────
@@ -82,14 +92,17 @@ const FRAG = /* glsl */ `
       uPeak * core * trail +
       uHeadBoost * core * pow(trail, 16.0);
 
-    amount *= step(vT, uProgress) * uOn;
+    // 兩端各淡出一小段：ribbon 是切在黑塊邊緣的，不淡的話會看到一條硬切邊。
+    float ends = smoothstep(0.0, uEndFade, vT) * smoothstep(1.0, 1.0 - uEndFade, vT);
+
+    amount *= ends * step(vT, uProgress) * uOn;
     gl_FragColor = vec4(col * amount, 1.0);
   }
 `
 
 export function createBeam(node, index) {
   const curve = curveOf(node.id)
-  const range = visibleRange(node.id, node)
+  const len = visibleLength(node.id)
   const N = FX.beam.segments
   const pts = curve.getSpacedPoints(N)
 
@@ -133,12 +146,19 @@ export function createBeam(node, index) {
   geo.setAttribute('aSide', new THREE.BufferAttribute(aSide, 1))
   geo.setIndex(idx)
 
+  // 拖尾長度用世界單位換算成路徑比例，九條線的彗星才會一樣長（可見長度差 5 倍以上）。
+  const tailLen = Math.min(FX.beam.tailUnits / len, FX.beam.tailMaxFrac)
+  const tailSpan = tailLen * 3.22 // exp 衰減到 0.04 需要 ln(25) ≈ 3.22 個 tailLen
+
   // 等速：九條線一律 FX.beam.speed，長線就飛久一點。短線靠 minCycle 拉長等待，
   // 不是把飛行時間拉長 —— 那樣短線會比長線慢。
-  const travelSec = range.fullLen / FX.beam.speed
+  // 飛行距離是 1 + tailSpan（頭要多走 tailSpan 才能把尾巴帶出核心邊緣）。
+  const travelSec = ((1 + tailSpan) * len) / FX.beam.speed
   const cycle = Math.max(travelSec / 0.7, FX.beam.minCycle)
 
   const mat = new THREE.ShaderMaterial({
+    // COMETS 必須是編譯期常數（GLSL ES 100 的 for 迴圈上限不能是 uniform）
+    defines: { COMETS: FX.beam.comets },
     vertexShader: VERT,
     fragmentShader: FRAG,
     transparent: true,
@@ -155,7 +175,9 @@ export function createBeam(node, index) {
       uPhase: { value: (index * 0.37) % 1 },
       uProgress: { value: 0 },
       uOn: { value: 0 },
-      uTailLen: { value: FX.beam.tailLen },
+      uTailLen: { value: tailLen },
+      uTailSpan: { value: tailSpan },
+      uEndFade: { value: FX.beam.endFade / len },
       uBase: { value: FX.beam.base },
       uBaseSoft: { value: FX.beam.baseSoft },
       uBreathe: { value: 1 },
@@ -172,7 +194,10 @@ export function createBeam(node, index) {
   const mesh = new THREE.Mesh(geo, mat)
   mesh.frustumCulled = false
   mesh.renderOrder = 2
-  return { id: node.id, mesh, mat, curve, range, cycle, travel: travelSec / cycle,
+  return {
+    id: node.id, mesh, mat, curve, len, cycle,
+    travel: travelSec / cycle,
     phase: (index * 0.37) % 1,
-    drawSec: ((1 - range.start) * range.fullLen) / FX.drawSpeed }
+    drawSec: len / FX.drawSpeed,
+  }
 }
