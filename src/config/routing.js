@@ -222,9 +222,7 @@ function buildRoutes() {
 // 把「框心 → 核心內部」的完整軌跡切成看得見的那一段：
 // 頭切在家電黑塊邊界、尾切在核心黑塊邊界。彗星走 full，其他everything走 visible。
 function finish(n, full) {
-  const own = boxOf(n)
-  const visible = clipEnds(full, own, HUB_BOX)
-  return { pts: visible, full }
+  return { pts: clipEnds(full, boxOf(n), HUB_BOX) }
 }
 
 // a 在 r 內、b 在 r 外時，回傳線段離開 r 的參數 t。
@@ -319,46 +317,8 @@ function simplify(pts) {
 // ⚠ 半徑必須【逐個轉角】夾限，不能全域取一個安全值：除濕機與空氣清淨機的第一段
 //   只有 4.6 單位，全域統一就會被卡在 4.5，九條線全部看不出圓角。逐角夾限之後，
 //   那個角收成 2.3（而且它落在黑塊正中央，本來就看不見），其餘可見轉角照拿 18。
-//
-// ⚠ 用 A（真圓弧）而不是 Q（二次貝茲）：弧長算得出精確值，彗星的等速換算才準。
 // ============================================================================
 const TAU_EPS = 1e-6
-
-export function roundPath(pts, r) {
-  if (pts.length < 2) return { d: '', length: 0 }
-  if (pts.length === 2) {
-    return { d: `M ${f(pts[0].x)} ${f(pts[0].y)} L ${f(pts[1].x)} ${f(pts[1].y)}`, length: polylineLength(pts) }
-  }
-
-  const corner = cornersOf(pts, r)
-
-  let d = ''
-  let length = 0
-  let cur = pts[0]
-  for (let i = 1; i < pts.length - 1; i++) {
-    const cn = corner[i - 1]
-    const b = pts[i]
-    if (!cn) continue
-    const inLen = Math.hypot(b.x - cur.x, b.y - cur.y)
-    const ux = (b.x - cur.x) / inLen, uy = (b.y - cur.y) / inLen
-    const entry = { x: b.x - ux * cn.t, y: b.y - uy * cn.t }
-
-    const c = pts[i + 1]
-    const outLen = Math.hypot(c.x - b.x, c.y - b.y)
-    const vx = (c.x - b.x) / outLen, vy = (c.y - b.y) / outLen
-    const exit = { x: b.x + vx * cn.t, y: b.y + vy * cn.t }
-
-    d += (d ? '' : `M ${f(cur.x)} ${f(cur.y)}`) + ` L ${f(entry.x)} ${f(entry.y)}`
-    d += ` A ${f(cn.rEff)} ${f(cn.rEff)} 0 0 ${cn.sweep} ${f(exit.x)} ${f(exit.y)}`
-    length += Math.hypot(entry.x - cur.x, entry.y - cur.y) + cn.rEff * cn.abs
-    cur = exit
-  }
-  const last = pts[pts.length - 1]
-  if (!d) d = `M ${f(pts[0].x)} ${f(pts[0].y)}`
-  d += ` L ${f(last.x)} ${f(last.y)}`
-  length += Math.hypot(last.x - cur.x, last.y - cur.y)
-  return { d, length }
-}
 
 // 每個轉角先算自己的切線長，再夾到「不吃掉相鄰段一半」——
 // 取一半是保守但夠用：即使兩端的轉角都要吃，也不會互相重疊。
@@ -436,93 +396,15 @@ export function samplePath(pts, r = FX.corner, arcStep = 3, lineStep = 24) {
   return out
 }
 
-function f(v) {
-  return Math.round(v * 100) / 100
-}
-
-// 倒角後的走線。核心線、光暈裡的走線複本、彗星的 animateMotion、能量光帶
-// 【四個地方都必須吃這同一條 d】—— 任何一個自己再算一次，彗星就會脫離線飛。
-// WebGL 用的取樣點（與 roundedRoute / cometRoute 同一組幾何，只是換成點陣列）。
+// 倒角後的走線取樣點。WebGL 的 ribbon 與彗星軌跡都吃這一條（見 webgl/curves.js）。
+// ⚠ 只有這一條 —— 走線的幾何只能有一個來源，任何地方自己再算一次都會對不齊。
 const SAMPLED = {}
 export function sampledRoute(id) {
   if (!SAMPLED[id]) SAMPLED[id] = samplePath(getRoute(id).pts)
   return SAMPLED[id]
 }
-const SAMPLED_FULL = {}
-export function sampledCometRoute(id) {
-  if (!SAMPLED_FULL[id]) SAMPLED_FULL[id] = samplePath(getRoute(id).full)
-  return SAMPLED_FULL[id]
-}
-
-const ROUNDED = {}
-export function roundedRoute(id) {
-  if (!ROUNDED[id]) ROUNDED[id] = roundPath(getRoute(id).pts, FX.corner)
-  return ROUNDED[id]
-}
-
-// 彗星專用：兩端各自伸進黑塊裡面，所以它有地方可以躲（等待期停在家電框心、
-// 抵達後繼續往核心裡面跑到拖尾也被吃掉）。
-// ⚠ 只有 animateMotion 吃這條；核心線 / 光暈 / 能量光帶一律吃 roundedRoute。
-const ROUNDED_FULL = {}
-export function cometRoute(id) {
-  if (!ROUNDED_FULL[id]) ROUNDED_FULL[id] = roundPath(getRoute(id).full, FX.corner)
-  return ROUNDED_FULL[id]
-}
-
 const ROUTES = buildRoutes()
 
-export function getRoute(id) {
-  return ROUTES[id] ?? { pts: [pt(CX, CY)], full: [pt(CX, CY)] }
-}
-
-// 折線總長度。倒角後的長度由 roundedRoute 另外算（弧比直角短），這裡只給折線用。
-function polylineLength(pts) {
-  let L = 0
-  for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
-  return L
-}
-
-// 直接把折點串成 polyline —— 極簡版走線用這個。
-// 路徑幾何（buildRoutes 的八方位佈線、避讓、pad 落點）完全沿用，
-// 只是不再把轉角切成 45° 斜邊，因為倒角正是「電路板」的招牌特徵。
-export function linePath(pts) {
-  if (!pts.length) return ''
-  return pts.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')
-}
-
-// ⚠ 以下 chamferPath 目前沒有任何元件在用（極簡版改用 linePath）。
-//    保留匯出是因為佈線幾何本身沒變，之後若要把倒角外觀加回來可以直接切換。
-// 把「直角(90°)轉折」切成 45° 斜角（電路板 trace 招牌外觀）。
-// 只切「兩段互相垂直、且都是水平/垂直」的轉角——切出來剛好是 45° 斜邊，仍是八方位；
-// 其餘轉角（已經是 45° 斜線的接點）保持尖角不動，避免切出非八方位的線段。
-export function chamferPath(pts, c = 14) {
-  if (pts.length < 2) return ''
-  if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`
-  const isAxis = (vx, vy) => Math.abs(vx) < 1e-6 || Math.abs(vy) < 1e-6
-  let d = `M ${pts[0].x} ${pts[0].y}`
-  for (let i = 1; i < pts.length - 1; i++) {
-    const prev = pts[i - 1]
-    const cur = pts[i]
-    const next = pts[i + 1]
-    const inLen = Math.hypot(cur.x - prev.x, cur.y - prev.y) || 1
-    const outLen = Math.hypot(next.x - cur.x, next.y - cur.y) || 1
-    const ix = (cur.x - prev.x) / inLen
-    const iy = (cur.y - prev.y) / inLen
-    const ox = (next.x - cur.x) / outLen
-    const oy = (next.y - cur.y) / outLen
-    const perpendicular = Math.abs(ix * ox + iy * oy) < 1e-6
-    if (isAxis(ix, iy) && isAxis(ox, oy) && perpendicular) {
-      const ci = Math.min(c, inLen / 2, outLen / 2)
-      const ax = cur.x - ix * ci
-      const ay = cur.y - iy * ci
-      const bx = cur.x + ox * ci
-      const by = cur.y + oy * ci
-      d += ` L ${ax.toFixed(1)} ${ay.toFixed(1)} L ${bx.toFixed(1)} ${by.toFixed(1)}`
-    } else {
-      d += ` L ${cur.x.toFixed(1)} ${cur.y.toFixed(1)}`
-    }
-  }
-  const last = pts[pts.length - 1]
-  d += ` L ${last.x} ${last.y}`
-  return d
+function getRoute(id) {
+  return ROUTES[id] ?? { pts: [pt(CX, CY)] }
 }

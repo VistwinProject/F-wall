@@ -6,7 +6,7 @@
 //
 // ⚠ foreignObject 會裁切內容，所以框比面板大 PAD*2、內層再 padding 推回去，
 //    不然外陰影會被切掉。pointer-events: none 避免蓋住底下的 SVG。
-export const PLATE_PAD = 40
+const PLATE_PAD = 40
 
 export default function GlassPlate({ x, y, w, h }) {
   return (

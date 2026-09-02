@@ -1,7 +1,5 @@
 import * as THREE from 'three'
 import { sampledRoute } from '../config/routing.js'
-import { APPLIANCES, HUB } from '../config/appliances.js'
-import { FX } from '../config/fx.js'
 
 // ============================================================================
 // 把既有的佈線變成 Three.js 曲線。
@@ -58,7 +56,3 @@ export function roundedRectPoints(cx, cy, w, h, r, step = 6) {
   arc(x0 + rr, y0 + rr, Math.PI, Math.PI * 1.5)
   return out
 }
-
-export const APPLIANCE_LIST = APPLIANCES
-export const HUB_BOX = HUB
-export const CORNER = FX.corner

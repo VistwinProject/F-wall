@@ -11,22 +11,11 @@
 //   3. active 訊號 = 純白高光，不使用彩色。
 // ============================================================================
 
+// ⚠ 這裡只剩「SVG 那一層」還在用的 token。
+//    所有「光」的顏色（框架格線、走線光束、彗星）都在 config/fx.js 的 FX.color，
+//    背景色在 FX.bg 與 styles.css —— 之前放在這裡的 bg / frameLine / frameBg /
+//    surface 系列已經被 WebGL 那一套取代，全部刪掉了。
 export const COLORS = {
-  // ── 基底 ──
-  bg: '#000000',
-  bgRaise: '#0a0a0a',
-  surface: 'rgba(255,255,255,0.04)', // 資訊面板底
-  surfaceHi: 'rgba(255,255,255,0.08)', // active 面板底
-
-  // ── 線條框架與走線的光（現在畫在 WebGL canvas 上，見 config/fx.js 的 color.line）──
-  frameLine: '#A0D8FF',
-
-  // 底色改深灰而不是純黑 —— 外暈最外圈那幾階在純黑上會直接沉進去，
-  // 有一層深灰墊著才浮得出體積感。
-  // ⚠ 這只影響「背景」。九個家電框、電視預留區、面板底板一律仍是純黑 #000 ——
-  //    投影機的黑 = 不出光，那幾塊是實體展品的位置，不能被投影光打亮。
-  frameBg: '#16181D',
-
   // ── 線 / 邊框（分層就靠這三階）──
   // ── 線 / 邊框（分層就靠這三階）──
   line: 'rgba(255,255,255,0.10)', // 極細灰線、hairline、idle 走線
@@ -53,8 +42,8 @@ export const COLORS = {
   err: 'rgba(255,255,255,0.38)',
 }
 
-// 圓角
-export const RADIUS = { sm: 6, md: 12, lg: 18 }
+// 圓角（sm = 黑塊與家電框，md = 毛玻璃面板）
+export const RADIUS = { sm: 6, md: 12 }
 
 // 節奏：只留進出場淡入淡出，沒有任何循環動畫
 export const MOTION = {

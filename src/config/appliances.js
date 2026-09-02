@@ -19,7 +19,7 @@
 
 // 中央 AI 核心。與九個家電同一個性質：這是牆上【實體展品的預留位】，
 // 所以是純黑挖空 + 白框，不是裝飾圖形。x/y 是【中心】，rect 要自己減半。
-export const HUB = { x: 955, y: 550, w: 340, h: 340, label: 'AI 大腦中樞' }
+export const HUB = { x: 955, y: 550, w: 340, h: 340 }
 
 export const VIEWBOX = { w: 1920, h: 1080 }
 
