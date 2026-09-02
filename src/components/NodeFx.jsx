@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { APPLIANCES, HUB } from '../config/appliances.js'
-import { getRoute, roundedRoute } from '../config/routing.js'
+import { getRoute, roundedRoute, cometRoute } from '../config/routing.js'
 import { MOTION, RADIUS } from '../config/theme.js'
 import { FX, FX_BLUE, LINE_W, DOTS, BEAM_LAYERS, phaseOf } from '../config/fx.js'
 
@@ -161,12 +161,16 @@ function EnergyBeam({ d, length, index }) {
 //   三層 opacity（進退場 × 閃爍 × 呼吸）相乘。
 export function ApplianceFx({ node, index }) {
   const { d, length } = roundedRoute(node.id)
+  // 彗星走的是【兩端都伸進黑塊裡】的完整軌跡，不是畫出來的那條 ——
+  // 等待期要停在家電框心（黑塊底下＝隱形），抵達核心後也要繼續往裡面跑到拖尾被吃完，
+  // 否則會在核心邊緣「啪」地重置。其餘三者（亮芯 / 光暈 / 光帶）一律吃 roundedRoute。
+  const comet = cometRoute(node.id)
 
   // 等速：九條線速度一律 FX.speed，長線就飛久一點。
-  // ⚠ 長度要用【倒角後】的，不是折線長度（每個 90° 角短約 0.43r，三個角差 16 單位）。
-  // ⚠ 不要反過來用固定週期去縮放飛行時間 —— 走線長度差 3.4 倍
-  //   （socket 244、sensor 817），那樣 socket 會比 sensor 快三倍多。
-  const travel = length / FX.speed
+  // ⚠ 長度要用【倒角後】的，不是折線長度（每個 90° 角短約 0.43r）。
+  // ⚠ 不要反過來用固定週期去縮放飛行時間 —— 走線長度差好幾倍，
+  //   那樣短線會比長線快好幾倍。
+  const travel = comet.length / FX.speed
   const cycle = Math.max(travel / FX.duty, FX.minCycle)
   const travelFrac = travel / cycle
 
@@ -219,7 +223,7 @@ export function ApplianceFx({ node, index }) {
                 不用 rotate="auto" 的單一拖尾形狀 —— 走線是折線（轉角 90/90/45），
                 rotate 在頂點會瞬間甩 90°，拖尾看得出彈一下。 */}
             <animateMotion
-              path={d}
+              path={comet.d}
               dur={`${cycle.toFixed(3)}s`}
               begin={`-${(phase + dot.lag).toFixed(3)}s`}
               repeatCount="indefinite"
