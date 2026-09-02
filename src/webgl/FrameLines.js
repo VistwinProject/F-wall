@@ -29,16 +29,13 @@ const VERT = /* glsl */ `
 const FRAG = /* glsl */ `
   precision highp float;
   uniform vec3 uColor;
-  uniform float uCore;      // 芯亮度（要超過 bloom threshold 才會泛光）
-  uniform float uSoft;      // 外圍柔光
-  uniform float uCoreSharp;
-  uniform float uSoftSharp;
-  uniform float uGain;      // 整體倍率：家電框 active 時拉高
+  uniform float uAmp;       // 這一層的亮度（芯層用 core、光暈層用 soft）
+  uniform float uSharp;     // 這一層的收斂指數
+  uniform float uGain;      // 整體倍率：家電框 active 時拉高、呼吸也乘在這裡
   varying float vSide;
   void main() {
     float cross = max(0.0, 1.0 - abs(vSide));
-    float amount = uCore * pow(cross, uCoreSharp) + uSoft * pow(cross, uSoftSharp);
-    gl_FragColor = vec4(uColor * amount * uGain, 1.0);
+    gl_FragColor = vec4(uColor * uAmp * pow(cross, uSharp) * uGain, 1.0);
   }
 `
 
@@ -79,7 +76,18 @@ function ribbon(points, width, closed = false) {
   return geo
 }
 
-function material(gain = 1) {
+// 每條線畫兩層，因為「不要在交叉點爆亮」與「光暈要完整」需要不同的混色方式：
+//
+//   芯層  MAX  —— 8 垂直 × 4 水平 = 32 個交叉點，用加法會讓每個交叉點亮兩倍，
+//                 整片背景框架的亮度就不統一。MAX 取較亮者，重疊處與單獨一條線一樣亮。
+//   暈層  加法 —— ⚠ 光暈【不能】用 MAX：MAX 算的是 max(光暈, 背景)，
+//                 於是所有比背景 #16181D 還暗的外圈全部被丟掉，光暈被砍成一條
+//                 6 單位寬的硬邊帶（實測剖面 …87,90,113,155,265,626,626,265,155,114,90,87…
+//                 之後就直接是背景 82）。改加法之後才是完整的連續衰減
+//                 （…157,177,201,227,260,310,426,714,714,426,310,261,227,201,177…）。
+//                 暈層在交叉點會相加，但它只有 0.3，比芯的 1.35 溫和得多。
+function material(gain, kind) {
+  const halo = kind === 'halo'
   return new THREE.ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: FRAG,
@@ -87,25 +95,33 @@ function material(gain = 1) {
     // ⚠ 必須 DoubleSide：正交相機是 y 向下（top<bottom），投影矩陣的 y 為負，
     //    三角形環繞方向整個翻過來，用 FrontSide 會一個像素都畫不出來。
     side: THREE.DoubleSide,
-    // ⚠ 框架用 MAX 混色，不是加法。
-    //   八條垂直 × 四條水平 = 32 個交叉點，加法會讓每個交叉點亮兩倍、
-    //   格線與大框、格線與家電框重疊處也一樣 —— 整片背景框架的亮度就不統一了。
-    //   MAX 取兩者較亮的那個，重疊處與單獨一條線一樣亮，而且與繪製順序無關。
-    blending: THREE.CustomBlending,
-    blendEquation: THREE.MaxEquation,
-    blendSrc: THREE.OneFactor,
-    blendDst: THREE.OneFactor,
+    ...(halo
+      ? { blending: THREE.AdditiveBlending }
+      : {
+          blending: THREE.CustomBlending,
+          blendEquation: THREE.MaxEquation,
+          blendSrc: THREE.OneFactor,
+          blendDst: THREE.OneFactor,
+        }),
     depthWrite: false,
     depthTest: false,
     uniforms: {
       uColor: { value: col(FX.color.line) },
-      uCore: { value: FX.frame.core },
-      uSoft: { value: FX.frame.soft },
-      uCoreSharp: { value: FX.frame.coreSharp },
-      uSoftSharp: { value: FX.frame.softSharp },
+      uAmp: { value: halo ? FX.frame.soft : FX.frame.core },
+      uSharp: { value: halo ? FX.frame.softSharp : FX.frame.coreSharp },
       uGain: { value: gain },
     },
   })
+}
+
+// 一條線 = 共用同一份 geometry 的兩個 mesh（暈層先畫、芯層後畫）。
+function twoLayer(group, geo, mats, order) {
+  for (let i = 0; i < 2; i++) {
+    const m = new THREE.Mesh(geo, mats[i])
+    m.frustumCulled = false
+    m.renderOrder = order * 2 + i
+    group.add(m)
+  }
 }
 
 const V = (x, y) => new THREE.Vector3(x, y, 0)
@@ -127,19 +143,15 @@ const snap = (v) => Math.round(v)
 // 大框 + 正交格線。完全靜態。
 export function createFrame() {
   const group = new THREE.Group()
-  const mat = material(1)
+  // [暈層, 芯層] —— 順序就是繪製順序
+  const mats = [material(1, 'halo'), material(1, 'core')]
   const { x, y, w, h, r } = FRAME
-  const add = (pts, closed = false) => {
-    const m = new THREE.Mesh(ribbon(pts, FX.frame.width, closed), mat)
-    m.frustumCulled = false
-    m.renderOrder = 0
-    group.add(m)
-  }
+  const add = (pts, closed = false) => twoLayer(group, ribbon(pts, FX.frame.width, closed), mats, 0)
   const x0 = snap(x), y0 = snap(y), x1 = snap(x + w), y1 = snap(y + h)
   for (const vx of VLINES) add([V(snap(vx), y0), V(snap(vx), y1)])
   for (const hy of HLINES) add([V(x0, snap(hy)), V(x1, snap(hy))])
   add(roundedRectPoints((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0, r), true)
-  return { group, mat }
+  return { group, mats }
 }
 
 // 十一個黑塊的外圈（九台家電 + 核心 + 電視預留區）。
@@ -148,12 +160,9 @@ export function createBlockOutlines() {
   const group = new THREE.Group()
   const items = {}
   const make = (cx, cy, w, h, r, key, gain) => {
-    const mat = material(gain)
-    const m = new THREE.Mesh(ribbon(roundedRectPoints(cx, cy, w, h, r), FX.frame.width, true), mat)
-    m.frustumCulled = false
-    m.renderOrder = 1
-    group.add(m)
-    items[key] = mat
+    const mats = [material(gain, 'halo'), material(gain, 'core')]
+    twoLayer(group, ribbon(roundedRectPoints(cx, cy, w, h, r), FX.frame.width, true), mats, 1)
+    items[key] = mats
   }
   for (const n of APPLIANCES) make(n.x, n.y, n.w, n.h, RADIUS.sm, n.id, FX.frame.blockIdle)
   make(HUB.x, HUB.y, HUB.w, HUB.h, RADIUS.sm, 'hub', FX.frame.hubIdle)

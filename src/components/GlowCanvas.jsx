@@ -78,7 +78,8 @@ export default function GlowCanvas({ activeIds }) {
       const breathe = wave(FX.breathe.period, FX.breathe.lo)
       // 背景框架自己一組呼吸（3 秒），與家電／核心那組（1.5 秒）分開。
       // 兩者是 2:1，會週期性地對齊，讀起來像「快的疊在慢的上面」而不是各走各的。
-      frame.mat.uniforms.uGain.value = wave(FX.frame.breathe.period, FX.frame.breathe.lo)
+      const frameGain = wave(FX.frame.breathe.period, FX.frame.breathe.lo)
+      for (const m of frame.mats) m.uniforms.uGain.value = frameGain
       // ⚠ 同一個值也要餵給 SVG 那層的銳利白框。
       //   只讓 canvas 的光暈呼吸的話，上面壓著一條恆亮的硬白線 —— 主體不動，
       //   整體就讀成「光暈在旁邊閃」而不是「這個框在呼吸」，看起來很僵硬。
@@ -103,10 +104,8 @@ export default function GlowCanvas({ activeIds }) {
 
         // 家電框：idle 時與格線同亮（背景框架是同一套東西），active 時提亮並跟著呼吸。
         const on = FX.frame.blockOn * breathe
-        if (outlines.items[b.id]) {
-          outlines.items[b.id].uniforms.uGain.value =
-            FX.frame.blockIdle + (on - FX.frame.blockIdle) * s.on
-        }
+        const g = FX.frame.blockIdle + (on - FX.frame.blockIdle) * s.on
+        for (const m of outlines.items[b.id]) m.uniforms.uGain.value = g
 
         if (s.on > 0.01) busy = true
       }
@@ -114,8 +113,8 @@ export default function GlowCanvas({ activeIds }) {
       // 核心框跟著「有沒有任何一張卡」亮，並與九台同相位一起呼吸。
       // 沒感應時 hubIdle = 0 ＝ 全暗。
       const anyOn = state.reduce((m, s) => Math.max(m, s.on), 0)
-      outlines.items.hub.uniforms.uGain.value =
-        FX.frame.hubIdle + (FX.frame.blockOn * breathe - FX.frame.hubIdle) * anyOn
+      const hubGain = FX.frame.hubIdle + (FX.frame.blockOn * breathe - FX.frame.hubIdle) * anyOn
+      for (const m of outlines.items.hub) m.uniforms.uGain.value = hubGain
 
       stage.render()
 
