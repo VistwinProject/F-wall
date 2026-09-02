@@ -41,6 +41,7 @@ const FRAG = /* glsl */ `
   uniform float uBreathe;   // 呼吸倍率（每幀由 CPU 餵，九台共用同一個值）
   uniform float uPeak;
   uniform float uHeadBoost;
+  uniform float uHeadSharp;
   uniform float uCoreSharp;
   uniform float uSoftSharp;
   uniform vec3  uHead;
@@ -90,7 +91,7 @@ const FRAG = /* glsl */ `
     float amount =
       baseLit +
       uPeak * core * trail +
-      uHeadBoost * core * pow(trail, 16.0);
+      uHeadBoost * core * pow(trail, uHeadSharp);
 
     // 兩端各淡出一小段：ribbon 是切在黑塊邊緣的，不淡的話會看到一條硬切邊。
     float ends = smoothstep(0.0, uEndFade, vT) * smoothstep(1.0, 1.0 - uEndFade, vT);
@@ -183,6 +184,7 @@ export function createBeam(node, index) {
       uBreathe: { value: 1 },
       uPeak: { value: FX.beam.peak },
       uHeadBoost: { value: FX.beam.headBoost },
+      uHeadSharp: { value: FX.beam.headSharp },
       uCoreSharp: { value: FX.beam.coreSharp },
       uSoftSharp: { value: FX.beam.softSharp },
       uHead: { value: col(FX.color.head) },

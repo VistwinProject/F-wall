@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
 import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
 import { PANEL_LAYOUT } from '../config/panels.js'
-import { LINE_W, LINE_W_IDLE } from '../config/fx.js'
+import { FX, LINE_W, LINE_W_IDLE } from '../config/fx.js'
 import GlassPlate, { estWidth } from './GlassPlate.jsx'
 import MiniBars from './MiniBars.jsx'
 
@@ -35,7 +35,9 @@ export function ApplianceBlock({ node, active }) {
       height={node.h}
       rx={RADIUS.sm}
       fill="#000"
-      stroke={active ? COLORS.lineActive : COLORS.lineStrong}
+      // FX.svgBlockStroke = false 時只剩黑底，框完全交給 canvas 上的發光外圈。
+      // ⚠ 黑底本身不能拿掉：投影機的黑 = 不出光，它負責蓋住往框內溢的 bloom。
+      stroke={FX.svgBlockStroke ? (active ? COLORS.lineActive : COLORS.lineStrong) : 'none'}
       strokeWidth={active ? LINE_W : LINE_W_IDLE}
       // active 時跟著 WebGL 那層同一個呼吸值（GlowCanvas 每幀寫進 --fx-breathe）。
       // 沒有 canvas（?nofx）時變數不存在，退回 1 = 恆亮。
