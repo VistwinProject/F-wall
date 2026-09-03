@@ -5,6 +5,9 @@ import { col } from './stage.js'
 import { FX } from '../config/fx.js'
 import { roundedRectPoints } from './curves.js'
 import { RADIUS } from '../config/theme.js'
+// ⚠ shader 與 ribbon 已經抽到 glow/ —— 那是三端共用的單一份，iPad 與桌面 import 同一個檔案。
+import { LINE_VERT as VERT, LINE_FRAG as FRAG } from '../glow/shaders.js'
+import { ribbon } from '../glow/ribbon.js'
 
 // ============================================================================
 // 框架格線 + 家電框 / 核心框的「外圈發光」。
@@ -16,65 +19,6 @@ import { RADIUS } from '../config/theme.js'
 // ⚠ 家電框與核心框在這裡只畫【發光的外圈】。SVG 上層會再蓋一次純黑底 + 銳利白框，
 //   所以往框內溢的光全部被蓋掉 —— 投影機的黑 = 不出光，實體展品不會被打亮。
 // ============================================================================
-
-const VERT = /* glsl */ `
-  attribute float aSide;
-  varying float vSide;
-  void main() {
-    vSide = aSide;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-
-const FRAG = /* glsl */ `
-  precision highp float;
-  uniform vec3 uColor;
-  uniform float uAmp;       // 這一層的亮度（芯層用 core、光暈層用 soft）
-  uniform float uSharp;     // 這一層的收斂指數
-  uniform float uGain;      // 整體倍率：家電框 active 時拉高、呼吸也乘在這裡
-  varying float vSide;
-  void main() {
-    float cross = max(0.0, 1.0 - abs(vSide));
-    gl_FragColor = vec4(uColor * uAmp * pow(cross, uSharp) * uGain, 1.0);
-  }
-`
-
-// 沿一串點鋪三角帶。與 TraceBeam 同樣的作法，只是不需要沿線的 t。
-function ribbon(points, width, closed = false) {
-  const pts = closed ? [...points, points[0]] : points
-  const n = pts.length
-  const half = width / 2
-  const pos = new Float32Array(n * 2 * 3)
-  const aSide = new Float32Array(n * 2)
-  for (let i = 0; i < n; i++) {
-    const p = pts[i]
-    const a = pts[Math.max(0, i - 1)]
-    const b = pts[Math.min(n - 1, i + 1)]
-    let tx = b.x - a.x
-    let ty = b.y - a.y
-    const L = Math.hypot(tx, ty) || 1
-    tx /= L
-    ty /= L
-    for (const s of [0, 1]) {
-      const sign = s === 0 ? 1 : -1
-      const k = (i * 2 + s) * 3
-      pos[k] = p.x + -ty * half * sign
-      pos[k + 1] = p.y + tx * half * sign
-      pos[k + 2] = 0
-      aSide[i * 2 + s] = sign
-    }
-  }
-  const idx = []
-  for (let i = 0; i < n - 1; i++) {
-    const a = i * 2
-    idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  geo.setAttribute('aSide', new THREE.BufferAttribute(aSide, 1))
-  geo.setIndex(idx)
-  return geo
-}
 
 // 每條線畫兩層，因為「不要在交叉點爆亮」與「光暈要完整」需要不同的混色方式：
 //
@@ -107,6 +51,8 @@ function material(gain, kind) {
     depthTest: false,
     uniforms: {
       uColor: { value: col(FX.color.line) },
+      // 0 = alpha 恆為 1。牆面的 canvas 是不透明的，維持原本行為（見 glow/shaders.js）。
+      uAlphaLuma: { value: 0 },
       uAmp: { value: halo ? FX.frame.soft : FX.frame.core },
       uSharp: { value: halo ? FX.frame.softSharp : FX.frame.coreSharp },
       uGain: { value: gain },

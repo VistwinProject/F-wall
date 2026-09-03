@@ -8,6 +8,70 @@
 //   所以 appliances.js 的座標可以直接餵給 Three.js，不用任何換算。
 // ============================================================================
 
+// ============================================================================
+// 三端共用的視覺 token —— 【單一來源】。
+//
+// F-wall / F-Ipad / F-table 三個畫面的「淡藍發光線段 + 毛玻璃面板」全部由這裡決定。
+// 改完之後在 /Users/chunming/F 底下跑：
+//
+//     node sync-tokens.mjs
+//
+// 它會把三個 CSS 檔裡 `GLOW-TOKENS:BEGIN … END` 之間的內容重新產生：
+//     F-wall/src/styles.css
+//     F-Ipad/src/style.css
+//     F-table/web/src/style.css
+//
+// ⚠ 那三個區塊【不要手改】，下次同步會被蓋掉。要改就改這裡再跑一次腳本。
+// ⚠ 現場不需要跑這支腳本 —— 產生出來的 CSS 是簽入的，三個資料夾各自完整，
+//    單獨複製到展場電腦照樣能跑 啟動.bat。
+// ============================================================================
+export const SHARED = {
+  // 底色。⚠ WebGL canvas 用這個值清除畫面，CSS 也用同一個 —— 兩邊不一致的話
+  //   letterbox 邊界（非 16:9 投影時）會出現一條色差接縫。
+  bg: '#16181D',
+
+  // ── 光的四階（冷色，彼此是同一家人）──
+  head: '#FFFFFF', // 彗星頭：最亮，會超過 1.0 去觸發 bloom
+  beam: '#7FE3FF', // 身部：青
+  deep: '#1B4FA8', // 尾端：深藍，之後淡出
+  line: '#A0D8FF', // 框架格線與家電框外圈
+  // 亮芯。牆面靠 bloom 過曝自然產生，iPad / 桌面沒有 bloom，用這個近白色頂上。
+  core: '#DCEFFF',
+
+  // ── 毛玻璃面板 ──
+  rim:  { rgb: [220, 239, 255], a: 0.60 }, // 邊緣高光的邊框色
+  halo: { rgb: [160, 216, 255], a: 0.42 }, // 邊緣高光的外暈色
+  dim: 0.16,                               // idle 線段／hairline 的 halo 不透明度
+  glass: {
+    bg: 0.11,        // 玻璃底的白色不透明度。11% 而不是 4% —— 背後有亮白走線要吃掉
+    bg2: 0.055,      // 面板【內】的次層卡片，疊起來才不會過亮
+    blur: 14,        // px
+    saturate: 1.2,
+    plainBorder: 0.22, // 牆面 .panel-glass 自己那圈白邊（高光是另一層 rim）
+    rimOpacity: 0.8,   // 牆面 .panel-glass-rim 的 opacity
+    haloBlur: 14,      // px，外緣光暈的擴散半徑
+  },
+
+  // ── 走線彗星（三端共用）────────────────────────────────────────────────
+  // ⚠ 長度單位是「畫面寬的幾分之幾」，不是世界單位 —— 三個畫面的座標系都不同
+  //   （牆面 viewBox 1920×1080、iPad 0..100 非等比、桌面直接用容器 px），
+  //   用相對寬度才通用。牆面自己要換回世界單位就乘 WALL_W（見下面 FX.beam）。
+  comet: {
+    count: 2,           // 每條線同時跑幾顆，相位平均錯開
+    speed: 0.2609,      // 每秒走過幾分之幾的畫面寬（× 1610 = 牆面原本的 420 單位/秒）
+    minCycle: 2.0,      // 一輪最短秒數：短線不要一直發射，會很吵
+    travelMax: 0.7,     // 飛行最多佔一輪的比例，其餘時間彗星在線外（＝封包之間的間隔）
+    tailWidths: 0.1025, // 拖尾 e-fold 長度 ÷ 畫面寬（× 1610 = 牆面原本的 165 單位）
+    tailMaxFrac: 0.6,   // 但短線上不能超過這個比例，不然整條線都是尾巴
+    breathe: 1.5,       // 底光呼吸：秒／一輪。⚠ 彗星本身不呼吸（它是資料封包）
+    breatheLo: 0.5,     // 最暗時的倍率（1 = 最亮）
+  },
+}
+
+// SHARED.comet 的長度換回牆面世界單位用的基準寬。⚠ 與 config/frame.js 的 FRAME.w 相同。
+// 這裡不 import frame.js，是為了讓 sync-tokens.mjs 能單獨 import 這個檔而不牽動其他模組。
+const WALL_W = 1610
+
 // 走線光束的芯寬（發光的那條）。SVG 上層那圈銳利白框用 LINE_W_IDLE。
 export const LINE_W = 3
 export const LINE_W_IDLE = 2
@@ -18,11 +82,12 @@ export const FX = {
 
   // ── 顏色（三階）────────────────────────────────────────────────────────────
   // 頭部純白 → 身部青 → 尾部深藍再淡出。刻意留在冷色，跟淡藍框架是同一家人。
+  // ⚠ 值在上面的 SHARED（三端共用的單一來源），這裡只是換成牆面自己的欄位名。
   color: {
-    head: '#FFFFFF', // 彗星頭：最亮，會超過 1.0 去觸發 bloom
-    body: '#7FE3FF', // 身部：青
-    tail: '#1B4FA8', // 尾端：深藍，之後淡出
-    line: '#A0D8FF', // 框架格線與家電框外圈（維持原本的淡藍）
+    head: SHARED.head,
+    body: SHARED.beam,
+    tail: SHARED.deep,
+    line: SHARED.line,
   },
 
   // ── 光束（每條走線一個 ribbon mesh）────────────────────────────────────────
@@ -32,13 +97,14 @@ export const FX = {
     softSharp: 1.6, // 外圍柔光的指數（比 coreSharp 小很多，才會有一圈暈）
     segments: 320, // 沿曲線的取樣段數。轉角多的線靠這個維持平滑
 
-    speed: 420, // 彗星頭的線速度（單位／秒）。九條線一律同速，長線自然跑比較久
-    minCycle: 2.0, // 一輪最短秒數：短線不要一直發射，會很吵
-    comets: 2, // 每條線同時在跑幾顆（相位平均錯開）。調高＝資料傳遞更密集
+    // ⚠ 下面四項的值在 SHARED.comet（三端共用的單一來源），這裡只是換回世界單位。
+    speed: SHARED.comet.speed * WALL_W,      // ≈ 420 單位／秒。九條線一律同速，長線自然跑比較久
+    minCycle: SHARED.comet.minCycle,
+    comets: SHARED.comet.count,
     // 拖尾長度用【世界單位】而不是路徑比例 —— 九條線的可見長度差 5 倍以上
     // （socket 118、sensor 652），用比例的話每條線的彗星看起來會不一樣長。
-    tailUnits: 165,
-    tailMaxFrac: 0.6, // 但短線上不能超過這個比例，不然整條線都是尾巴、看不出是彗星
+    tailUnits: SHARED.comet.tailWidths * WALL_W, // ≈ 165
+    tailMaxFrac: SHARED.comet.tailMaxFrac,
     endFade: 6, // 兩端各淡出幾個單位，避免 ribbon 被切斷的硬邊
 
     // 導線底光：感應期間【整條線持續亮著】，不是只有彗星掃過時才看得到。
@@ -59,8 +125,8 @@ export const FX = {
   // 把 GlowCanvas 裡算 breathe 的 time 加上 phaseOf(i) * period 就好。
   // ⚠ 彗星本身不呼吸：它是資料封包，跟著明暗會讀成訊號不穩。
   breathe: {
-    period: 1.5, // 秒／一輪
-    lo: 0.5, // 最暗時的倍率（1 = 最亮）。數字越小明暗落差越大
+    period: SHARED.comet.breathe, // 值在 SHARED.comet
+    lo: SHARED.comet.breatheLo,
   },
 
   // 點亮時「射向中樞」的速度（單位／秒）。長線自然跑久一點。
@@ -104,7 +170,7 @@ export const FX = {
   dpr: 1,
 
   // 背景：與頁面同色，canvas 是不透明的（框架也在 canvas 裡，底下不需要透出任何東西）。
-  bg: '#16181D',
+  bg: SHARED.bg,
 
   // SVG 那層要不要在家電黑塊上再畫一圈銳利白框。
   // false = 家電框只剩 canvas 上的發光外圈（見 webgl/FrameLines.js）。

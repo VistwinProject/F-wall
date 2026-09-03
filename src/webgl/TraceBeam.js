@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { col } from './stage.js'
 import { FX } from '../config/fx.js'
 import { curveOf, visibleLength } from './curves.js'
+// ⚠ shader 已經抽到 glow/shaders.js —— 三端共用同一份。
+import { BEAM_VERT as VERT, BEAM_FRAG as FRAG } from '../glow/shaders.js'
 
 // ============================================================================
 // 一條走線 = 一片沿曲線鋪出來的三角帶（ribbon），整條的外觀由 fragment shader 決定。
@@ -12,94 +14,6 @@ import { curveOf, visibleLength } from './curves.js'
 // ⚠ ribbon 蓋在【完整路徑】上（兩端伸進黑塊）。SVG 的黑塊畫在 canvas 之上會把兩端蓋掉，
 //   所以彗星在等待期是隱形的（＝封包之間的間隔），抵達核心後也會被吃掉。
 // ============================================================================
-
-const VERT = /* glsl */ `
-  attribute float aT;
-  attribute float aSide;
-  varying float vT;
-  varying float vSide;
-  void main() {
-    vT = aT;
-    vSide = aSide;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-
-const FRAG = /* glsl */ `
-  precision highp float;
-  uniform float uTime;
-  uniform float uCycle;      // 一輪幾秒
-  uniform float uTravel;     // 飛行佔一輪的比例，其餘時間整顆彗星在線外（不畫）
-  uniform float uPhase;      // 九條線錯開用
-  uniform float uTailSpan;   // 拖尾完全消失需要走多長（以路徑長為 1）
-  uniform float uEndFade;    // 兩端各淡出多少（以路徑長為 1）
-  uniform float uProgress;   // 「射向中樞」畫到哪了：0~1
-  uniform float uOn;         // 整條的淡入淡出
-  uniform float uTailLen;
-  uniform float uBase;
-  uniform float uBaseSoft;
-  uniform float uBreathe;   // 呼吸倍率（每幀由 CPU 餵，九台共用同一個值）
-  uniform float uPeak;
-  uniform float uHeadBoost;
-  uniform float uHeadSharp;
-  uniform float uCoreSharp;
-  uniform float uSoftSharp;
-  uniform vec3  uHead;
-  uniform vec3  uBody;
-  uniform vec3  uTail;
-  varying float vT;
-  varying float vSide;
-
-  // 一顆彗星在位置 vT 的亮度。
-  //
-  // prog < 0 = 這一輪還沒發射 → 整顆不畫（不是停在起點！路徑兩端就是黑塊邊緣，
-  // 停在起點會變成一顆亮點杵在家電框邊上）。
-  // 頭部從 0 掃到 1 + uTailSpan：掃過 1 之後頭已經出了核心邊緣不再畫，
-  // 尾巴繼續往前掃出去，整條尾巴才會乾淨地沒入核心，而不是突然消失。
-  float cometAt(float ph, float t) {
-    float prog = (ph - (1.0 - uTravel)) / uTravel;
-    if (prog < 0.0) return 0.0;
-    float d = prog * (1.0 + uTailSpan) - t;    // > 0 表示在頭部後方
-    if (d < 0.0) return 0.0;
-    return max(0.0, (exp(-d / uTailLen) - 0.04) / 0.96);
-  }
-
-  void main() {
-    // 同一條線上跑 COMETS 顆，相位平均錯開。取 max 而不是相加 ——
-    // 兩顆疊在一起時相加會爆掉，看起來像一團白。
-    float base = uTime / uCycle + uPhase;
-    float trail = 0.0;
-    for (int i = 0; i < COMETS; i++) {
-      trail = max(trail, cometAt(fract(base + float(i) / float(COMETS)), vT));
-    }
-
-    // ── 橫剖面：中心緊、邊緣柔 ──────────────────────────────────────────────
-    float cross = max(0.0, 1.0 - abs(vSide));
-    float core = pow(cross, uCoreSharp);
-    float soft = pow(cross, uSoftSharp);
-
-    // ── 三階顏色：深藍 → 青 → 白 ───────────────────────────────────────────
-    vec3 col = mix(uTail, uBody, smoothstep(0.0, 0.35, trail));
-    col = mix(col, uHead, smoothstep(0.55, 1.0, trail));
-
-    // 底光：感應期間整條線持續亮著，並隨呼吸緩慢明暗。
-    // 亮芯 + 一點柔邊，只有柔邊的話整條線會糊成一條霧、看不出是「線」。
-    float baseLit = uBase * uBreathe * (core + uBaseSoft * soft);
-
-    // 頭部把亮度推過 1.0 —— 這一項就是 bloom 的來源，SVG 濾鏡做不到的地方。
-    // ⚠ 彗星不乘呼吸：它是資料封包，跟著明暗會讀成訊號不穩。
-    float amount =
-      baseLit +
-      uPeak * core * trail +
-      uHeadBoost * core * pow(trail, uHeadSharp);
-
-    // 兩端各淡出一小段：ribbon 是切在黑塊邊緣的，不淡的話會看到一條硬切邊。
-    float ends = smoothstep(0.0, uEndFade, vT) * smoothstep(1.0, 1.0 - uEndFade, vT);
-
-    amount *= ends * step(vT, uProgress) * uOn;
-    gl_FragColor = vec4(col * amount, 1.0);
-  }
-`
 
 export function createBeam(node, index) {
   const curve = curveOf(node.id)
@@ -171,6 +85,8 @@ export function createBeam(node, index) {
     depthTest: false,
     uniforms: {
       uTime: { value: 0 },
+      // 0 = alpha 恆為 1。牆面的 canvas 是不透明的，維持原本行為（見 glow/shaders.js）。
+      uAlphaLuma: { value: 0 },
       uCycle: { value: cycle },
       uTravel: { value: travelSec / cycle },
       uPhase: { value: (index * 0.37) % 1 },
