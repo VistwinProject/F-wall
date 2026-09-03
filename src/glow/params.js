@@ -1,4 +1,4 @@
-// ⚠ 自動產生 —— 由 /Users/chunming/F/sync-tokens.mjs 依 F-wall/src/config/fx.js 的 FX 換算。
+// ⚠ 自動產生 —— 由 F-wall/sync-tokens.mjs 依 F-wall/src/config/fx.js 的 FX 換算。
 // 不要手改，跑一次 `node sync-tokens.mjs` 就會被蓋掉。
 //
 // 長度一律是「世界寬的幾分之幾」。牆面的世界是 viewBox 1920 寬，

@@ -528,3 +528,50 @@ attract 狀態（還沒人刷卡）觀眾走近就該看得到；走線則要安
 字體：Latin / 數字走系統字（`-apple-system` / `Segoe UI`）並開 `tabular-nums`；
 CJK 用 Chiron Hei HK，fallback 到 `PingFang TC` / 微軟正黑體。
 ⚠ 字體是從 CDN 抓的，展場離線時會退到 fallback —— `portable/` 若要真的免連網，得把字體檔自帶進去。
+
+---
+
+## 三端共用的視覺程式碼（重要）
+
+F 區有三個畫面，各自是獨立的 repo。「淡藍發光線段 + 毛玻璃 + 走線彗星」這一整套
+**共用同一份程式碼**，原稿全部在這個 repo：
+
+| 檔案 | 內容 |
+| --- | --- |
+| `src/config/fx.js` 的 `SHARED` | 顏色、毛玻璃、彗星參數的**單一來源** |
+| `src/glow/` | WebGL 發光層（shader、bloom 舞台、彗星）三端共用 |
+| `src/shared/` | 其他共用的小東西（鍵盤模擬 NFC） |
+
+`src/glow/` 與 `src/shared/` 會被**複製**到另外兩個 repo（不是 import、不是 submodule）——
+這樣每個資料夾都自帶完整程式碼，單獨複製到展場電腦就能跑，不依賴其他 repo 存在。
+代價是要靠腳本維持同步。
+
+### 改了設計要跑同步
+
+```bash
+cd F-wall
+node sync-tokens.mjs          # 寫入三端
+node sync-tokens.mjs --check  # 只檢查有沒有飄掉（可掛 CI / commit 前跑）
+```
+
+它會重新產生：
+
+- 三個 `style(s).css` 裡 `GLOW-TOKENS:BEGIN … END` 之間的 CSS 變數
+- `src/glow/params.js`（把 `FX` 換算成「世界寬的幾分之幾」，同一份 shader 才能在
+  三個大小完全不同的畫布上畫出等比一致的光）
+- 另外兩個 repo 的 `glow/` 與 `shared/`
+
+⚠ **這支腳本要三個專案並排放**才能同步：
+
+```
+<任意上層>/
+  ├── F-wall/     ← 腳本在這
+  ├── F-Ipad/
+  └── F-table/
+```
+
+只 clone 了 F-wall 的話腳本會直接報錯說明。展場現場**不需要**跑它 ——
+產生出來的檔案都簽入版本了。
+
+⚠ 那些被複製過去的檔案在另外兩個 repo 裡都標了「不要單獨改」。真的要改就改這裡再跑一次，
+否則下次同步會被蓋掉。

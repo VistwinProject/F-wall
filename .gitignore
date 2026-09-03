@@ -22,3 +22,8 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# editor swap files
+*.swp
+*.swo
+*~

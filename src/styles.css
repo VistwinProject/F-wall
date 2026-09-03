@@ -1,7 +1,7 @@
 :root {
   /* GLOW-TOKENS:BEGIN — 以下到 END 之間由 config/fx.js 的 SHARED 產生。
      ⚠ 不要手改，下次同步會被蓋掉。要調淡藍色／光暈／玻璃濃度，
-        改 SHARED 之後在 /Users/chunming/F 底下跑 `node sync-tokens.mjs`
+        改 SHARED 之後到 F-wall 跑 `node sync-tokens.mjs`
         —— 同一份值會一起推到 F-Ipad 與 F-table，三個畫面才不會飄開。 */
   /* ── 光：淡藍發光線段 ── */
   --wall-bg:          #16181D;

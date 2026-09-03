@@ -12,7 +12,7 @@
 // 三端共用的視覺 token —— 【單一來源】。
 //
 // F-wall / F-Ipad / F-table 三個畫面的「淡藍發光線段 + 毛玻璃面板」全部由這裡決定。
-// 改完之後在 /Users/chunming/F 底下跑：
+// 改完之後到 F-wall 的根目錄跑：
 //
 //     node sync-tokens.mjs
 //
