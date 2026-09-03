@@ -39,23 +39,41 @@ export const LINE_FRAG = /* glsl */ `
   uniform float uAlphaLuma;  // 見檔案上方說明
   varying float vSide;
 
-// ── ridge()：把亮芯限制成「至少一個像素寬」──────────────────────────────────
+// ── ridge()：把亮芯撐到「至少 MIN_CORE_PX 個像素寬」─────────────────────────
 //
 // pow(cross, uSharp) 的半高半寬約 ln2 / uSharp（cross 單位）。線越細、指數越大，
 // 芯就越窄；窄到比一個像素還細時，畫出來的亮度取決於「像素中心有沒有剛好落在芯上」。
 //
-// ⚠ 實際踩過：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
+// ⚠ 實際踩過（一）：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
 //   每 ~100px 才跨過一個像素列，於是每 ~100px 亮一段暗一段 —— 看起來就是
 //   「一節一節」。陡的線每 1px 就跨一列，高頻反而看不出來。
 //   實測峰值沿線 255→191→255→205…，峰值所在的像素列同時在 0 / -1 之間跳。
 //
-// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。把指數壓到「芯剛好一像素寬」，
-// 同時等比降低亮度（pow 的積分約 ∝ 1/s）把能量守住 —— 線不會因此變亮或變暗，
-// 只是不再忽亮忽暗。芯本來就夠寬時 min() 不會生效，畫面完全不變。
+// ⚠ 實際踩過（二）：撐到「剛好一像素」【只治好線本身，治不好光暈】。
+//   UnrealBloomPass 的高通是【比峰值】：iPad 上芯的峰值 ≈ 1.15，threshold 才 0.5，
+//   餘裕只有一點；亞像素對位差半個像素，峰值就掉一半到 ≈ 0.57 貼在門檻上 ——
+//   那一段完全不泛光。芯本身是連續的（隔離單條邊掃描，整條線都有 255 的像素），
+//   斷掉的是 bloom。1687×948 的緩衝上實測 edge-sensor-ac（0.5°）：離線 12px 的
+//   光暈在 27↔50 之間起伏、週期約 140px —— 那就是畫面上一顆一顆的光暈。
+//   所以芯的下限要放寬到「差半個像素只掉兩成」；iPad 的關聯邊用 2.5px。
+//
+// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。
+//   s  ＝ 撐到 MIN_CORE_PX 像素寬之後的指數。
+//   s1 ＝ 撐到「剛好一像素」的指數。亮度補償【固定拿 s1 算】而不是拿 s ——
+//        補償的用意是「線不要因為被撐寬而變亮」，以一像素為基準就夠了；
+//        跟著 s 一起降會把峰值壓到 1/17，直接掉到 bloom threshold 以下，
+//        光暈整個消失（實測光暈平均值 24 → 3.6）。
+//   MIN_CORE_PX = 1.0（預設）時 s == s1，行為與原本【逐字相同】——
+//   牆面與桌面不帶這個 define，畫面不會有任何變化。牆面本來也不會有這個症狀：
+//   它的格線是 VLINES / HLINES，純水平垂直，沿線的亞像素相位根本不變。
+#ifndef MIN_CORE_PX
+#define MIN_CORE_PX 1.0
+#endif
 float ridge(float c, float sharp, float dSide) {
-  float sMax = 1.386 / max(dSide, 1e-5);   // 2*ln2 / 一像素 → 芯的 FWHM ≈ 1px
-  float s = min(sharp, sMax);
-  return pow(c, s) * (s / sharp);
+  float d  = max(dSide, 1e-5);
+  float s1 = min(sharp, 1.386 / d);                  // 2*ln2 / 一像素 → FWHM ≈ 1px
+  float s  = min(sharp, 1.386 / (MIN_CORE_PX * d));  // FWHM ≈ MIN_CORE_PX px
+  return pow(c, s) * (s1 / sharp);
 }
 
   void main() {
@@ -106,23 +124,41 @@ export const BEAM_FRAG = /* glsl */ `
   varying float vT;
   varying float vSide;
 
-// ── ridge()：把亮芯限制成「至少一個像素寬」──────────────────────────────────
+// ── ridge()：把亮芯撐到「至少 MIN_CORE_PX 個像素寬」─────────────────────────
 //
 // pow(cross, uSharp) 的半高半寬約 ln2 / uSharp（cross 單位）。線越細、指數越大，
 // 芯就越窄；窄到比一個像素還細時，畫出來的亮度取決於「像素中心有沒有剛好落在芯上」。
 //
-// ⚠ 實際踩過：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
+// ⚠ 實際踩過（一）：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
 //   每 ~100px 才跨過一個像素列，於是每 ~100px 亮一段暗一段 —— 看起來就是
 //   「一節一節」。陡的線每 1px 就跨一列，高頻反而看不出來。
 //   實測峰值沿線 255→191→255→205…，峰值所在的像素列同時在 0 / -1 之間跳。
 //
-// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。把指數壓到「芯剛好一像素寬」，
-// 同時等比降低亮度（pow 的積分約 ∝ 1/s）把能量守住 —— 線不會因此變亮或變暗，
-// 只是不再忽亮忽暗。芯本來就夠寬時 min() 不會生效，畫面完全不變。
+// ⚠ 實際踩過（二）：撐到「剛好一像素」【只治好線本身，治不好光暈】。
+//   UnrealBloomPass 的高通是【比峰值】：iPad 上芯的峰值 ≈ 1.15，threshold 才 0.5，
+//   餘裕只有一點；亞像素對位差半個像素，峰值就掉一半到 ≈ 0.57 貼在門檻上 ——
+//   那一段完全不泛光。芯本身是連續的（隔離單條邊掃描，整條線都有 255 的像素），
+//   斷掉的是 bloom。1687×948 的緩衝上實測 edge-sensor-ac（0.5°）：離線 12px 的
+//   光暈在 27↔50 之間起伏、週期約 140px —— 那就是畫面上一顆一顆的光暈。
+//   所以芯的下限要放寬到「差半個像素只掉兩成」；iPad 的關聯邊用 2.5px。
+//
+// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。
+//   s  ＝ 撐到 MIN_CORE_PX 像素寬之後的指數。
+//   s1 ＝ 撐到「剛好一像素」的指數。亮度補償【固定拿 s1 算】而不是拿 s ——
+//        補償的用意是「線不要因為被撐寬而變亮」，以一像素為基準就夠了；
+//        跟著 s 一起降會把峰值壓到 1/17，直接掉到 bloom threshold 以下，
+//        光暈整個消失（實測光暈平均值 24 → 3.6）。
+//   MIN_CORE_PX = 1.0（預設）時 s == s1，行為與原本【逐字相同】——
+//   牆面與桌面不帶這個 define，畫面不會有任何變化。牆面本來也不會有這個症狀：
+//   它的格線是 VLINES / HLINES，純水平垂直，沿線的亞像素相位根本不變。
+#ifndef MIN_CORE_PX
+#define MIN_CORE_PX 1.0
+#endif
 float ridge(float c, float sharp, float dSide) {
-  float sMax = 1.386 / max(dSide, 1e-5);   // 2*ln2 / 一像素 → 芯的 FWHM ≈ 1px
-  float s = min(sharp, sMax);
-  return pow(c, s) * (s / sharp);
+  float d  = max(dSide, 1e-5);
+  float s1 = min(sharp, 1.386 / d);                  // 2*ln2 / 一像素 → FWHM ≈ 1px
+  float s  = min(sharp, 1.386 / (MIN_CORE_PX * d));  // FWHM ≈ MIN_CORE_PX px
+  return pow(c, s) * (s1 / sharp);
 }
 
   // 一顆彗星在位置 vT 的亮度。

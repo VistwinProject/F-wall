@@ -21,9 +21,12 @@ import { PARAMS } from './params.js'
 //                MAX 取較亮者，重疊處與單獨一條線一樣亮。
 //   暈層 加法 —— ⚠ 光暈【不能】用 MAX：那會算成 max(光暈, 背景)，
 //                比背景暗的外圈全部被丟掉，光暈被砍成一條硬邊帶。
-function lineMaterial(worldW, gain, kind) {
+function lineMaterial(worldW, gain, kind, minCorePx) {
   const halo = kind === 'halo'
   return new THREE.ShaderMaterial({
+    // 亮芯的最小像素寬（見 shaders.js 的 ridge()）。不給就是 1.0 ＝ 原本的行為。
+    // ⚠ 一定要帶小數點：GLSL ES 100 不會把 int 自動轉 float，`2 * d` 會編不過。
+    ...(minCorePx ? { defines: { MIN_CORE_PX: minCorePx.toFixed(2) } } : {}),
     vertexShader: LINE_VERT,
     fragmentShader: LINE_FRAG,
     transparent: true,
@@ -61,9 +64,12 @@ function lineMaterial(worldW, gain, kind) {
 
 /**
  * @param worldW  世界寬度（線寬是它的比例，見 PARAMS.line.width）
- * @param items   [{ id, pts, closed, width? }]，pts 是世界座標的 {x,y} 陣列。
+ * @param items   [{ id, pts, closed, width?, minCorePx? }]，pts 是世界座標的 {x,y} 陣列。
  *                width 是「世界寬的比例」，不給就用 PARAMS.line.width
  *                （iPad 的調參面板會逐項覆寫）。
+ *                minCorePx 是亮芯的最小像素寬，不給＝ 1.0（牆面與桌面）。
+ *                線很細又不是水平／垂直時要放寬，否則光暈會一節一節 ——
+ *                原因寫在 shaders.js 的 ridge()。
  * @returns { group, gains: { [id]: (v) => void } }
  */
 export function createGlowLines(worldW, items) {
@@ -72,7 +78,10 @@ export function createGlowLines(worldW, items) {
 
   for (const it of items) {
     const geo = ribbon(it.pts, (it.width ?? PARAMS.line.width) * worldW, !!it.closed)
-    const mats = [lineMaterial(worldW, PARAMS.line.idle, 'halo'), lineMaterial(worldW, PARAMS.line.idle, 'core')]
+    const mats = [
+      lineMaterial(worldW, PARAMS.line.idle, 'halo', it.minCorePx),
+      lineMaterial(worldW, PARAMS.line.idle, 'core', it.minCorePx),
+    ]
     // 暈層先畫、芯層後畫
     for (let i = 0; i < 2; i++) {
       const m = new THREE.Mesh(geo, mats[i])
@@ -91,9 +100,10 @@ export function createGlowLines(worldW, items) {
 // ── 走線彗星 ────────────────────────────────────────────────────────────────
 /**
  * @param worldW  世界寬度
- * @param items   [{ id, pts, width? }]，pts 是世界座標的 {x,y} 陣列。
+ * @param items   [{ id, pts, width?, minCorePx? }]，pts 是世界座標的 {x,y} 陣列。
  *                ⚠ 順序＝流動方向：pts[0] → pts[n-1]。牆面是「家電 → 中樞」。
  *                width 是「世界寬的比例」，不給就用 PARAMS.beam.width。
+ *                minCorePx 同 createGlowLines，見 shaders.js 的 ridge()。
  */
 export function createGlowBeams(worldW, items) {
   const speed = PARAMS.beam.speed * worldW
@@ -113,7 +123,11 @@ export function createGlowBeams(worldW, items) {
 
     const mat = new THREE.ShaderMaterial({
       // COMETS 必須是編譯期常數（GLSL ES 100 的 for 迴圈上限不能是 uniform）
-      defines: { COMETS: PARAMS.beam.comets },
+      // MIN_CORE_PX 同上，不給就是 1.0 ＝ 原本的行為。
+      defines: {
+        COMETS: PARAMS.beam.comets,
+        ...(it.minCorePx ? { MIN_CORE_PX: it.minCorePx.toFixed(2) } : {}),
+      },
       vertexShader: BEAM_VERT,
       fragmentShader: BEAM_FRAG,
       transparent: true,
