@@ -38,9 +38,29 @@ export const LINE_FRAG = /* glsl */ `
   uniform float uGain;      // 整體倍率：家電框 active 時拉高、呼吸也乘在這裡
   uniform float uAlphaLuma;  // 見檔案上方說明
   varying float vSide;
+
+// ── ridge()：把亮芯限制成「至少一個像素寬」──────────────────────────────────
+//
+// pow(cross, uSharp) 的半高半寬約 ln2 / uSharp（cross 單位）。線越細、指數越大，
+// 芯就越窄；窄到比一個像素還細時，畫出來的亮度取決於「像素中心有沒有剛好落在芯上」。
+//
+// ⚠ 實際踩過：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
+//   每 ~100px 才跨過一個像素列，於是每 ~100px 亮一段暗一段 —— 看起來就是
+//   「一節一節」。陡的線每 1px 就跨一列，高頻反而看不出來。
+//   實測峰值沿線 255→191→255→205…，峰值所在的像素列同時在 0 / -1 之間跳。
+//
+// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。把指數壓到「芯剛好一像素寬」，
+// 同時等比降低亮度（pow 的積分約 ∝ 1/s）把能量守住 —— 線不會因此變亮或變暗，
+// 只是不再忽亮忽暗。芯本來就夠寬時 min() 不會生效，畫面完全不變。
+float ridge(float c, float sharp, float dSide) {
+  float sMax = 1.386 / max(dSide, 1e-5);   // 2*ln2 / 一像素 → 芯的 FWHM ≈ 1px
+  float s = min(sharp, sMax);
+  return pow(c, s) * (s / sharp);
+}
+
   void main() {
     float cross = max(0.0, 1.0 - abs(vSide));
-    vec3 c = uColor * uAmp * pow(cross, uSharp) * uGain;
+    vec3 c = uColor * uAmp * ridge(cross, uSharp, fwidth(vSide)) * uGain;
     float a = mix(1.0, clamp(max(max(c.r, c.g), c.b), 0.0, 1.0), uAlphaLuma);
     gl_FragColor = vec4(c, a);
   }
@@ -86,6 +106,25 @@ export const BEAM_FRAG = /* glsl */ `
   varying float vT;
   varying float vSide;
 
+// ── ridge()：把亮芯限制成「至少一個像素寬」──────────────────────────────────
+//
+// pow(cross, uSharp) 的半高半寬約 ln2 / uSharp（cross 單位）。線越細、指數越大，
+// 芯就越窄；窄到比一個像素還細時，畫出來的亮度取決於「像素中心有沒有剛好落在芯上」。
+//
+// ⚠ 實際踩過：iPad 的關聯邊線寬調細之後芯只剩 0.52px，近水平的線（0.6°）
+//   每 ~100px 才跨過一個像素列，於是每 ~100px 亮一段暗一段 —— 看起來就是
+//   「一節一節」。陡的線每 1px 就跨一列，高頻反而看不出來。
+//   實測峰值沿線 255→191→255→205…，峰值所在的像素列同時在 0 / -1 之間跳。
+//
+// fwidth(vSide) = vSide 在螢幕上每個像素變化多少。把指數壓到「芯剛好一像素寬」，
+// 同時等比降低亮度（pow 的積分約 ∝ 1/s）把能量守住 —— 線不會因此變亮或變暗，
+// 只是不再忽亮忽暗。芯本來就夠寬時 min() 不會生效，畫面完全不變。
+float ridge(float c, float sharp, float dSide) {
+  float sMax = 1.386 / max(dSide, 1e-5);   // 2*ln2 / 一像素 → 芯的 FWHM ≈ 1px
+  float s = min(sharp, sMax);
+  return pow(c, s) * (s / sharp);
+}
+
   // 一顆彗星在位置 vT 的亮度。
   //
   // prog < 0 = 這一輪還沒發射 → 整顆不畫（不是停在起點！路徑兩端就是黑塊邊緣，
@@ -111,8 +150,9 @@ export const BEAM_FRAG = /* glsl */ `
 
     // ── 橫剖面：中心緊、邊緣柔 ──────────────────────────────────────────────
     float cross = max(0.0, 1.0 - abs(vSide));
-    float core = pow(cross, uCoreSharp);
-    float soft = pow(cross, uSoftSharp);
+    float dSide = fwidth(vSide);
+    float core = ridge(cross, uCoreSharp, dSide);
+    float soft = ridge(cross, uSoftSharp, dSide);
 
     // ── 三階顏色：深藍 → 青 → 白 ───────────────────────────────────────────
     vec3 col = mix(uTail, uBody, smoothstep(0.0, 0.35, trail));

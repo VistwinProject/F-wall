@@ -186,6 +186,20 @@ export default function GlowLayer({ containerRef, build, activeIds, rebuildKey =
     }
     raf = requestAnimationFrame(tick)
 
+    // dev 除錯把手：主控台可以讀每條線/光束目前的 gain 與狀態，
+    // 不用靠猜或靠讀畫布像素。正式 build 不會有這一段。
+    if (import.meta.env?.DEV) {
+      window.__glow = {
+        stage, lines, beams, glowLines, glowBeams, lineState, beamState,
+        active: () => [...(activeRef.current || [])],
+        dump: () => lines.map((it) => ({
+          id: it.id,
+          on: +lineState[it.id].on.toFixed(3),
+          gain: +(PARAMS.line.idle + (PARAMS.line.on - PARAMS.line.idle) * lineState[it.id].on).toFixed(3),
+        })),
+      }
+    }
+
     return () => {
       cancelAnimationFrame(raf)
       // ⚠ 一定要自己回收：調參面板拖一下滑桿就重建一次場景，

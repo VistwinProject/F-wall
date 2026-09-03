@@ -59,6 +59,11 @@ export function createStage(canvas, aspect, { transparent = true } = {}) {
     //   暗的地方等於被平方，整層光會明顯變暗（實際踩過）。
     premultipliedAlpha: true,
     powerPreference: 'high-performance',
+    // ?glowdbg —— 讓畫布內容在 render 之後仍可讀，才能用 drawImage / readPixels
+    // 量真實輸出。這是唯一能「量」而不是「猜」發光層的方法（牆面 webgl/stage.js
+    // 有同一個開關）。正式展場不會帶這個參數。
+    preserveDrawingBuffer:
+      typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('glowdbg'),
   })
   // 透明時 clear alpha = 0；不透明時填背景色。
   renderer.setClearColor(col(PARAMS.bg), transparent ? 0 : 1)
