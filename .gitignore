@@ -13,9 +13,6 @@ portable/app/
 *.log
 npm-debug.log*
 
-# local agent / editor settings
-.claude/
-
 # editor / OS
 .DS_Store
 *.local
