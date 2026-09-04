@@ -23,7 +23,7 @@ export const PARAMS = {
   breathe: { period: 1.5, lo: 0.5 },
   // 發光線（節點外圈 / 中樞環）＝ 牆面的 FX.frame
   line: {
-    width: 0.013542,
+    width: 0.014063,
     coreSharp: 17,
     softSharp: 2.2,
     core: 1.95,
