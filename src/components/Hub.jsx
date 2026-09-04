@@ -1,4 +1,4 @@
-import { HUB } from '../config/appliances.js'
+import { blockOf, HUB_ID } from '../config/wallTuning.js'
 import { COLORS, MOTION, RADIUS } from '../config/theme.js'
 import { FX, LINE_W, LINE_W_IDLE } from '../config/fx.js'
 
@@ -11,7 +11,8 @@ import { FX, LINE_W, LINE_W_IDLE } from '../config/fx.js'
 //    所以這裡【不放任何文字】。置中的字會直接把投影光打在展品上。
 // ============================================================================
 export default function Hub({ activeCount = 0 }) {
-  const { x, y, w, h } = HUB
+  // ⚠ 幾何從 wallTuning 讀 —— 編輯模式搬動核心黑塊時這裡要跟著動。
+  const { x, y, w, h } = blockOf(HUB_ID)
   const live = activeCount > 0
   return (
     <g>

@@ -24,3 +24,6 @@ npm-debug.log*
 *.swp
 *.swo
 *~
+
+# 編輯模式（鍵盤 e）「存到專案」寫出來的匯出檔，不是設定檔
+wall-export.txt

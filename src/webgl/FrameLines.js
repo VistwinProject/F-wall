@@ -1,8 +1,12 @@
 import * as THREE from 'three'
-import { FRAME, VLINES, HLINES } from '../config/frame.js'
-import { APPLIANCES, HUB } from '../config/appliances.js'
+import { APPLIANCES } from '../config/appliances.js'
 import { col } from './stage.js'
 import { FX } from '../config/fx.js'
+// ⚠ 幾何一律從 wallTuning 讀（見該檔案的說明）。沒有覆寫時就是 frame.js /
+//   appliances.js 的原值，畫出來與改之前逐字相同。
+import {
+  blockOf, frameGeom, frameLineWidth, hLines, vLines, HUB_ID,
+} from '../config/wallTuning.js'
 import { roundedRectPoints } from './curves.js'
 import { RADIUS } from '../config/theme.js'
 // ⚠ shader 與 ribbon 已經抽到 glow/ —— 那是三端共用的單一份，iPad 與桌面 import 同一個檔案。
@@ -100,11 +104,12 @@ export function createFrame() {
   const group = new THREE.Group()
   // [暈層, 芯層] —— 順序就是繪製順序
   const mats = [material(1, 'halo'), material(1, 'core')]
-  const { x, y, w, h, r } = FRAME
-  const add = (pts, closed = false) => twoLayer(group, ribbon(pts, FX.frame.width, closed), mats, 0)
+  const { x, y, w, h, r } = frameGeom()
+  const lw = frameLineWidth()
+  const add = (pts, closed = false) => twoLayer(group, ribbon(pts, lw, closed), mats, 0)
   const x0 = snap(x), y0 = snap(y), x1 = snap(x + w), y1 = snap(y + h)
-  for (const vx of VLINES) add([V(snap(vx), y0), V(snap(vx), y1)])
-  for (const hy of HLINES) add([V(x0, snap(hy)), V(x1, snap(hy))])
+  for (const vx of vLines()) add([V(snap(vx), y0), V(snap(vx), y1)])
+  for (const hy of hLines()) add([V(x0, snap(hy)), V(x1, snap(hy))])
   add(roundedRectPoints((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0, r), true)
   return { group, mats }
 }
@@ -114,12 +119,17 @@ export function createFrame() {
 export function createBlockOutlines() {
   const group = new THREE.Group()
   const items = {}
+  const lw = frameLineWidth()
   const make = (cx, cy, w, h, r, key, gain) => {
     const mats = [material(gain, 'halo'), material(gain, 'core')]
-    twoLayer(group, ribbon(roundedRectPoints(cx, cy, w, h, r), FX.frame.width, true), mats, 1)
+    twoLayer(group, ribbon(roundedRectPoints(cx, cy, w, h, r), lw, true), mats, 1)
     items[key] = mats
   }
-  for (const n of APPLIANCES) make(n.x, n.y, n.w, n.h, RADIUS.sm, n.id, FX.frame.blockIdle)
-  make(HUB.x, HUB.y, HUB.w, HUB.h, RADIUS.sm, 'hub', FX.frame.hubIdle)
+  for (const n of APPLIANCES) {
+    const b = blockOf(n.id)
+    make(b.x, b.y, b.w, b.h, RADIUS.sm, n.id, FX.frame.blockIdle)
+  }
+  const hub = blockOf(HUB_ID)
+  make(hub.x, hub.y, hub.w, hub.h, RADIUS.sm, HUB_ID, FX.frame.hubIdle)
   return { group, items }
 }

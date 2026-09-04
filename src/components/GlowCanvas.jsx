@@ -5,6 +5,8 @@ import { FX } from '../config/fx.js'
 import { createStage, contentRect } from '../webgl/stage.js'
 import { createBeam } from '../webgl/TraceBeam.js'
 import { createFrame, createBlockOutlines } from '../webgl/FrameLines.js'
+import { invalidateRoutes } from '../config/routing.js'
+import { getTuning, subscribe, HUB_ID } from '../config/wallTuning.js'
 
 // ============================================================================
 // 牆面的「光」全部畫在這張 canvas 上：框架格線、家電框外圈、走線光束、彗星、微粒，
@@ -37,15 +39,78 @@ export default function GlowCanvas({ activeIds }) {
       return
     }
 
-    const frame = createFrame()
-    const outlines = createBlockOutlines()
-    stage.scene.add(frame.group, outlines.group)
-
-    const beams = APPLIANCES.map((n, i) => createBeam(n, i))
-    for (const b of beams) stage.scene.add(b.mesh)
-
+    // ── 幾何：可重建 ──────────────────────────────────────────────────────
+    // 編輯模式（鍵盤 e）會即時改黑塊 / 框架 / 線粗，這些全部是【烤進頂點】的，
+    // 光改設定沒有用 —— 值一變就要把對應的那組 mesh 整個重做。
+    // ⚠ 舞台（renderer / composer）不重建：在同一張 canvas 上重複 new WebGLRenderer
+    //   會一路累積 context，拖一下滑桿就掉一個。
+    let frame = null
+    let outlines = null
+    let beams = []
     // 每條線的狀態：on = 淡入淡出、progress = 射到哪了
-    const state = beams.map(() => ({ on: 0, progress: 0 }))
+    let state = []
+
+    const dumpGroup = (g) => {
+      stage.scene.remove(g)
+      g.traverse((o) => {
+        o.geometry?.dispose()
+        o.material?.dispose()
+      })
+    }
+
+    const buildFrame = () => {
+      if (frame) dumpGroup(frame.group)
+      frame = createFrame()
+      stage.scene.add(frame.group)
+    }
+    const buildOutlines = () => {
+      if (outlines) dumpGroup(outlines.group)
+      outlines = createBlockOutlines()
+      stage.scene.add(outlines.group)
+    }
+    const buildBeams = () => {
+      for (const b of beams) {
+        stage.scene.remove(b.mesh)
+        b.mesh.geometry.dispose()
+        b.mat.dispose()
+      }
+      // 路徑是黑塊幾何算出來的 —— 黑塊搬了就要丟掉快取重算，
+      // 否則線會留在原地、與框脫節。
+      invalidateRoutes()
+      beams = APPLIANCES.map((n, i) => createBeam(n, i))
+      for (const b of beams) stage.scene.add(b.mesh)
+      // ⚠ 沿用舊的淡入淡出狀態：重建時整組才不會閃一下回到全暗。
+      const prev = state
+      state = beams.map((_, i) => prev[i] ?? { on: 0, progress: 0 })
+    }
+
+    buildFrame()
+    buildOutlines()
+    buildBeams()
+
+    // ── 幾何變動 → 只重建真正受影響的那一組 ────────────────────────────────
+    // 拖曳時每一幀都會進來，全部重建的話 9 條走線（各 320 段）要重跑一次避讓求解，
+    // 拖框線這種只動大框的操作沒必要付那個代價。
+    const sig = (t) => ({
+      blocks: JSON.stringify(t.blocks),
+      frame: JSON.stringify([t.frame, t.vlines, t.hlines]),
+      width: t.lineWidth,
+    })
+    let last = sig(getTuning())
+    let pending = null
+    const unsubscribe = subscribe((t) => {
+      pending = sig(t)
+      request()
+    })
+    const applyPending = () => {
+      if (!pending) return
+      const next = pending
+      pending = null
+      if (next.frame !== last.frame || next.width !== last.width) buildFrame()
+      if (next.blocks !== last.blocks || next.width !== last.width) buildOutlines()
+      if (next.blocks !== last.blocks) buildBeams()
+      last = next
+    }
 
     let raf = 0
     let running = false
@@ -62,6 +127,9 @@ export default function GlowCanvas({ activeIds }) {
     }
 
     const tick = () => {
+      // ⚠ 重建放在幀的開頭、不放在 subscribe 的回呼裡：拖曳一次會連發好幾個
+      //   pointermove，合併到一幀做一次就好。
+      applyPending()
       const now = performance.now()
       const dt = Math.min(0.05, (now - t0) / 1000)
       t0 = now
@@ -114,7 +182,7 @@ export default function GlowCanvas({ activeIds }) {
       // 沒感應時 hubIdle = 0 ＝ 全暗。
       const anyOn = state.reduce((m, s) => Math.max(m, s.on), 0)
       const hubGain = FX.frame.hubIdle + (FX.frame.blockOn * breathe - FX.frame.hubIdle) * anyOn
-      for (const m of outlines.items.hub) m.uniforms.uGain.value = hubGain
+      for (const m of outlines.items[HUB_ID]) m.uniforms.uGain.value = hubGain
 
       stage.render()
 
@@ -146,10 +214,23 @@ export default function GlowCanvas({ activeIds }) {
 
     apiRef.current = { request }
     // dev 用的除錯把手：主控台可以即時改參數再 __glow.render()
-    if (import.meta.env?.DEV) window.__glow = { stage, beams, state, frame, outlines, THREE, render: () => stage.render() }
+    // ⚠ 用 getter 而不是直接塞值：幾何會被重建（見上面的 buildFrame / buildBeams），
+    //   塞值的話主控台永遠讀到掛載當下那一份已經 dispose 掉的 mesh（實際踩過，
+    //   量出來的頂點對不上畫面）。
+    if (import.meta.env?.DEV) {
+      window.__glow = {
+        stage, THREE,
+        get beams() { return beams },
+        get state() { return state },
+        get frame() { return frame },
+        get outlines() { return outlines },
+        render: () => stage.render(),
+      }
+    }
 
     return () => {
       cancelAnimationFrame(raf)
+      unsubscribe()
       window.removeEventListener('resize', resize)
       canvas.removeEventListener('webglcontextlost', onLost)
       stage.dispose()

@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion'
 import { APPLIANCES, VIEWBOX } from '../config/appliances.js'
-import { COLORS, FONT, MOTION, RADIUS } from '../config/theme.js'
-import { PANEL_LAYOUT } from '../config/panels.js'
+import { COLORS, FONT, MOTION, PANEL_TEXT, RADIUS, TITLE_ASCENT } from '../config/theme.js'
+import { panelBoxOf, panelPad, panelText } from '../config/wallTuning.js'
 import { FX, LINE_W, LINE_W_IDLE } from '../config/fx.js'
 import GlassPlate, { estWidth } from './GlassPlate.jsx'
-import MiniBars from './MiniBars.jsx'
 
 // ============================================================================
 // 單一家電 = 黑色挖空框 + active 時彈出的狀態面板。
@@ -126,9 +125,10 @@ function edgePoint(rect, tx, ty) {
 // ⚠ 這是「自動版面」的唯一來源。編輯器(?edit)會用自己存的 box 覆蓋它，
 //    但正式投影一律走這裡算出來的值。
 export function panelBox(node) {
-  // 編輯器調出來的絕對座標優先（config/panels.js）。
+  // 編輯器調出來的絕對座標優先（config/panels.js，可被編輯模式覆寫）。
   // 沒有登記的才回退到下面「依 panelDir 開在家電旁 + avoidX」的自動算法。
-  if (PANEL_LAYOUT[node.id]) return { ...PANEL_LAYOUT[node.id] }
+  const fixed = panelBoxOf(node.id)
+  if (fixed) return { ...fixed }
   const { panelDir = 'B' } = node
   const bl = node.x - node.w / 2
   const br = node.x + node.w / 2
@@ -180,14 +180,20 @@ function StatusPanel({ node, box }) {
   // 視覺上玻璃「就地浮現」也比滑進來更像玻璃。
   // ── 版面尺度（字級一律是原本的一半）────────────────────────────────────────
   // 面板從固定 220x116 變成各種尺寸後，這些值都改成從 box 推算，不再寫死。
-  const PADX = 10
-  const S = { title: 12.5, code: 6.25, state: 6.5, key: 7.5, val: 8 }
-  const innerW = PW - PADX * 2
-  const yTitle = py + 17
-  const yMeta = py + 29
-  const yRule = py + 35
-  const rowTop = py + 46
-  const bottomPad = 9
+  // 標題字級、資料列行距、四邊內距都是編輯模式（鍵盤 e）可調的，其餘字級固定。
+  const TXT = panelText()
+  const P = panelPad()
+  const S = { title: TXT.title, code: 6.25, state: 6.5, key: 7.5, val: 8 }
+  const innerW = PW - P.l - P.r
+  // ⚠ 標題基線從【上內距 + 字級】推出來，不是寫死的 py + 17。
+  //   寫死的話字級一調大，字就往上頂出面板上緣（實際踩過）。
+  // ⚠ 用 S.title（上限）而不是 fitLabelSize 的結果：名字長的面板字會縮小，
+  //   但九塊面板的標題基線要對齊在同一條線上，整面牆才不會參差。
+  // 下面三個間距（12 / 6 / 11）維持原本的節奏，只是改成相對於標題基線。
+  const yTitle = py + P.t + S.title * TITLE_ASCENT
+  const yMeta = yTitle + 12
+  const yRule = yMeta + 6
+  const rowTop = yRule + 11
 
   // 資料列並排放不下就改成上下兩行（左標籤在上、數值在下）。
   // 只要有一列放不下就整個面板都換行，避免同一塊面板混兩種排法。
@@ -196,26 +202,20 @@ function StatusPanel({ node, box }) {
   )
   const lineH = stacked ? 9 : 0
 
-  // 行距固定 25（對齊窗簾面板），不再依高度平均分佈 ——
-  // 平均分佈會讓每塊面板行距都不一樣（實測 sensor 12、bathfan 13、其他 27~28），
-  // 整面牆看起來就不齊。
-  const ROW_GAP = stacked ? 34 : 25
-  const avail = py + PH - bottomPad - rowTop
+  // 行距是【固定值】，不依高度平均分佈 —— 平均分佈會讓每塊面板行距都不一樣
+  // （實測 sensor 12、bathfan 13、其他 27~28），整面牆看起來就不齊。
+  // 上下兩行排法的行距跟著等比例放大，編輯器才只需要一支滑桿。
+  const ROW_GAP = stacked ? TXT.rowGap * PANEL_TEXT.stackedRatio : TXT.rowGap
+  const avail = py + PH - P.b - rowTop
 
   // 塞得下幾列就顯示幾列，最多 5 列；矮面板自然收到 2~3 列。
   const maxRows = Math.max(1, Math.min(5, Math.floor(avail / ROW_GAP)))
   const rows = status.rows.slice(0, maxRows)
 
-  // 列排完之後真正剩下的高度。
-  // ⚠ 不能用 rows.length * ROW_GAP —— 最後一列之後沒有行距，那樣會多算一整格，
-  //    害本來塞得下小圖的面板（例如冷氣還有 40+）被判定成沒空間。
-  //    最後一列的基線在 rowTop + (n-1)*ROW_GAP + 8，再加約 4 的下伸部。
-  const lastRowBottom = rowTop + (rows.length - 1) * ROW_GAP + 12
-  const restY = lastRowBottom + 4
-  const restH = py + PH - bottomPad - restY
-
-  // 兩段式：空間夠就「標題 + 長條圖」，只有一點就畫沒有標題的精簡版。
-  const trendMode = !status.trend ? null : restH >= 36 ? 'full' : restH >= 18 ? 'compact' : null
+  // ⚠ 舊版在這裡算「資料列排完還剩多少高度」，剩得夠多就補一張近七日趨勢小圖，
+  //   不要空一大片。那一段【刻意移除】—— 面板本身的資訊量已經夠，不需要再用
+  //   圖表填空間（status.trend 的資料先留著沒刪，之後想加回來還在）。
+  //   要獨立的圖表面板請用 config/panels.js 的 CUSTOM_PANELS，那是另一回事。
 
   // ⚠ 進出場只做不透明度，不做位移。
   // 會動的 backdrop-filter 元素是最貴的情況 —— 元素每移動一格，合成器就得把底下
@@ -235,7 +235,7 @@ function StatusPanel({ node, box }) {
 
       {/* 標題：設備名，字級自動縮到塞得下面板寬 */}
       <text
-        x={px + PADX}
+        x={px + P.l}
         y={yTitle}
         fontSize={fitLabelSize(node.label, innerW, S.title, 0.5)}
         fill={COLORS.text}
@@ -245,29 +245,29 @@ function StatusPanel({ node, box }) {
       </text>
 
       {/* 設備代碼（左）+ 狀態點與狀態字（右） */}
-      <text x={px + PADX} y={yMeta} fontSize={S.code} fill={COLORS.textOnGlass}
+      <text x={px + P.l} y={yMeta} fontSize={S.code} fill={COLORS.textOnGlass}
         style={{ fontFamily: FONT, letterSpacing: '0.8px' }}>
         {status.code}
       </text>
-      <circle cx={px + PW - PADX - 2} cy={yMeta - 2.2} r="2" fill={hollow ? 'none' : COLORS.text}
+      <circle cx={px + PW - P.r - 2} cy={yMeta - 2.2} r="2" fill={hollow ? 'none' : COLORS.text}
         stroke={COLORS.text} strokeWidth="0.7" />
-      <text x={px + PW - PADX - 8} y={yMeta} textAnchor="end" fontSize={S.state} fill={COLORS.text2}
+      <text x={px + PW - P.r - 8} y={yMeta} textAnchor="end" fontSize={S.state} fill={COLORS.text2}
         style={{ fontFamily: FONT }}>
         {status.state}
       </text>
 
-      <line x1={px + PADX} y1={yRule} x2={px + PW - PADX} y2={yRule} stroke={COLORS.line} strokeWidth="0.8" />
+      <line x1={px + P.l} y1={yRule} x2={px + PW - P.r} y2={yRule} stroke={COLORS.line} strokeWidth="0.8" />
 
       {/* 資料列。stacked = 面板太窄，標籤與數值改上下排。 */}
       {rows.map(([k, v], i) => {
         const ry = rowTop + i * ROW_GAP + (stacked ? 6 : 8)
         return (
           <g key={i}>
-            <text x={px + PADX} y={ry} fontSize={S.key} fill={COLORS.textOnGlass} style={{ fontFamily: FONT }}>
+            <text x={px + P.l} y={ry} fontSize={S.key} fill={COLORS.textOnGlass} style={{ fontFamily: FONT }}>
               {k}
             </text>
             <text
-              x={stacked ? px + PADX : px + PW - PADX}
+              x={stacked ? px + P.l : px + PW - P.r}
               y={ry + lineH}
               textAnchor={stacked ? 'start' : 'end'}
               fontSize={S.val}
@@ -279,28 +279,6 @@ function StatusPanel({ node, box }) {
           </g>
         )
       })}
-
-      {/* 資料列排完還有空間 → 補一張近七日趨勢小圖，不要空一大片。
-          full = 分隔線 + 標題 + 長條；compact = 只有長條（空間不夠放標題）。 */}
-      {trendMode && (
-        <>
-          <line x1={px + PADX} y1={restY} x2={px + PW - PADX} y2={restY}
-            stroke={COLORS.line} strokeWidth="0.8" />
-          {trendMode === 'full' && (
-            <text x={px + PADX} y={restY + 12} fontSize={S.code} fill={COLORS.textOnGlass}
-              style={{ fontFamily: FONT }}>
-              {status.trend.label}
-            </text>
-          )}
-          <MiniBars
-            x={px + PADX}
-            y={restY + (trendMode === 'full' ? 17 : 6)}
-            w={innerW}
-            h={Math.max(10, Math.min(32, restH - (trendMode === 'full' ? 20 : 9)))}
-            data={status.trend.data}
-          />
-        </>
-      )}
     </motion.g>
   )
 

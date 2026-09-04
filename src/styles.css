@@ -177,7 +177,14 @@ body {
   cursor: default; /* kiosk 的 cursor:none 在編輯時要關掉，不然看不到游標 */
 }
 
-.pe-layer {
+/* ============================================================================
+   版面編輯器（鍵盤 e）—— 暫時性工具，正式投影不會進到這裡。
+   顏色刻意用青色：牆面本身是無彩的黑白灰，編輯器的東西一眼就分得出不是內容。
+   ========================================================================== */
+/* ⚠ 選擇器要壓得過上面的 `.wall-stage svg { position: relative }`（同分會比出現
+   順序，太脆弱）。少了這一層權重，這張 svg 會變成 .wall-stage 的第三個 flex item，
+   跟牆面那張各分一半寬度 —— 症狀是「編輯把手全部跑到畫面右半邊」。 */
+.wall-stage svg.we-layer {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -185,54 +192,183 @@ body {
   z-index: 500;
 }
 
-.pe-hit {
+/* 物件外框：虛線 = 沒選、實線 = 選取中 */
+.we-obj .we-hit {
   fill: transparent;
-  stroke: rgba(0, 200, 255, 0.55);
+  stroke: rgba(0, 200, 255, 0.5);
   stroke-width: 1;
   stroke-dasharray: 6 4;
   cursor: move;
 }
-.pe-hit:hover {
+.we-obj .we-hit:hover {
   fill: rgba(0, 200, 255, 0.08);
 }
-.pe-hit--on {
+.we-obj--on .we-hit {
   stroke: #00e0ff;
   stroke-width: 2;
   stroke-dasharray: none;
   fill: rgba(0, 200, 255, 0.1);
 }
+/* 圖表面板換一個色，與家電資訊面板分得開 */
+.we-obj--chart .we-hit {
+  stroke: rgba(180, 130, 255, 0.6);
+}
+.we-obj--chart.we-obj--on .we-hit {
+  stroke: #c08bff;
+  fill: rgba(180, 130, 255, 0.12);
+}
 
-.pe-grip {
+.we-hit--frame {
+  fill: transparent;
+  stroke: rgba(0, 200, 255, 0.25);
+  stroke-width: 1;
+  stroke-dasharray: 10 8;
+  cursor: move;
+}
+.we-hit--frame:hover {
+  fill: rgba(0, 200, 255, 0.05);
+}
+
+/* 大框四邊的拖曳帶：平常看不見，滑過才亮 */
+.we-edge {
+  fill: rgba(0, 200, 255, 0.001);
+}
+.we-edge:hover {
+  fill: rgba(0, 224, 255, 0.35);
+}
+
+/* 格線：畫一條指示線 + 一條看不見的粗拖曳帶（細線太難點中） */
+.we-guide {
+  stroke: rgba(0, 224, 255, 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+  pointer-events: none;
+}
+.we-obj--on .we-guide {
+  stroke: #00e0ff;
+  stroke-width: 2;
+  stroke-dasharray: none;
+}
+.we-line-hit {
+  fill: rgba(0, 200, 255, 0.001);
+}
+.we-line-hit:hover {
+  fill: rgba(0, 224, 255, 0.18);
+}
+
+/* 框外緣的尺標把手：垂直線在上緣、水平線在左緣，兩組永遠不重疊 */
+.we-line-grip {
+  fill: rgba(0, 224, 255, 0.55);
+  rx: 3;
+}
+.we-line-grip:hover {
+  fill: #00e0ff;
+}
+.we-obj--on .we-line-grip {
+  fill: #00e0ff;
+}
+
+.we-grip {
   fill: #00e0ff;
   opacity: 0.85;
   cursor: nwse-resize;
   rx: 3;
 }
 
-.pe-tag {
+.we-tag {
   fill: #00e0ff;
   font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
 
-.pe-bar {
+/* ── 控制面板 ───────────────────────────────────────────────────────────────
+   ⚠ 一定要能收起：它固定在左下角，展開時正好蓋住下排「燈 / 智慧插座」那一區，
+     不收起來就沒辦法對那兩塊的版面。 */
+.we-panel {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 12px;
+  bottom: 12px;
   z-index: 600;
+  width: 486px;
+  max-width: calc(100vw - 24px);
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.94);
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  /* ⚠ column-reverse：DOM 順序仍是「頭在前」，但畫出來頭在【最下面】。
+     面板是靠下對齊的，頭放上面的話每換一個分頁、每選一個物件，內容高度一變
+     整排分頁與按鈕就會上下跳，滑鼠永遠對不準（實際踩過）。頭釘在底邊之後
+     它離螢幕底部的距離固定，內容往上長。 */
+  display: flex;
+  flex-direction: column-reverse;
+}
+.we-panel--min {
+  width: auto;
+}
+
+.we-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  padding: 9px 14px;
-  background: rgba(8, 10, 14, 0.94);
-  border-top: 1px solid rgba(0, 200, 255, 0.3);
-  color: rgba(255, 255, 255, 0.9);
-  font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(0, 200, 255, 0.18);
 }
-.pe-bar button {
+.we-panel--min .we-head {
+  border-top: none;
+}
+.we-head strong {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.we-spacer {
+  flex: 1;
+}
+
+.we-tabs {
+  display: flex;
+  gap: 4px;
+}
+.we-tabs button {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  background: transparent;
+  color: rgba(216, 246, 255, 0.75);
+  font: inherit;
+  cursor: pointer;
+}
+.we-tabs button.on {
+  background: rgba(0, 200, 255, 0.25);
+  border-color: rgba(0, 224, 255, 0.7);
+  color: #eaffff;
+}
+
+.we-body {
+  padding: 0 10px 10px;
+}
+
+.we-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 9px;
+}
+
+.we-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 200, 255, 0.18);
+}
+
+.we-panel button {
   padding: 5px 11px;
   border-radius: 6px;
   border: 1px solid rgba(0, 200, 255, 0.45);
@@ -241,14 +377,133 @@ body {
   font: inherit;
   cursor: pointer;
 }
-.pe-bar button:hover:not(:disabled) {
+.we-panel button:hover:not(:disabled) {
   background: rgba(0, 200, 255, 0.24);
 }
-.pe-bar button:disabled {
+.we-panel button:disabled {
   opacity: 0.35;
   cursor: default;
 }
-.pe-dim {
+.we-icon {
+  padding: 3px 8px !important;
+  line-height: 1;
+}
+
+.we-panel select {
+  flex: 1;
+  min-width: 130px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  background: rgba(0, 200, 255, 0.08);
+  color: #d8f6ff;
+  font: inherit;
+}
+
+.we-num {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.we-num input {
+  width: 62px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #eaffff;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.we-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 170px;
+  color: rgba(255, 255, 255, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+.we-slider input {
+  width: 100%;
+  accent-color: #00e0ff;
+}
+
+.we-hint {
+  margin: 9px 0 0;
+  line-height: 1.5;
+}
+
+.we-dim {
   color: rgba(255, 255, 255, 0.5);
   font-variant-numeric: tabular-nums;
+}
+
+/* 匯出視窗。⚠ 開在編輯面板【上方】而不是蓋住它 —— 匯出之後常常要回去再調一輪。 */
+.we-export {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 700;
+  width: 640px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.97);
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  color: rgba(255, 255, 255, 0.9);
+  font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+.we-export .we-head {
+  border-top: none;
+  border-bottom: 1px solid rgba(0, 200, 255, 0.18);
+}
+.we-export button {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  background: rgba(0, 200, 255, 0.12);
+  color: #d8f6ff;
+  font: inherit;
+  cursor: pointer;
+}
+.we-export button:hover {
+  background: rgba(0, 200, 255, 0.24);
+}
+.we-export textarea {
+  flex: 1;
+  min-height: 260px;
+  margin: 10px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  background: rgba(0, 0, 0, 0.45);
+  color: #eaffff;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+  overflow: auto;
+  resize: vertical;
+}
+.we-export-note {
+  padding: 0 12px 10px;
+}
+
+/* 有覆寫值時的常駐提醒 —— 編輯模式關掉也還在 */
+.we-badge {
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  z-index: 400;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.9);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: rgba(216, 246, 255, 0.85);
+  font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  pointer-events: none;
 }

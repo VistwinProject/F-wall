@@ -21,13 +21,17 @@
 // 路徑點（不含起點與 pad，兩端不用寫）。有 route 的就完全照給的點走、不再自動避讓。
 // dev 模式下會檢查每段是否為八方位（0/45/90），不合的在 console 提示。
 // ============================================================================
-import { APPLIANCES, HUB, RESERVED_SCREEN } from './appliances.js'
+import { APPLIANCES } from './appliances.js'
 import { FX } from './fx.js'
+import { blockOf, withBlock, HUB_ID, SCREEN_ID } from './wallTuning.js'
 
-const CX = HUB.x
-const CY = HUB.y
-// 核心黑塊（＝走線的終點面）。與 Hub.jsx 畫的是同一組 HUB.x/y/w/h。
-const HUB_BOX = { x: CX - HUB.w / 2, y: CY - HUB.h / 2, w: HUB.w, h: HUB.h }
+// ⚠ 幾何一律從 wallTuning 讀，不直接用 appliances.js 的常數 —— 編輯模式（鍵盤 e）
+//   搬動黑塊時走線要跟著重算。沒有覆寫時 wallTuning 回傳的就是原值。
+//   下面四個是 let 而不是 const：buildRoutes() 每次重算前用 refreshGeom() 更新。
+let CX = 0
+let CY = 0
+// 核心黑塊（＝走線的終點面）。與 Hub.jsx 畫的是同一組幾何。
+let HUB_BOX = { x: 0, y: 0, w: 0, h: 0 }
 // 彗星抵達核心之後還要往裡面跑多遠才算完全被吃掉（要 > 彗星頭半徑 + 拖尾長度）。
 const SWALLOW = 170
 // 走線與「別人的黑塊」之間要留的淨空。黑塊是牆上實體展品的預留位，線貼著框邊走
@@ -56,11 +60,17 @@ function inflate(b, m = CLEAR) {
 
 // 電視預留區也是實體展品的預留位，而且規格明訂「不准有連線穿過」。
 // 舊版的自動佈線完全沒檢查它，只靠上排兩台剛好沒經過而已。
-const SCREEN_BOX = {
-  x: RESERVED_SCREEN.x - RESERVED_SCREEN.w / 2,
-  y: RESERVED_SCREEN.y - RESERVED_SCREEN.h / 2,
-  w: RESERVED_SCREEN.w,
-  h: RESERVED_SCREEN.h,
+let SCREEN_BOX = { x: 0, y: 0, w: 0, h: 0 }
+
+// 把上面三個「牆上實體展品」的框從 wallTuning 重新讀一次。
+// ⚠ buildRoutes() 的第一件事就是叫它，順序不能反 —— padOf / keepOffHub 都吃 HUB_BOX。
+function refreshGeom() {
+  const hub = blockOf(HUB_ID)
+  CX = hub.x
+  CY = hub.y
+  HUB_BOX = { x: hub.x - hub.w / 2, y: hub.y - hub.h / 2, w: hub.w, h: hub.h }
+  const sc = blockOf(SCREEN_ID)
+  SCREEN_BOX = { x: sc.x - sc.w / 2, y: sc.y - sc.h / 2, w: sc.w, h: sc.h }
 }
 
 // 垂直線 x 在 [lo,hi] 這段是否穿過框 b
@@ -132,8 +142,11 @@ function keepOffHub(v, lo, hi, awayIsLess) {
 
 
 function buildRoutes() {
+  refreshGeom()
   const routes = {}
-  for (const n of APPLIANCES) {
+  const firstBuild = !WARNED
+  // ⚠ 用 withBlock(n)：拿的是「覆寫後」的 x/y/w/h，label / status / route 原樣保留。
+  for (const n of APPLIANCES.map(withBlock)) {
     const pad = padOf(n)
     const knee = kneeOf(pad)
     // 彗星要跑進核心黑塊裡面才會被吃掉，所以 full 路徑在 pad 之後再往內延伸一段。
@@ -157,7 +170,7 @@ function buildRoutes() {
     // 自己的框不算障礙（線本來就從框中心長出來），改用 unGraze 處理擦邊。
     // 資訊面板刻意不算障礙 —— 線可以直接穿過面板。
     const obstacles = [
-      ...APPLIANCES.filter((m) => m.id !== n.id).map((m) => inflate(boxOf(m))),
+      ...APPLIANCES.map(withBlock).filter((m) => m.id !== n.id).map((m) => inflate(boxOf(m))),
       inflate(SCREEN_BOX),
     ]
 
@@ -216,6 +229,7 @@ function buildRoutes() {
     warnNonOcti(n, full)
     routes[n.id] = finish(n, full)
   }
+  if (firstBuild) WARNED = true
   return routes
 }
 
@@ -265,8 +279,11 @@ function pt(x, y) {
 }
 
 // 手動路徑的自我檢查：每段都必須是 0° / 45° / 90°（八方位），否則線看起來不像 PCB trace。
+// ⚠ 只有第一次建路徑會提醒。編輯模式拖一次黑塊就重算一次，
+//   每次都印的話拖曳兩秒就會洗掉一整頁主控台。
+let WARNED = false
 function warnNonOcti(n, pts) {
-  if (!import.meta.env?.DEV) return
+  if (!import.meta.env?.DEV || WARNED) return
   for (let i = 1; i < pts.length; i++) {
     const dx = Math.abs(pts[i].x - pts[i - 1].x)
     const dy = Math.abs(pts[i].y - pts[i - 1].y)
@@ -398,13 +415,23 @@ export function samplePath(pts, r = FX.corner, arcStep = 3, lineStep = 24) {
 
 // 倒角後的走線取樣點。WebGL 的 ribbon 與彗星軌跡都吃這一條（見 webgl/curves.js）。
 // ⚠ 只有這一條 —— 走線的幾何只能有一個來源，任何地方自己再算一次都會對不齊。
-const SAMPLED = {}
+let SAMPLED = {}
 export function sampledRoute(id) {
   if (!SAMPLED[id]) SAMPLED[id] = samplePath(getRoute(id).pts)
   return SAMPLED[id]
 }
-const ROUTES = buildRoutes()
+
+// ⚠ 改成 lazy：路徑要能在編輯模式搬動黑塊之後重算（見 invalidateRoutes）。
+//   正式投影只會算一次，行為與原本的「模組載入時算好」相同。
+let ROUTES = null
+
+/** 幾何被編輯過 → 丟掉路徑與取樣的快取，下次讀取時重算。 */
+export function invalidateRoutes() {
+  ROUTES = null
+  SAMPLED = {}
+}
 
 function getRoute(id) {
+  if (!ROUTES) ROUTES = buildRoutes()
   return ROUTES[id] ?? { pts: [pt(CX, CY)] }
 }
