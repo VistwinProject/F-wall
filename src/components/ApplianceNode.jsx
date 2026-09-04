@@ -217,21 +217,32 @@ function StatusPanel({ node, box }) {
   //   圖表填空間（status.trend 的資料先留著沒刪，之後想加回來還在）。
   //   要獨立的圖表面板請用 config/panels.js 的 CUSTOM_PANELS，那是另一回事。
 
-  // ⚠ 進出場只做不透明度，不做位移。
-  // 會動的 backdrop-filter 元素是最貴的情況 —— 元素每移動一格，合成器就得把底下
-  // 那塊背景重讀一次再模糊一次。九個面板同時進場正好是最壞情境。
+  // ── 進出場 ────────────────────────────────────────────────────────────────
+  // ⚠ 只做不透明度，不做位移。會動的 backdrop-filter 元素是最貴的情況 ——
+  //   元素每移動一格，合成器就得把底下那塊背景重讀一次再模糊一次。
+  //
+  // ⚠⚠ 玻璃底板【不能】放在會動 opacity 的群組裡面。
+  //   規格上 opacity < 1 的祖先會建立一個新的 backdrop root，backdrop-filter
+  //   於是取樣不到任何背景 —— 玻璃在整段動畫期間等於沒有模糊也沒有壓暗，背後的
+  //   框架格線就一條一條銳利地穿透過來，動畫結束那一幀才「啪」地變成玻璃。
+  //   實測 opacity 只要從 1 掉到 0.99 就足以觸發，不是掉幀也不是快取沒暖。
+  //
+  //   所以拆成兩層：玻璃在外層（永遠 opacity 1，出現即最終樣貌），引線與文字在
+  //   內層淡入淡出。代價是底板本身「啪」一下出現 —— 那正是要的：面板一出現就
+  //   已經是最上層的視覺狀態。
   return (
-    <motion.g
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: MOTION.dur, ease: MOTION.ease }}
-    >
+    <motion.g>
+      <GlassPlate x={px} y={py} w={PW} h={PH} />
+
+      <motion.g
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: MOTION.dur, ease: MOTION.ease }}
+      >
       {from && (
         <line x1={from[0]} y1={from[1]} x2={to[0]} y2={to[1]} stroke={COLORS.line} strokeWidth="1" />
       )}
-
-      <GlassPlate x={px} y={py} w={PW} h={PH} />
 
       {/* 標題：設備名，字級自動縮到塞得下面板寬 */}
       <text
@@ -279,6 +290,7 @@ function StatusPanel({ node, box }) {
           </g>
         )
       })}
+      </motion.g>
     </motion.g>
   )
 
