@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { APPLIANCE_IDS } from '../config/appliances.js'
 import { attachSimKeys } from '../shared/simKeys.js'
+import { socketClass } from '../shared/demoSocket.js'
 
 // ============================================================================
 // 連桌面端 Python ws server（權威資料源，port 8787），牆面只收不送。
@@ -64,7 +65,9 @@ export function useDeskState({ url = DESK_WS } = {}) {
     let retry = null
 
     const connect = () => {
-      ws = new WebSocket(url)
+      // ?demo → 假 server（見 shared/demoSocket.js）。靜態部署時沒有真的
+      // ws://localhost:8787，而且 HTTPS 頁面連 ws:// 會被瀏覽器直接擋掉。
+      ws = new (socketClass())(url)
       ws.onopen = () => setStatus('open')
       ws.onmessage = ({ data }) => {
         try {

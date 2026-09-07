@@ -47,6 +47,10 @@ function wallExportSink() {
 }
 
 export default defineConfig({
+  // ⚠ 相對 base：靜態部署時整包可以放在任何子路徑底下（GitHub Pages 的
+  //    專案站是 /<repo>/）。寫死 '/' 的話 build 出來的資產路徑會全部 404。
+  //    這一版沒有前端路由，所以相對路徑不會有 history fallback 的問題。
+  base: './',
   plugins: [react(), wallExportSink()],
   // 牆面投影機這台跑 kiosk，port 5174（SYNC-SPEC §1.1 拍板）。
   // strictPort：被佔用直接報錯，不偷偷 fallback 到 5180，免得投影機指向錯 URL。
