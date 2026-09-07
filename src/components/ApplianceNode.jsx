@@ -24,25 +24,57 @@ import GlassPlate, { estWidth } from './GlassPlate.jsx'
 // idle 用 lineStrong 而不是 line —— 這九個框是牆上實體展品的位置，
 // attract 狀態（還沒有人刷卡）觀眾走近時就該看得到。投影機的黑會被環境光墊高，
 // 0.10 那一階在現場幾乎看不見，所以框跟走線在這裡刻意分兩階。
+// 框內的家電照片（public/appliances/<id>.png，去背 PNG）。
+//
+// ⚠ 這九張是【投影出來的光】，不是貼圖裝飾。黑塊原本的用途是「不出光，
+//    讓牆上的實體展品不被打亮」；放了照片之後那一格就會亮起來。
+//    展場如果實體展品還在原位，這裡要調暗甚至關掉 —— 見下面的 BLOCK_IMG。
+// ⚠ 照片只佔框的 IMG_FIT，不貼齊邊緣：框是實體展品的預留位，照片貼齊邊會
+//    讓框線與照片黏在一起，看不出「框」。
+const IMG_FIT = 0.88
+// 沒感應時暗、有感應時亮 —— 待機時整面牆的出光量才不會被九張白色照片拉高。
+const BLOCK_IMG = { idle: 0.5, on: 0.95 }
+
 export function ApplianceBlock({ node, active }) {
   const t = `${MOTION.dur}s ${MOTION.easeCss}`
+  const x = node.x - node.w / 2
+  const y = node.y - node.h / 2
+  const iw = node.w * IMG_FIT
+  const ih = node.h * IMG_FIT
   return (
-    <rect
-      x={node.x - node.w / 2}
-      y={node.y - node.h / 2}
-      width={node.w}
-      height={node.h}
-      rx={RADIUS.sm}
-      fill="#000"
-      // FX.svgBlockStroke = false 時只剩黑底，框完全交給 canvas 上的發光外圈。
-      // ⚠ 黑底本身不能拿掉：投影機的黑 = 不出光，它負責蓋住往框內溢的 bloom。
-      stroke={FX.svgBlockStroke ? (active ? COLORS.lineActive : COLORS.lineStrong) : 'none'}
-      strokeWidth={active ? LINE_W : LINE_W_IDLE}
-      // active 時跟著 WebGL 那層同一個呼吸值（GlowCanvas 每幀寫進 --fx-breathe）。
-      // 沒有 canvas（?nofx）時變數不存在，退回 1 = 恆亮。
-      strokeOpacity={active ? 'var(--fx-breathe, 1)' : 1}
-      style={{ transition: `stroke ${t}, stroke-width ${t}` }}
-    />
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={node.w}
+        height={node.h}
+        rx={RADIUS.sm}
+        fill="#000"
+        // FX.svgBlockStroke = false 時只剩黑底，框完全交給 canvas 上的發光外圈。
+        // ⚠ 黑底本身不能拿掉：投影機的黑 = 不出光，它負責蓋住往框內溢的 bloom。
+        stroke={FX.svgBlockStroke ? (active ? COLORS.lineActive : COLORS.lineStrong) : 'none'}
+        strokeWidth={active ? LINE_W : LINE_W_IDLE}
+        // active 時跟著 WebGL 那層同一個呼吸值（GlowCanvas 每幀寫進 --fx-breathe）。
+        // 沒有 canvas（?nofx）時變數不存在，退回 1 = 恆亮。
+        strokeOpacity={active ? 'var(--fx-breathe, 1)' : 1}
+        style={{ transition: `stroke ${t}, stroke-width ${t}` }}
+      />
+      <image
+        // ⚠ 路徑一定要串 BASE_URL：GitHub Pages 的專案站掛在 /F-wall/ 底下，
+        //    寫死 "/appliances/x.png" 會 404（iPad 的 TOP.png 踩過同一個坑）。
+        href={`${import.meta.env.BASE_URL}appliances/${node.id}.png`}
+        x={node.x - iw / 2}
+        y={node.y - ih / 2}
+        width={iw}
+        height={ih}
+        // meet = 完整放進框內、不裁切。框的比例是照實體展品給的，
+        // 與去背後的照片比例接近，留白很小。
+        preserveAspectRatio="xMidYMid meet"
+        opacity={active ? BLOCK_IMG.on : BLOCK_IMG.idle}
+        style={{ transition: `opacity ${t}` }}
+        pointerEvents="none"
+      />
+    </g>
   )
 }
 
