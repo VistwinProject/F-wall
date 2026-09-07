@@ -1,5 +1,5 @@
 // ============================================================================
-// 展示模式的假 WebSocket（網址帶 ?demo 時啟用）
+// 展示模式的假 WebSocket（https 之下自動啟用，或網址帶 ?demo）
 //
 // 為什麼需要：三端的資料都來自本機的 NFC server（ws://localhost:8787）。
 // 部署到靜態主機（GitHub Pages 之類）之後那台 server 不存在，而且頁面是 HTTPS
@@ -19,9 +19,26 @@
 // ⚠ 這個檔案由 sync-tokens.mjs 從 F-wall 複製到 F-Ipad / F-table，不要單獨改。
 // ============================================================================
 
-/** 網址有沒有 ?demo。三端共用同一個判斷，不要各寫各的。 */
-export const isDemo = () =>
-  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('demo')
+/**
+ * 要不要走展示模式。三端共用同一個判斷，不要各寫各的。
+ *
+ * 規則：頁面是 https 就【自動】展示模式。
+ * ⚠ 這不是隨手加的方便：真實資料來自 ws://<host>:8787，而瀏覽器【禁止】從
+ *   https 頁面連 ws://（mixed content，硬性阻擋、無法用設定放行）。也就是說
+ *   https 之下真的那條路一定連不上，自動切過去才是正確行為 —— 不然使用者
+ *   看到的是一個永遠在重連的離線畫面，而且沒有任何提示說要加 ?demo。
+ * ⚠ 現場不受影響：投影機與 iPad 都是走 http（vite dev server / kiosk），
+ *   protocol 是 'http:'，這個判斷是 false。
+ * ⚠ 逃生門：?live 強制走真的連線（將來若改成 https + wss 就用這個，或直接
+ *   把這段條件改掉）；?demo 則是在 http 之下也強制展示模式（本機預覽用）。
+ */
+export const isDemo = () => {
+  if (typeof window === 'undefined') return false
+  const q = new URLSearchParams(window.location.search)
+  if (q.has('live')) return false
+  if (q.has('demo')) return true
+  return window.location.protocol === 'https:'
+}
 
 // 九台的順序＝鍵盤 1–9，與 server 的 SIM_IDS 一致。
 const SIM_IDS = ['hrv', 'ac', 'dehum', 'purifier', 'sensor', 'light', 'socket', 'curtain', 'bathfan']
@@ -149,5 +166,5 @@ DemoSocket.OPEN = 1
 DemoSocket.CLOSING = 2
 DemoSocket.CLOSED = 3
 
-/** 要 new 的那個類別：?demo → 假的，其餘 → 瀏覽器原生的。 */
+/** 要 new 的那個類別：展示模式 → 假的，其餘 → 瀏覽器原生的（判斷見 isDemo）。 */
 export const socketClass = () => (isDemo() ? DemoSocket : WebSocket)
