@@ -19,6 +19,13 @@
 
 const KEY = /^[0-9aA]$/
 
+// 按鈕與鍵盤共用協議入口；呼叫端負責選擇本機 demo 或既有 server。
+export function sendSimCommand(ws, key) {
+  if (!KEY.test(String(key)) || !ws || ws.readyState !== 1) return false
+  ws.send(JSON.stringify({ type: 'sim-key', key: String(key) }))
+  return true
+}
+
 /**
  * 掛上鍵盤監聽，把 1–9 / 0 / a 送給 server。
  * @param getSocket 回傳目前 WebSocket 的函式（斷線會重建，所以不能直接傳 socket）
@@ -33,9 +40,7 @@ export function attachSimKeys(getSocket) {
     const t = e.target
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return
 
-    const ws = getSocket()
-    if (!ws || ws.readyState !== WebSocket.OPEN) return
-    ws.send(JSON.stringify({ type: 'sim-key', key: e.key }))
+    sendSimCommand(getSocket(), e.key)
   }
   window.addEventListener('keydown', onKey)
   return () => window.removeEventListener('keydown', onKey)

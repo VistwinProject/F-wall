@@ -22,7 +22,17 @@ npm run build      # 產出 dist/
 npm run preview    # 預覽 build 結果（同樣 5174）
 ```
 
-### 除錯參數
+### 本機替代 NFC 卡片
+
+以獨立埠啟動：`npm run dev -- --host 127.0.0.1 --port 5419 --strictPort`，
+開啟 `http://127.0.0.1:5419/?demo&manual`。若埠已占用，請改用另一個未占用埠。
+左下角「替代 NFC 卡片」預設展開，可隨時收合；九張家電卡支援點選放上／拿走、多選、全部放上或全部拿走。
+`?demo&manual` 從空白狀態開始，不自動輪播；不需要實體 NFC server。
+按鈕及 1–9／A／0 鍵盤都經由 `sendSimCommand` → DemoSocket → 原有 NFC 事件 → `activeIds` 更新牆面。
+卡片按鈕只允許 DemoSocket，實體模式僅提供切換本機模擬的入口，保留原有硬體接收及鍵盤流程。
+本次只修改 F-wall，沒有執行 `sync-tokens.mjs` 或同步其他 F 系列 repo。
+
+### 其他除錯參數
 
 - `?all` — 強制所有家電同時 active，用來驗證連線 / 狀態面板排版不打架。正式投影不帶此參數。
 - `?fps` — 左下角顯示 FPS / 最長幀 / 掉幀數（見「現場效能驗證」）。

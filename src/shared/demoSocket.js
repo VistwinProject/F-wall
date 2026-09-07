@@ -72,7 +72,7 @@ export class DemoSocket {
     this.onclose = null
     this._timers = new Set()
     this._present = new Set() // 目前有卡的 slot_index
-    this._auto = true         // 有人用鍵盤介入就停掉自動編排
+    this._auto = !new URLSearchParams(window.location.search).has('manual')
     this._step = 0
     this._t = setTimeout(() => this._open(), OPEN_MS)
   }
@@ -155,7 +155,9 @@ export class DemoSocket {
     }
     // 收掉：一台一台熄，收完回到第一步
     const order = [...this._present].sort((a, b) => a - b)
-    order.forEach((i, k) => this._later(() => this._remove(i), k * CLEAR_MS))
+    order.forEach((i, k) => this._later(() => {
+      if (this._auto) this._remove(i)
+    }, k * CLEAR_MS))
     this._step = 0
     this._later(() => this._tick(), order.length * CLEAR_MS + 1200)
   }

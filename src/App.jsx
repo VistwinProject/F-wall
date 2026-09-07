@@ -3,6 +3,7 @@ import WallScene from './components/WallScene.jsx'
 import GlowCanvas from './components/GlowCanvas.jsx'
 import FpsMeter from './components/FpsMeter.jsx'
 import WallEditor from './components/WallEditor.jsx'
+import NfcCards from './components/NfcCards.jsx'
 import { useDeskState } from './hooks/useDeskState.js'
 import { APPLIANCE_IDS } from './config/appliances.js'
 import { isTuned, subscribe } from './config/wallTuning.js'
@@ -17,7 +18,7 @@ const flag = (name) =>
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
 
 export default function App() {
-  const { activeIds } = useDeskState()
+  const { activeIds, status, simulate, demo } = useDeskState()
   const noGlass = flag('noglass')
   const noFx = flag('nofx')
   const [edit, setEdit] = useState(() => flag('edit'))
@@ -60,6 +61,7 @@ export default function App() {
       <WallScene activeIds={activeIds} edit={edit} />
       {edit && <WallEditor onClose={() => setEdit(false)} />}
       {flag('fps') && <FpsMeter />}
+      {!edit && <NfcCards activeIds={activeIds} status={status} simulate={simulate} demo={demo} />}
 
       {/* ⚠ 有覆寫就一直顯示，編輯模式關掉也還在 —— 展場如果有人誤按 e 拖到東西，
           這是唯一會讓人發現「現在畫面不是程式碼裡那一版」的線索。 */}

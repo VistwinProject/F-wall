@@ -1,6 +1,6 @@
 # 部署到 GitHub Pages。
 #
-# ⚠ 分支是 redesign/minimal，不是 main —— F 區的三端都在這條分支上開發。
+# F-wall 正式預覽由 main 部署；原始版本另存 backup 分支。
 # ⚠ 部署出去的是【展示版】：現場靠本機的 NFC server（ws://localhost:8787）餵資料，
 #    靜態主機上那台不存在，而且 Pages 是 HTTPS、瀏覽器會直接擋掉 ws:// 的連線。
 #    所以連結要帶 ?demo 才看得到東西（見 src/shared/demoSocket.js）。
@@ -8,7 +8,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [redesign/minimal]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

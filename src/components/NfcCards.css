@@ -1,0 +1,61 @@
+.nfc-cards {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 550;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  display: flex;
+  flex-direction: column-reverse;
+  background: #10151ef5;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: #e7f3ff;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 6px 24px #0008;
+  cursor: default;
+}
+.nfc-cards button, .nfc-cards a {
+  min-height: 44px;
+  border: 1px solid var(--glass-border-2);
+  border-radius: 8px;
+  background: #ffffff08;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 8px;
+}
+.nfc-cards button:focus-visible, .nfc-cards a:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 2px;
+}
+.nfc-cards button:hover { background: #a0d8ff20; }
+.nfc-cards button:disabled { opacity: .5; cursor: wait; }
+.nfc-cards .nfc-cards-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  flex-shrink: 0;
+  border: 0;
+}
+.nfc-cards-heading > span:first-child { font-weight: 600; }
+.nfc-cards-heading > span:last-child { font-size: 12px; }
+.nfc-cards-body { padding: 12px; overflow-y: auto; min-height: 0; }
+.nfc-cards-body p { margin-bottom: 10px; }
+.nfc-cards-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.nfc-cards-grid button { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.nfc-cards-grid small { font-size: 12px; color: #bac7d4; }
+.nfc-cards-grid button[aria-pressed="true"] { background: #a0d8ff26; border-color: var(--glow); }
+.nfc-cards-grid button[aria-pressed="true"] small { color: #dcefff; }
+.nfc-cards-actions { display: flex; gap: 8px; margin-top: 10px; }
+.nfc-cards-actions button { flex: 1; }
+.nfc-cards .nfc-cards-help { font-size: 12px; margin: 10px 0 0; color: #bac7d4; }
+.wall-stage:has(.nfc-cards) .fps-meter { bottom: 72px; left: auto; right: 12px; }
+@media (max-width: 360px) {
+  .nfc-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

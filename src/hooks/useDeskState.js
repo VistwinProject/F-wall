@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { APPLIANCE_IDS } from '../config/appliances.js'
-import { attachSimKeys } from '../shared/simKeys.js'
-import { socketClass } from '../shared/demoSocket.js'
+import { attachSimKeys, sendSimCommand } from '../shared/simKeys.js'
+import { DemoSocket, isDemo, socketClass } from '../shared/demoSocket.js'
 
 // ============================================================================
 // 連桌面端 Python ws server（權威資料源，port 8787），牆面只收不送。
@@ -22,6 +22,12 @@ export function useDeskState({ url = DESK_WS } = {}) {
   const [activeIds, setActiveIds] = useState(() => new Set())
   const [status, setStatus] = useState('connecting') // connecting | open | closed
   const slotToId = useRef({}) // slot_index -> 上次看到的 data.id
+  const socketRef = useRef(null)
+  // 面板只允許本機模擬；保留既有實體讀卡及鍵盤 server 流程。
+  const simulate = useCallback((key) => {
+    const ws = socketRef.current
+    return ws instanceof DemoSocket && sendSimCommand(ws, key)
+  }, [])
 
   // 唯一的事件入口：WS onmessage 走這裡
   const handleMessage = useCallback((msg) => {
@@ -68,6 +74,7 @@ export function useDeskState({ url = DESK_WS } = {}) {
       // ?demo → 假 server（見 shared/demoSocket.js）。靜態部署時沒有真的
       // ws://localhost:8787，而且 HTTPS 頁面連 ws:// 會被瀏覽器直接擋掉。
       ws = new (socketClass())(url)
+      socketRef.current = ws
       ws.onopen = () => setStatus('open')
       ws.onmessage = ({ data }) => {
         try {
@@ -84,9 +91,7 @@ export function useDeskState({ url = DESK_WS } = {}) {
       ws.onerror = () => ws.close()
     }
     connect()
-    // ⚠ 牆面原則上【只收不送】(見檔頭)。?sim 是唯一的例外:開發時想直接在
-    //   牆面這個視窗按 1–9,不用切到平板。沒帶 ?sim 就完全不掛監聽,
-    //   而且 server 沒帶 --sim 也不會理這則訊息,現場不會誤觸。
+    // 保留既有鍵盤模擬：真 server 需 --sim；demo 只在本頁處理。
     const detachSim = attachSimKeys(() => ws)
 
     return () => {
@@ -94,8 +99,9 @@ export function useDeskState({ url = DESK_WS } = {}) {
       closedByUs = true
       clearTimeout(retry)
       ws?.close()
+      socketRef.current = null
     }
   }, [url, handleMessage])
 
-  return { activeIds, status, handleMessage }
+  return { activeIds, status, handleMessage, simulate, demo: isDemo() }
 }
