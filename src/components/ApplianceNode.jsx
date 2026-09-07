@@ -24,7 +24,16 @@ import GlassPlate, { estWidth } from './GlassPlate.jsx'
 // idle 用 lineStrong 而不是 line —— 這九個框是牆上實體展品的位置，
 // attract 狀態（還沒有人刷卡）觀眾走近時就該看得到。投影機的黑會被環境光墊高，
 // 0.10 那一階在現場幾乎看不見，所以框跟走線在這裡刻意分兩階。
-// 框內的家電照片（public/appliances/<id>.png，去背 PNG）。
+// 框內的家電照片（public/appliances/<id>.webp，去背圖）。
+//
+// 產生方式（換圖時照這個做，不然檔案會胖回去）：
+//   尺寸 = 該黑塊【實際繪製尺寸】的 2 倍，不是統一 720。
+//         繪製尺寸 = min(w×IMG_FIT/圖寬, h×IMG_FIT/圖高) × 圖尺寸（因為是 meet）。
+//         原本統一 720 時，九張存的是實際繪製尺寸的 2.2～4.4 倍，純浪費。
+//   格式 = WebP quality 92（method 6）。
+// ⚠ 為什麼是 92 而不是無損：實測九張與無損版比，可見區的 RGB 平均差 < 1.3/255，
+//    而【alpha 逐像素完全相同】—— 去背邊緣沒有被壓壞，那是這裡最要緊的部分。
+//    無損 WebP 是 687 KB、q92 是 90 KB（原本 PNG 2411 KB）。
 //
 // ⚠ 這九張是【投影出來的光】，不是貼圖裝飾。黑塊原本的用途是「不出光，
 //    讓牆上的實體展品不被打亮」；放了照片之後那一格就會亮起來。
@@ -62,7 +71,7 @@ export function ApplianceBlock({ node, active }) {
       <image
         // ⚠ 路徑一定要串 BASE_URL：GitHub Pages 的專案站掛在 /F-wall/ 底下，
         //    寫死 "/appliances/x.png" 會 404（iPad 的 TOP.png 踩過同一個坑）。
-        href={`${import.meta.env.BASE_URL}appliances/${node.id}.png`}
+        href={`${import.meta.env.BASE_URL}appliances/${node.id}.webp`}
         x={node.x - iw / 2}
         y={node.y - ih / 2}
         width={iw}
