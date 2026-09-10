@@ -1,0 +1,15 @@
+{
+  "name": "f-control-tower-remake",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.mjs --sim",
+    "live": "node server/index.mjs --live",
+    "demo": "node server/index.mjs --sim --demo"
+  },
+  "dependencies": {
+    "three": "^0.185.1",
+    "ws": "^8.18.0"
+  }
+}

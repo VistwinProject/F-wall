@@ -1,0 +1,50 @@
+/* iPad-only monochrome architectural background and operating-device symbols. */
+/* The table reuses the same symbols; its slot containers exist only visually while occupied. */
+.table .table-slot-icon{position:absolute;z-index:4;width:86px;height:86px;transform:translate(-50%,-50%);pointer-events:none;}
+.table .table-slot-icon .node-icon{position:static;display:block;transform:none;width:86px;height:86px;}
+.table .table-slot-icon .node-icon:after{display:none;}
+.table .slot-icon-leader{fill:none;stroke:#dcefff;stroke-width:1;opacity:0;transition:opacity .28s;}
+.table .slot-icon-leader.active{opacity:.4;}
+.ipad .completion{background:rgba(16,21,27,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.ipad .floorplan{opacity:.76;filter:grayscale(1);}
+:is(.ipad .graph-node,.table .table-slot-icon){z-index:6;overflow:visible;}
+:is(.ipad .graph-node,.table .table-slot-icon):disabled{opacity:1;}
+:is(.ipad,.table) .node-icon{position:absolute;left:50%;bottom:35px;transform:translateX(-50%);width:86px;height:86px;color:#747980;pointer-events:auto;transition:color .28s,filter .28s;}
+:is(.ipad,.table) .node-icon:after{content:'';position:absolute;left:50%;top:100%;height:11px;border-left:1px solid currentColor;opacity:.35;}
+:is(.ipad,.table) .appliance-icon{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 5px #0009);}
+:is(.ipad,.table) .icon-body{fill:#181b20;}
+:is(.ipad,.table) .icon-dot{fill:currentColor;stroke:none;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .node-icon{color:#fff;filter:drop-shadow(0 0 5px #ffffff70);animation:device-beacon 2.8s ease-in-out infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active:hover .node-icon,:is(.ipad .graph-node,.table .table-slot-icon).active:focus-visible .node-icon{filter:drop-shadow(0 0 9px #ffffffb0);}
+:is(.ipad,.table) .icon-air,:is(.ipad,.table) .icon-clean-air,:is(.ipad,.table) .icon-heat,:is(.ipad,.table) .icon-signal,:is(.ipad,.table) .icon-rays,:is(.ipad,.table) .icon-electric{opacity:.25;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-rotor{transform-origin:var(--rotor-x) var(--rotor-y);animation:device-fan 1.8s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-air{opacity:1;stroke-dasharray:5 6;animation:device-air 1.4s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-louver{transform-origin:40px 44px;animation:device-louver 3.5s ease-in-out infinite alternate;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-droplet{animation:device-drop 2.1s ease-in infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-clean-air{opacity:1;stroke-dasharray:7 6;animation:device-purify 1.6s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-readout{stroke-dasharray:12 5;animation:device-readout 2s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-signal{transform-origin:40px 40px;animation:device-signal 2.4s ease-out infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-sensor-dots{animation:device-led 2s steps(2,end) infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-rays{animation:device-lamplight 2.6s ease-in-out infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-bulb{fill:#ffffff18;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-filament{filter:drop-shadow(0 0 3px #fff);}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-electric{opacity:1;stroke-dasharray:18 10;animation:device-current 1.3s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-curtain-left{animation:device-curtain-left 5s ease-in-out infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-curtain-right{animation:device-curtain-right 5s ease-in-out infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon).active .icon-heat{opacity:1;stroke-dasharray:7 5;animation:device-heat 1.9s linear infinite;}
+:is(.ipad .graph-node,.table .table-slot-icon):not(.active) .appliance-icon *{animation:none;}
+@keyframes device-beacon{0%,100%{opacity:1}50%{opacity:.63}}
+@keyframes device-fan{to{transform:rotate(360deg)}}
+@keyframes device-air{from{stroke-dashoffset:22}to{stroke-dashoffset:0}}
+@keyframes device-louver{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+@keyframes device-drop{0%{transform:translateY(-2px);opacity:.35}35%{opacity:1}85%,100%{transform:translateY(6px);opacity:.1}}
+@keyframes device-purify{from{stroke-dashoffset:26}to{stroke-dashoffset:0}}
+@keyframes device-readout{to{stroke-dashoffset:-34}}
+@keyframes device-signal{0%{opacity:.15;transform:scale(.95)}55%{opacity:.9}100%{opacity:.15;transform:scale(1.05)}}
+@keyframes device-led{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes device-lamplight{0%,100%{opacity:.4}50%{opacity:1;filter:drop-shadow(0 0 3px #fff)}}
+@keyframes device-current{to{stroke-dashoffset:-56}}
+@keyframes device-curtain-left{0%,15%,100%{transform:translateX(0)}45%,70%{transform:translateX(-8px)}}
+@keyframes device-curtain-right{0%,15%,100%{transform:translateX(0)}45%,70%{transform:translateX(8px)}}
+@keyframes device-heat{from{stroke-dashoffset:0}to{stroke-dashoffset:24}}
+@media(prefers-reduced-motion:reduce){:is(.ipad .graph-node,.table .table-slot-icon).active .node-icon,:is(.ipad .graph-node,.table .table-slot-icon).active .appliance-icon *{animation:none!important;}:is(.ipad .graph-node,.table .table-slot-icon).active .icon-air,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-clean-air,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-heat,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-signal,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-rays,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-electric{opacity:1;}}

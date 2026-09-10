@@ -1,0 +1,74 @@
+.wall-operation{position:absolute;z-index:4;pointer-events:none;opacity:0;visibility:hidden;color:#c0d4df;background:radial-gradient(ellipse,#050c1480,transparent 76%);transition:opacity .45s,visibility .45s}
+.wall-operation.active{opacity:1;visibility:visible}
+.wall-operation svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px #000c)}
+.op-cool{color:#66c8fc}.op-warm{color:#fa8d7f}.op-clean{color:#a8e9df}.op-water{color:#76c9fc}.op-neutral{color:#b7c9d5}.op-liquid{color:#d7afef}.op-power{color:#f5d69b}.op-signal{color:#8ce1d9}
+.op-duct{stroke:currentColor;stroke-width:4.2;opacity:.23}.op-stream{stroke:currentColor;stroke-width:1.4;stroke-dasharray:5 8;opacity:.85;animation:op-stream var(--speed,2.8s) linear infinite;filter:drop-shadow(0 0 1px currentColor)}
+.op-tracer{stroke:#f5fcff;stroke-width:1.2;fill:none;offset-rotate:auto;offset-anchor:0px 0px;animation:op-transit var(--speed,2.8s) linear infinite;animation-delay:var(--delay,0s)}
+.op-part{stroke:#aac4d080;fill:#0d1721;stroke-width:.8}.op-chip{fill:#112532;stroke:#a9cad5;stroke-width:.9}.op-label{font:5px 'PingFang TC','Microsoft JhengHei',sans-serif;text-anchor:middle;fill:#e1edf4;stroke:none;letter-spacing:.2px;paint-order:stroke;filter:drop-shadow(0 1px 1px #000)}
+.op-rotor{transform-box:view-box;transform-origin:0 0;animation:op-spin 1.6s linear infinite;fill:#a2ccda70;stroke:#d0eef7;stroke-width:.7}.op-hub{fill:#f1fcff;stroke:none}
+.op-filter{stroke:#ccdcc7;stroke-width:.65}.op-filter .op-part{fill:#b9dcb50b}.op-coil{stroke:currentColor;stroke-width:1.6;filter:drop-shadow(0 0 1px currentColor)}
+.op-exchanger{stroke:#cddce9;fill:#7495ac17}.op-fin{stroke:#c9dae5;stroke-width:.7;opacity:.5}.op-transfer{stroke:#ffe3a7;stroke-dasharray:2 3;animation:op-stream 2s linear infinite;opacity:.7}
+.op-divider{stroke:#aac4d040;stroke-dasharray:2 4;stroke-width:.65}.op-drain{stroke:#78bcdb;stroke-width:1;opacity:.65}.op-drop{fill:#8ed9fc;stroke:#c6efff;stroke-width:.5;animation:op-drip 2.6s ease-in infinite;animation-delay:var(--delay,0s)}
+path.op-water{stroke:#84d6fb;fill:#72c8f71a;animation:op-water 3.2s ease-in-out infinite}.op-dust{fill:#d5b48a;stroke:none;animation:op-capture 2.6s ease-in infinite;animation-delay:var(--delay,0s)}
+.op-scan{stroke:#edb58c;stroke-dasharray:3 4;animation:op-stream 1.8s linear infinite}.op-radio{stroke:#9adee4;animation:op-radio 2.5s ease-in-out infinite}.op-signal-trace{stroke:#8ce1d9;stroke-dasharray:2 3;animation:op-stream 2s linear infinite}
+.op-led{stroke:#fff1c6;fill:#ffe1a980;animation:op-illumination 3.2s ease-in-out infinite}.op-photons{stroke:#ffefce;animation:op-illumination 3.2s ease-in-out infinite;filter:drop-shadow(0 0 2px #fff1c6)}
+.op-relay{stroke:#f5d69b;fill:#ffedbe}.op-contact{transform-box:fill-box;transform-origin:top center;animation:op-close .65s ease-out both}.op-load{stroke:#d4dde4;fill:#bdd8e80b}
+.op-belt{stroke:#b8c9d4;stroke-width:1.7;stroke-dasharray:2 3;animation:op-belt 8s ease-in-out infinite}.op-carrier{stroke:#e9f6fb;fill:#294656}.op-carrier.left{animation:op-open-left 8s ease-in-out infinite}.op-carrier.right{animation:op-open-right 8s ease-in-out infinite}
+.op-intake-hole{fill:#c5dbe5;stroke:none;opacity:.75}
+.op-pressure-chamber{fill:#a8e9df0a;stroke:#a8e9df80;stroke-width:1}
+.op-outlet-slot{stroke:#e5fff6;stroke-width:1.7;opacity:.85}
+.op-blind-slat{fill:#fff;stroke:none;transform-box:fill-box;transform-origin:center;animation:op-blind-tilt 6s ease-in-out infinite}
+.wall-operation[data-operation="curtain"]{background:none}
+.wall-operation[data-operation="curtain"] svg{filter:none}
+@keyframes op-blind-tilt{0%,15%,100%{transform:scaleY(.1)}45%,65%{transform:scaleY(1)}}
+.wall-operation *{animation-play-state:paused!important}.wall-operation.active *{animation-play-state:running!important}
+@keyframes op-transit{from{offset-distance:0%;opacity:0}8%,90%{opacity:1}to{offset-distance:100%;opacity:0}}
+@keyframes op-stream{to{stroke-dashoffset:-26}}
+@keyframes op-spin{to{transform:rotate(360deg)}}
+@keyframes op-drip{0%{opacity:0;transform:translateY(0)}25%{opacity:.95}to{opacity:0;transform:translateY(14px)}}
+@keyframes op-water{0%,100%{opacity:.65}50%{opacity:1}}
+@keyframes op-capture{0%{opacity:.85;transform:translateY(0)}to{opacity:0;transform:translateY(-12px)}}
+@keyframes op-radio{0%,100%{opacity:.25}45%{opacity:1}}
+@keyframes op-illumination{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes op-close{from{transform:rotate(-40deg)}to{transform:rotate(0)}}
+@keyframes op-belt{0%,12%,100%{stroke-dashoffset:0}44%,62%{stroke-dashoffset:35}}
+@keyframes op-open-left{0%,12%,100%{transform:translateX(0)}44%,62%{transform:translateX(-35px)}}
+@keyframes op-open-right{0%,12%,100%{transform:translateX(0)}44%,62%{transform:translateX(35px)}}
+@media(prefers-reduced-motion:reduce){.wall-operation.active *{animation:none!important}.op-tracer{display:none}}
+/* Solid process paths; traveling arrowheads carry the flow direction. */
+.wall-operation :is(.op-stream,.op-transfer,.op-divider,.op-scan,.op-signal-trace,.op-belt){stroke-dasharray:none;animation:none}
+.op-sensor-bracket{stroke:#badfe6;stroke-width:1.3;fill:none}
+.op-sensor-grid{stroke:#98c8d7;stroke-width:.7;opacity:.22}
+.op-sensor-point{fill:#d1f3f7;stroke:none;opacity:.65}
+.op-sensor-beam-halo{stroke:#8de6f5;stroke-width:9;opacity:.18;filter:blur(2px)}
+.op-sensor-beam{stroke:#f0feff;stroke-width:1.8;filter:drop-shadow(0 0 2px #a4f0ff)}
+.op-sensor-sweep{animation:op-sensor-sweep 5s linear infinite}
+.op-sensor-receive{animation:op-sensor-receive 5s linear infinite}
+.op-sensor-send{animation:op-sensor-send 5s linear infinite}
+.op-sensor-output{stroke:#c3f8fc;stroke-width:1.4;fill:none}
+@keyframes op-sensor-receive{0%{opacity:0}8%,24%{opacity:1}34%,100%{opacity:0}}
+@keyframes op-sensor-sweep{0%,27%{opacity:0;transform:translateX(0)}30%{opacity:1;transform:translateX(0)}67%{opacity:1;transform:translateX(63px)}71%,100%{opacity:0;transform:translateX(63px)}}
+@keyframes op-sensor-send{0%,70%{opacity:0}77%,91%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.op-sensor-sweep{display:none}.op-sensor-receive,.op-sensor-send{opacity:1}}
+/* Simplified power receipt and soft lamp ignition. */
+.op-lamp-power{animation:op-lamp-power 6s ease-in-out infinite}
+.op-lamp-rise{animation:op-lamp-rise 6s ease-in-out infinite}
+.op-lamp-aura{fill:#ffe6a8;stroke:none;opacity:.2;filter:blur(6px)}
+.op-lamp-core{fill:#fff0bc;fill-opacity:.3;stroke:#fff4d2;stroke-width:1.5}
+.op-lamp-filament,.op-lamp-rays{stroke:#fff7df;stroke-width:1.5;filter:drop-shadow(0 0 2px #ffe7a6)}
+.op-socket-module{fill:#14232c;stroke:#d9edf2;stroke-width:1}
+.op-socket-contacts{stroke:#ffedc3;stroke-width:1.5}
+.op-socket-feedback{stroke:#8ce1d9;stroke-width:1;opacity:.7}
+.op-socket-pulse{fill:#c4faf3;stroke:none;animation:op-radio 2.8s ease-in-out infinite}
+@keyframes op-lamp-power{0%{opacity:0}8%,78%{opacity:1}100%{opacity:0}}
+@keyframes op-lamp-rise{0%,18%{opacity:.08}56%,82%{opacity:1}100%{opacity:.08}}
+@media(prefers-reduced-motion:reduce){.op-lamp-power,.op-lamp-rise{opacity:1}}
+/* Surface-mapped details, deliberately free of diagram panels and labels. */
+.wall-operation{background:none}
+.op-filter-shell{stroke:#baded2;stroke-width:1;opacity:.42}
+.op-diffuser-glow{fill:#fff0c9;fill-opacity:.76;stroke:#fff6dc;stroke-width:.7;filter:drop-shadow(0 0 3px #fff0c980)}
+.op-model-scan{animation:op-model-scan 5s linear infinite}
+.op-socket-feed{stroke:#f5d69b;stroke-width:1.1}
+.op-socket-lit{stroke:#fff0c5;stroke-width:1.5;animation:op-radio 2.8s ease-in-out infinite}
+@keyframes op-model-scan{0%,27%{opacity:0;transform:translateX(0)}30%{opacity:1;transform:translateX(0)}67%{opacity:1;transform:translateX(56px)}71%,100%{opacity:0;transform:translateX(56px)}}
+@media(prefers-reduced-motion:reduce){.op-model-scan{display:none}}

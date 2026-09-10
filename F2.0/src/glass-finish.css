@@ -1,0 +1,124 @@
+/* Optical glass finish; geometry and mapping coordinates remain unchanged. */
+:root{--glass-ink:rgba(13,24,34,.48);--glass-rim:rgba(207,231,242,.24);--glass-lit:rgba(209,244,255,.76);--glass-ease:cubic-bezier(.16,1,.3,1)}
+:is(.wall-panel,.info-panel,.device-card,.detail-card).glass{
+ isolation:isolate;
+ background:linear-gradient(145deg,rgba(241,250,255,.12),rgba(198,225,239,.025) 38%,rgba(164,197,216,.065)),var(--glass-ink);
+ border:1px solid var(--glass-rim);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(105,157,185,.13),0 10px 28px rgba(2,8,15,.24);
+ backdrop-filter:blur(18px) saturate(1.18);-webkit-backdrop-filter:blur(18px) saturate(1.18);
+}
+:is(.wall-panel,.info-panel,.device-card,.detail-card).glass::before{
+ content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+ background:linear-gradient(118deg,rgba(255,255,255,.055),transparent 32%,transparent 72%,rgba(180,228,248,.025));
+ z-index:-1;
+}
+/* Only the one-pixel perimeter is exposed: no light sheet over the text. */
+:is(.wall-panel,.info-panel,.device-card,.detail-card).glass::after{
+ content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;
+ background:linear-gradient(125deg,rgba(255,255,255,.64),rgba(186,224,241,.08) 28%,rgba(133,181,205,.04) 58%,rgba(219,245,255,.4) 84%,rgba(255,255,255,.12));
+ -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+ -webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;
+ opacity:.48;transition:opacity .6s ease;
+}
+.wall-panel{transition:clip-path .55s var(--glass-ease),visibility .55s,border-color .55s,box-shadow .7s}
+.device-card{transition:color .4s,border-color .5s,box-shadow .7s,background .5s}
+.info-panel{transition:border-color .5s,box-shadow .7s}
+:is(.wall-panel.active,.device-card.active,.info-panel.nfc-linked).glass{
+ border-color:rgba(204,237,251,.46);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.48),inset 0 -1px 0 rgba(159,216,241,.2),0 0 0 1px rgba(167,221,243,.035),0 0 18px rgba(139,211,239,.09),0 12px 30px rgba(2,8,15,.26);
+}
+:is(.wall-panel.active,.device-card.active,.info-panel.nfc-linked).glass::after{
+ opacity:1;background-image:linear-gradient(115deg,rgba(194,231,249,.22) 12%,rgba(255,255,255,.96) 26%,rgba(187,234,252,.4) 34%,rgba(133,189,211,.06) 50%,rgba(227,248,255,.68) 76%,rgba(193,229,244,.12) 90%);
+ background-size:240% 100%;animation:glass-edge-arrival 1.35s var(--glass-ease) both;
+}
+.wall-panel h2{color:#f2f8fb;text-shadow:0 1px 5px #0005}
+.wall-panel dl>div{border-bottom:1px solid rgba(217,236,247,.035)}
+.wall-panel dl>div:last-child{border-bottom:0}
+.wall-panel dd{color:#e9f5fb}.wall-code{border-bottom-color:rgba(214,239,251,.14)}
+.wall-panel.active .wall-code>span:last-child{color:#c4e8ed}
+.metric-box{background:linear-gradient(140deg,rgba(235,248,255,.048),rgba(12,24,35,.12));border-color:rgba(218,239,249,.15);box-shadow:inset 0 1px 0 rgba(255,255,255,.065),0 3px 12px rgba(0,6,15,.065)}
+.progress>div{box-shadow:inset 0 1px 3px #0004;background:rgba(208,231,244,.08)}
+.progress i{background:linear-gradient(90deg,#75b5c9,#cdebf5);box-shadow:0 0 9px #beeaff30}
+.device-indicator{background:linear-gradient(145deg,#ecf7ff09,#09172224);box-shadow:inset 0 1px 0 #fff1;transition:background .5s,box-shadow .6s,border-color .5s}
+.active .device-indicator{background:radial-gradient(circle at 35% 25%,#f5ffff 0%,#c2e5ed 22%,#719fab 62%,#345667 100%);border-color:#e1f5f9b3;box-shadow:inset 0 1px 2px #fff9,inset 0 -3px 8px #19354480,0 0 13px #b7e6f333;animation:glass-led-arrival .9s ease-out both}
+.slot-circle{position:relative;isolation:isolate;box-shadow:inset 0 1px 0 #f1faff0a;transition:border-color .55s,box-shadow .65s,background .55s,color .4s}
+.slot.active .slot-circle{background:radial-gradient(circle at 35% 20%,#e6f8ff12,#d0edff03 70%);border-color:#d9f1f9b3;box-shadow:inset 0 1px 0 #fff6,inset 0 0 14px #bce6ff0a,0 0 16px #a5dcf51a}
+.slot-circle::before,.slot-circle::after{content:'';position:absolute;inset:-6px;border:1px solid transparent;border-radius:50%;pointer-events:none;opacity:0}
+.slot.active .slot-circle::before{border-color:#cbeefa70;animation:nfc-ring-arrival 1.15s var(--glass-ease) both}
+.slot.active .slot-circle::after{inset:5px;border-top-color:#f0fcff85;border-right-color:#d7f2ff20;opacity:.7;animation:nfc-rim-settle 1.3s var(--glass-ease) both}
+.graph-hub.active span{background:radial-gradient(circle at 35% 20%,#e6f8ff1a,#142c3b55);box-shadow:inset 0 1px 0 #fff4,0 0 12px #b4e6f51a}
+.table-core.active{box-shadow:inset 0 1px 0 #e2f5ff30,inset 0 0 34px #bedfff06}
+@keyframes glass-edge-arrival{from{background-position:140% 0;opacity:.25}35%{opacity:1}to{background-position:0 0;opacity:1}}
+@keyframes glass-led-arrival{0%{filter:brightness(.65)}38%{filter:brightness(1.3)}100%{filter:brightness(1)}}
+@keyframes nfc-ring-arrival{0%{transform:scale(.96);opacity:0}20%{opacity:.65}100%{transform:scale(1.22);opacity:0}}
+@keyframes nfc-rim-settle{from{transform:rotate(-100deg);opacity:0}to{transform:rotate(0);opacity:.7}}
+/* Retain the existing glass-off switch and motion accessibility preference. */
+.no-glass :is(.wall-panel,.info-panel,.device-card,.detail-card).glass{background:#0b0d11;backdrop-filter:none;-webkit-backdrop-filter:none}
+.no-glass :is(.wall-panel,.info-panel,.device-card,.detail-card).glass::before{display:none}
+@supports not ((mask-composite:exclude) or (-webkit-mask-composite:xor)){
+ :is(.wall-panel,.info-panel,.device-card,.detail-card).glass::after{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ :is(.wall-panel,.info-panel,.device-card,.detail-card).glass::after,.active .device-indicator,.slot.active .slot-circle::before,.slot.active .slot-circle::after{animation:none!important}
+ .slot.active .slot-circle::before{display:none}
+}
+/* iPad-only optical indicator. Active state follows the existing NFC binding. */
+.ipad .device-card .device-indicator{
+ position:relative;isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse at 32% 18%,#e1f3ff12,transparent 55%),linear-gradient(155deg,#273b49,#101b25 70%);
+ border-color:#b7d7e533;
+ box-shadow:inset 0 1px 1px #e9f8ff29,inset 0 -3px 6px #0005,0 1px 2px #0004;
+}
+.ipad .device-card .device-indicator::before{
+ content:'';position:absolute;inset:5px;border-radius:9px;pointer-events:none;
+ background:radial-gradient(ellipse at 45% 38%,#efffff 0%,#c3f2ff 14%,#80c9e8 38%,#437f9b 68%,#294454 100%);
+ box-shadow:0 0 8px #a7e4ff55,inset 0 1px 2px #fff9;
+ opacity:0;transition:opacity .65s ease;
+}
+.ipad .device-card .device-indicator::after{
+ content:'';position:absolute;inset:1px;border-radius:11px;pointer-events:none;
+ background:linear-gradient(145deg,#ffffff60,transparent 29%,transparent 67%,#b1e3fc14),linear-gradient(180deg,#fff2,transparent 42%);
+ border-top:1px solid #e4f6ff66;opacity:.35;transition:opacity .65s ease;
+}
+.ipad .device-card.active .device-indicator{
+ background:radial-gradient(ellipse at 35% 20%,#bfe9f73d,#39637a85 48%,#182d3c 100%);
+ border-color:#cceefa99;
+ box-shadow:inset 0 1px 2px #f1fcff80,inset 0 -3px 7px #102b4380,0 0 12px #9cdfff29,0 0 22px #9cdfff0d;
+ animation:none;
+}
+.ipad .device-card.active .device-indicator::before{
+ opacity:.85;animation:ipad-indicator-shimmer 4.8s ease-in-out infinite;
+}
+.ipad .device-card.active .device-indicator::after{opacity:.85}
+.ipad .device-card[data-device="ac"] .device-indicator::before{animation-delay:-.7s}
+.ipad .device-card[data-device="dehum"] .device-indicator::before{animation-delay:-1.4s}
+.ipad .device-card[data-device="purifier"] .device-indicator::before{animation-delay:-2.1s}
+.ipad .device-card[data-device="sensor"] .device-indicator::before{animation-delay:-2.8s}
+.ipad .device-card[data-device="light"] .device-indicator::before{animation-delay:-.4s}
+.ipad .device-card[data-device="socket"] .device-indicator::before{animation-delay:-1.1s}
+.ipad .device-card[data-device="curtain"] .device-indicator::before{animation-delay:-1.8s}
+.ipad .device-card[data-device="bathfan"] .device-indicator::before{animation-delay:-2.5s}
+@keyframes ipad-indicator-shimmer{
+ 0%,100%{opacity:.82}22%{opacity:.95}42%{opacity:.79}48%{opacity:.86}54%{opacity:.81}73%{opacity:.94}88%{opacity:.85}
+}
+@media(prefers-reduced-motion:reduce){.ipad .device-card.active .device-indicator::before{animation:none!important;opacity:.88}}
+/* Let the completed graph remain visible while the closing screen settles in. */
+.ipad .completion{transition:opacity 2.2s cubic-bezier(.22,.61,.36,1),visibility 2.2s;}
+.ipad .completion>div{opacity:0;transform:translateY(8px);transition:opacity 1.8s ease,transform 2.2s cubic-bezier(.22,.61,.36,1);}
+.ipad .completion.show>div{opacity:1;transform:translateY(0);transition-delay:.25s;}
+@media(prefers-reduced-motion:reduce){.ipad .completion,.ipad .completion>div{transition-duration:.01ms!important;transition-delay:0s!important;transform:none;}}
+/* Table coordinates are authored at 1920 x 1000. The frame's inset and
+   border must not shrink only the SVG/WebGL layers relative to DOM circles.
+   The outer stage still scales all layers together to fit the projection. */
+.table .table-scene{inset:auto;left:0;top:0;width:1920px;height:1000px;}
+.table .table-scene>.scene-svg,.table .table-scene>.glow-canvas{width:1920px!important;height:1000px!important;}
+.table .slot.active .slot-label{letter-spacing:1px;color:#e9f6fc;}
+.table .slot-device:empty{display:none;}
+/* Clip sliding dashboard content to the stationary glass enclosure. */
+.table #info-panel{overflow:hidden;}
+/* Blur only the expanded color field, never dashboard text or NFC geometry. */
+.table .table-gradient-field{position:absolute;inset:-64px;z-index:0;pointer-events:none;background:#16181d;filter:blur(32px);}
+/* Transparent glow alpha must not dim the gradient beneath its ribbons.
+   Screen compositing keeps dark/empty glow pixels neutral to the backdrop. */
+.table .table-frame{isolation:isolate;}
+.table .table-scene>.glow-canvas{mix-blend-mode:screen;}

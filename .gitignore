@@ -27,3 +27,11 @@ npm-debug.log*
 
 # 編輯模式（鍵盤 e）「存到專案」寫出來的匯出檔，不是設定檔
 wall-export.txt
+
+F2.0/node_modules/
+F2.0/dist/
+F2.0/server/uid-map.json
+F2.0/server/reader-map.json
+.env
+.env.*
+.DS_Store

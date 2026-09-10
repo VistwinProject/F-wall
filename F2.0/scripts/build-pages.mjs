@@ -1,0 +1,25 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const role=process.argv[2],repo={wall:'F-wall',table:'F-table',ipad:'F-Ipad'}[role];
+if(!repo)throw Error('Usage: node scripts/build-pages.mjs wall|table|ipad');
+const out=path.join(root,'dist'),base='/'+repo+'/';
+await fs.rm(out,{recursive:true,force:true});await fs.mkdir(out,{recursive:true});
+await fs.cp(path.join(root,'public'),out,{recursive:true});
+await fs.cp(path.join(root,'src'),path.join(out,'src'),{recursive:true});
+await fs.cp(path.join(root,'node_modules/three/build'),path.join(out,'vendor'),{recursive:true});
+await fs.cp(path.join(root,'node_modules/three/examples/jsm'),path.join(out,'vendor-addons'),{recursive:true});
+const assets=text=>text.replace(/(["'`])\/(src\/|vendor\/|vendor-addons\/|appliances\/|device-audio\/|f-intro\.wav|f-completion\.wav|floorplan-lineart-v2\.png|TOP\.png)/g,(_,quote,asset)=>quote+base+asset);
+async function rewrite(dir){for(const entry of await fs.readdir(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory())await rewrite(file);else if(/\.(js|css)$/.test(file)){const source=await fs.readFile(file,'utf8');await fs.writeFile(file,assets(source));}}}
+await rewrite(path.join(out,'src'));
+let app=await fs.readFile(path.join(out,'src/app.js'),'utf8');
+app="import {PagesSession} from './pages-session.js';\n"+app;
+app=app.replace(/^const role=.*;$/m,`const role='${role}';`).replace('new Session(role)','new PagesSession(role)');
+for(const [port,r]of [[6274,'F-wall'],[6273,'F-table'],[6275,'F-Ipad']])app=app.replaceAll(`http://\${location.hostname}:${port}/${r==='F-wall'?'wall':r==='F-table'?'table':'ipad'}`,`https://vistwinproject.github.io/${r}/`);
+await fs.writeFile(path.join(out,'src/app.js'),app);
+let html=assets(await fs.readFile(path.join(root,'index.html'),'utf8'));
+html=html.replace('<body>','<body><div class="pages-demo-badge">2.0 公開展示版 · 模擬 NFC</div>');
+await fs.writeFile(path.join(out,'index.html'),html);await fs.writeFile(path.join(out,'404.html'),html);await fs.writeFile(path.join(out,'.nojekyll'),'');
+await fs.appendFile(path.join(out,'src/glass-finish.css'),'\n.pages-demo-badge{position:fixed;right:12px;top:10px;z-index:39;padding:5px 9px;background:#11202bcc;border:1px solid #cbe6f32e;border-radius:6px;color:#c4d7e5;font:11px sans-serif;pointer-events:none}\n');
+console.log(`Built ${role} GitHub Pages demo at ${out}`);
