@@ -30,3 +30,24 @@
 @keyframes intro-prompt-breathe{0%,100%{opacity:.58}50%{opacity:1}}
 @media(prefers-reduced-motion:reduce){.ipad .welcome .intro-prompt{animation:none!important;opacity:1}}
 .device-audio-unlock{position:fixed;z-index:65;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 22px;border:1px solid #d2edf580;border-radius:24px;background:#152631f5;color:#e8f7ff;box-shadow:0 4px 20px #0005;font-size:16px;}
+
+/* Exhibition welcome background: navy plane and curved ice-blue light ribbons. */
+:is(.ipad,.table) .welcome{
+ isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse at 84% 72%,#123c78 0%,transparent 52%),radial-gradient(ellipse at 15% 15%,#122963 0%,transparent 62%),#081440;
+ border-color:#7bbbe64d;
+}
+:is(.ipad,.table) .welcome::before{
+ content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:url('/backgrounds/exhibition-arcs.svg?v=3') center/cover no-repeat;
+}
+:is(.ipad,.table) .welcome::after{
+ content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 44%,#071334a6 0%,#08143b66 30%,transparent 67%);
+}
+:is(.ipad,.table) .welcome>div{position:relative;z-index:1}
+:is(.ipad,.table) .welcome h1{color:#e1f4ff;text-shadow:0 2px 20px #020d33b3,0 0 48px #83d4ff18}
+:is(.ipad,.table) .welcome-eyebrow{color:#89cff5}
+:is(.ipad,.table) .welcome-instruction{color:#c3dff0;text-shadow:0 2px 8px #061032}
+/* Crop the taller iPad welcome artwork past its edges, like the table view. */
+.ipad .welcome::before{transform:scale(1.2);transform-origin:center}

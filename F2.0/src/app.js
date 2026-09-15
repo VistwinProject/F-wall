@@ -1,6 +1,8 @@
-import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING,TREND} from './devices.js';
+import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING} from './devices.js';
 import {Session} from './session.js';
-import {PANEL_CONTENT,panelFacts} from './panel-content.js';
+import {PANEL_CONTENT,TABLE_CONTENT,IPAD_SUMMARY,panelFacts} from './panel-content.js';
+import {tableInsights,tableGauge} from './table-insights.js';
+import {ipadDetail,insightPanel} from './ipad-insights.js';
 import {applianceIcon} from './appliance-icons.js';
 import {wallOperation} from './wall-operations.js';
 import {Glow} from './glow.js';
@@ -28,9 +30,6 @@ function fit(){const scale=Math.min(innerWidth/1920,innerHeight/stageHeight);sta
 addEventListener('resize',fit);fit();
 const svg=(content,width=1920,height=1080,cls='scene-svg')=>`<svg class="${cls}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${content}</svg>`;
 const boxMarkup=(box,extra='')=>{const[x,y,w,h]=box;return `<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="6" fill="#000" ${extra}/>`;};
-const metric=d=>d.id==='socket'?'負載功率':d.unit==='次'?(d.id==='sensor'?'偵測次數':'啟閉次數'):d.unit==='hr'?'運轉時數':'用電量';
-const today=d=>d.id==='socket'?'目前負載':d.unit==='次'?(d.id==='sensor'?'今日偵測':'今日啟閉'):d.unit==='hr'?'今日運轉':'今日用電量';
-const monthUnit=d=>d.id==='socket'?'kWh':d.unit;
 let glow,scene,session,state,rotation,intro,completionAudio,focused=null,detail=null,completionDismissed=false;
 let completionTimer=null,completionReady=false;
 let overrides=structuredClone(defaultPositions[role]);
@@ -107,15 +106,11 @@ const notice=document.createElement('div');notice.className='notice';notice.setA
 let noticeTimer;
 function notify(text){notice.textContent=text;notice.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('show'),3500);}
 
-function chart(d){
-  const max=Math.max(...TREND),scale=d.id==='hrv'?1:Math.max(.15,d.value/28.5);
-  return `<div class="chart-caption">${monthUnit(d)}</div><div class="bar-chart"><div class="y-axis">${[50,40,30,20,10,0].map(n=>`<span>${Math.round(n*scale)}</span>`).join('')}</div><div class="bars">${TREND.map((n,i)=>`<i style="height:${n/max*100}%" title="${String(i).padStart(2,'0')}:00 ${(n*scale).toFixed(1)} ${monthUnit(d)}"></i>`).join('')}</div></div><div class="x-axis"><span>00</span><span>04</span><span>08</span><span>12</span><span>16</span><span>20</span><span>24</span></div>`;
-}
 function infoMarkup(d){
-  if(!d)return `<h1>感應 待機 中</h1><section class="metric-box waiting-message"><div class="waiting-dots">● ● ●</div><h2>請將物件放上感應區</h2><p>感應後將顯示該家電的即時用電、累積消耗與<br>預測性維護排程</p></section><section class="metric-box system-status"><div><span>系統狀態</span><b>${state?.online?'正常運作':'連線中斷'}</b></div><div><span>資料來源</span><b>展示數據</b></div></section>`;
+  if(!d)return `<h1>感應 待機 中</h1><section class="metric-box waiting-message"><div class="waiting-dots">● ● ●</div><h2>請將物件放上感應區</h2><p>感應後將顯示該家電的運作狀態與快速資訊，<br>詳細資訊請於 iPad 查看</p></section><section class="metric-box system-status"><div><span>系統狀態</span><b>${state?.online?'正常運作':'連線中斷'}</b></div><div><span>資料來源</span><b>展示數據</b></div></section>`;
   if(role!=='table')return `<section class="metric-box panel-facts-detail">${panelFacts(d.id,role)}</section>`;
-  const percent=Math.round(d.month/d.target*100);
-  return `<h1>${d.label}${metric(d)}</h1><section class="metric-box usage"><h2>${today(d)}</h2><div class="today-value"><span><strong data-count="${d.value}">${d.value}</strong> ${d.unit}</span><span class="delta">較昨日<br><b>${d.delta<0?'↓':d.delta>0?'↑':'－'} ${Math.abs(d.delta)}%</b></span></div><div class="month"><span>本月累積${d.id==='socket'?'用電量':metric(d)}</span><span><strong data-count="${d.month}">${d.month.toLocaleString('en-US')}</strong> / 目標 ${d.target.toLocaleString('en-US')} ${monthUnit(d)}</span></div><div class="progress"><div><i style="width:${Math.min(100,percent)}%"></i></div><b data-count="${percent}" data-count-suffix="%">${percent}%</b></div></section><section class="metric-box trend"><h2>${metric(d)}趨勢</h2>${chart(d)}</section><section class="metric-box maintenance"><h2>維養排程</h2><table><thead><tr><th>項目</th><th>上次維養</th><th>下次維養</th><th>狀態</th></tr></thead><tbody>${d.maintenance.map((name,i)=>`<tr><td>${name}</td><td>2026/${['05/20','04/20','05/10','03/15'][i]}</td><td>2026/${['06/20','07/20','08/10','09/15'][i]}</td><td>${i===0?'即將到期':'正常'}</td></tr>`).join('')}</tbody></table></section>`;
+  const content=TABLE_CONTENT[d.id],label=PANEL_CONTENT[d.id].label;
+  return `<h1>${label}</h1><section class="metric-box usage panel-facts-detail table-quick-facts"><div class="table-quick-copy"><h2>${content.heading}</h2>${panelFacts(d.id,'table')}</div>${tableGauge(d.id)}</section>${tableInsights(d.id)}`;
 }
 let focusTimer=null,focusAnimations=[],metricFrame=null,metricAnimations=[];
 function stopMetricEntry(){
@@ -134,17 +129,21 @@ function animateMetricEntry(panel){
     return {el,value,formatter,suffix};
   });
   const options={duration,easing:'cubic-bezier(.16,1,.3,1)'};
-  for(const bar of panel.querySelectorAll('.bars i')){
+  for(const bar of panel.querySelectorAll('.bars i,.table-energy-track i')){
     bar.style.transformOrigin='center bottom';
-    metricAnimations.push(bar.animate([{transform:'scaleY(0)',opacity:.25},{transform:'scaleY(1)',opacity:1}],options));
+    metricAnimations.push(bar.animate([{transform:'scaleY(0)',opacity:.25},{transform:'scaleY(1)',opacity:1}],{...options,delay:metricAnimations.length*65,fill:'backwards'}));
   }
   for(const fill of panel.querySelectorAll('.progress i')){
     fill.style.transformOrigin='left center';
     metricAnimations.push(fill.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],options));
   }
+  const rings=Array.from(panel.querySelectorAll('[data-ring]'),el=>({el,value:Number(el.dataset.ring)}));
+  for(const {el} of rings)el.setAttribute('stroke-dasharray','0 100');
+  panel.querySelectorAll('.table-plan li').forEach((row,i)=>metricAnimations.push(row.animate([{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:600,delay:250+i*100,fill:'backwards',easing:options.easing})));
   function tick(now){
-    const t=Math.min(1,(now-started)/duration),eased=1-Math.pow(1-t,4);
+    const t=Math.max(0,Math.min(1,(now-started)/duration)),eased=1-Math.pow(1-t,4);
     for(const {el,value,formatter,suffix}of counters)el.textContent=formatter.format(t===1?value:value*eased)+suffix;
+    for(const {el,value}of rings)el.setAttribute('stroke-dasharray',`${t===1?value:value*eased} 100`);
     if(t<1)metricFrame=requestAnimationFrame(tick);else metricFrame=null;
   }
   metricFrame=requestAnimationFrame(tick);
@@ -214,7 +213,7 @@ function renderTable(){
     }
     scene.querySelector(`[data-icon-leader="${i+1}"]`).classList.toggle('active',on);
     const el=scene.querySelector(`[data-slot="${i+1}"]`);el.classList.toggle('active',on);el.classList.toggle('reader-online',!!s?.reader);el.classList.toggle('unknown',s?.known===false);
-    el.querySelector('.slot-label').textContent=on?device.label:`NFC ${String(i+1).padStart(2,'0')}`;
+    el.querySelector('.slot-label').textContent=on?PANEL_CONTENT[device.id].label:`NFC ${String(i+1).padStart(2,'0')}`;
     el.querySelector('.slot-device').textContent=s?.known===false?'未登記卡片':'';
     el.querySelector('button').disabled=!state.sim||!state.online;
     scene.querySelector(`[data-slot-wire="${i+1}"]`).classList.toggle('active',on);
@@ -229,7 +228,7 @@ function renderGraph(){
   for(const [ids,right]of [[LEFT,false],[RIGHT,true]])ids.forEach((id,i)=>{
     const d=BY_ID[id],on=active.includes(id),p=graphPosition(id),card=scene.querySelector(`[data-device="${id}"]`),node=scene.querySelector(`[data-node="${id}"]`);
     card.classList.toggle('active',on);card.setAttribute('aria-disabled',String(!on));node.classList.toggle('active',on);node.disabled=!on&&!fullEditor?.open;
-    card.querySelector('.device-reading').innerHTML=on?`<strong>${d.value}</strong> <small>${d.unit}</small>`:d.sub;
+    card.querySelector('.device-reading').innerHTML=on?IPAD_SUMMARY[id]:d.sub;
     const cp=positioned('card-'+id,right?1620:40,right?60+i*290:60+i*220);
     svgLines.push(`<polyline class="leader ${on?'active':''}" points="${svgPoints([[cp[0]+(right?0:250),cp[1]+46],p])}"/>`);
     if(on){addLight(paths,'node-'+id,ring(...p,tune.ringR),false,1.3);const route=between(p,hub,tune.ringR+2,tune.hubR+2);addLight(paths,'node-link-'+id,route,false,1.4);addLight(paths,'node-packet-'+id,route,true,2.6);}
@@ -283,13 +282,29 @@ glow.prewarm(tune);
 
 function send(type,fields){if(!session.send(type,fields)){notify('連線中斷，正在重新連線；恢復後可繼續操作。');return false;}return true;}
 function toggle(slot){if(!state.sim){notify('現場模式請使用實體 NFC 卡片。');return;}send('simulate',{action:'toggle',slot_index:Number(slot)});}
-function closeDetail(){document.querySelector('.detail-backdrop')?.remove();detail=null;}
+let detailOpener=null;
+function closeDetail(){document.querySelector('.detail-backdrop')?.remove();detail=null;if(detailOpener?.isConnected)detailOpener.focus();detailOpener=null;}
 function showDetail(id){
   if(!state.active.includes(id)){notify('請先將對應家電放上感應區。');return;}
-  closeDetail();detail=id;const d=role==='table'?BY_ID[id]:{...BY_ID[id],label:PANEL_CONTENT[id].label};
-  const modal=document.createElement('div');modal.className='detail-backdrop';modal.innerHTML=`<section class="glass detail-card" role="dialog" aria-modal="true" aria-label="${d.label}詳細資料"><button class="close-detail" data-action="close-detail" aria-label="關閉">×</button><div class="detail-header"><img src="/appliances/${id}.webp" alt=""><div><p>${d.code} · 已連線</p><h1>${d.label}</h1><p>${d.sub}</p></div></div><div class="detail-body">${infoMarkup(d)}</div><h3>AI 連動關係</h3><div class="relation-list">${RELATIONS.filter(([a,b])=>a===id||b===id).map(([a,b,label])=>`<div><span>${label}</span><b>${state.active.includes(a)&&state.active.includes(b)?'已串聯':'等待設備'}</b></div>`).join('')}</div><p class="sample-label">展示數據 · 維養排程為初代內容範例</p></section>`;
+  const opener=document.activeElement;closeDetail();detailOpener=opener;detail=id;const d={...BY_ID[id],label:PANEL_CONTENT[id].label};
+  const modal=document.createElement('div');modal.className='detail-backdrop';modal.innerHTML=`<section class="glass detail-card" role="dialog" aria-modal="true" aria-label="${d.label}詳細資料"><button class="close-detail" data-action="close-detail" aria-label="關閉">×</button><div class="detail-header"><img src="/appliances/${id}.webp" alt="${d.label}"><div><p>${d.code} · 已連線</p><h1>${d.label}</h1><p>${d.sub}</p></div></div><div class="detail-body">${role==='ipad'?ipadDetail(id):infoMarkup(d)}</div><h3>AI 連動關係</h3><div class="relation-list">${RELATIONS.filter(([a,b])=>a===id||b===id).map(([a,b,label])=>`<div><span>${label}</span><b>${state.active.includes(a)&&state.active.includes(b)?'已串聯':'等待設備'}</b></div>`).join('')}</div><p class="sample-label">展示數據 · 依業主提供文案呈現</p></section>`;
   modal.addEventListener('click',e=>{if(e.target===modal)closeDetail();});app.append(modal);modal.querySelector('.close-detail').focus();
-  modal.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();modal.querySelector('.close-detail').focus();}});
+  const selectView=(button)=>{
+    modal.querySelectorAll('[data-insight-view]').forEach(tab=>{const selected=tab===button;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
+    const panel=modal.querySelector('#insight-panel');panel.innerHTML=insightPanel(id,button.dataset.insightView);panel.setAttribute('aria-labelledby',button.id);
+  };
+  modal.addEventListener('click',e=>{const tab=e.target.closest('[data-insight-view]');if(tab)selectView(tab);});
+  modal.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){e.preventDefault();closeDetail();return;}
+    const tabs=[...modal.querySelectorAll('[data-insight-view]')];
+    if(tabs.includes(document.activeElement)&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
+      e.preventDefault();const i=tabs.indexOf(document.activeElement);const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowLeft'?-1:1)+tabs.length)%tabs.length;selectView(tabs[next]);tabs[next].focus();return;
+    }
+    if(e.key==='Tab'){
+      const items=[...modal.querySelectorAll('button:not([disabled]):not([tabindex="-1"])')];const first=items[0],last=items.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
 }
 document.addEventListener('click',event=>{
   if(fullEditor?.open&&event.target.closest('[data-move]'))return;

@@ -12,3 +12,100 @@
 .detail-backdrop{background:rgba(7,10,14,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .detail-backdrop .glass.detail-card{background:linear-gradient(145deg,rgba(46,61,76,.76),rgba(22,33,46,.66));backdrop-filter:blur(26px) saturate(110%);-webkit-backdrop-filter:blur(26px) saturate(110%);border:1px solid rgba(210,233,249,.30);box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)}
 .detail-backdrop .panel-facts-detail{background:rgba(17,27,39,.22)}
+.table-device-visual{display:grid;place-items:center;flex:0 1 260px;min-height:120px;margin:8px 0 24px}
+.table .table-device-visual .node-icon{position:static;transform:none;width:180px;height:180px;color:#dcefff;pointer-events:none}
+.table .table-device-visual .node-icon:after{display:none}
+.table .table-quick-facts{flex:0 0 auto;padding:26px 24px}
+.table .table-quick-facts h2{font-size:28px;color:var(--text);line-height:1.5;margin-bottom:18px}
+.table-quick-facts .device-facts{font-size:24px;line-height:1.6}
+.table-quick-facts .device-facts>div{gap:8px 12px;padding:16px 0}
+.table-quick-facts .device-facts>div:last-child{border-bottom:0}
+.table-quick-facts .device-facts dd{overflow-wrap:anywhere}
+.table-detail-hint{margin:auto 0 4px;text-align:center;font-size:18px;line-height:1.7;color:var(--muted)}
+.ipad .device-reading{white-space:normal;line-height:1.4;font-size:14px}
+
+/* iPad device analytics: client snapshot plus explicitly simulated history. */
+.ipad .detail-card{width:min(1080px,96vw);padding:28px;scrollbar-width:thin;scrollbar-color:#92b8cc55 transparent}
+/* Absolute glass overlays scroll inside this panel and leave a viewport-sized
+   edge across its content. Its native border and inset shadow provide the rim. */
+.ipad .detail-backdrop .glass.detail-card::before,
+.ipad .detail-backdrop .glass.detail-card::after{content:none}
+.ipad .detail-header{padding-right:44px}
+.ipad .detail-header img{width:72px;height:80px}
+.ipad .detail-body{display:block;margin-top:18px}
+.insight-intro{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#c6dae5}
+.insight-intro>span:last-child{font-size:12px;color:var(--muted)}
+.insight-disclaimer{font-size:12px;line-height:1.8;color:#a7bdcb;margin:10px 0 18px}
+.insight-tabs{display:flex;gap:6px;padding:5px;background:#08152255;border:1px solid #bbd9ea22;border-radius:12px;margin-bottom:18px}
+.insight-tabs button{flex:1;border:1px solid transparent;border-radius:8px;padding:12px 8px;background:transparent;color:#aebfcb;font-size:14px;cursor:pointer}
+.insight-tabs button[aria-selected=true]{background:linear-gradient(135deg,#b4dcee27,#609bb41b);border-color:#beddea44;color:#effaff;box-shadow:0 2px 8px #06111c33}
+.insight-tabs button:focus-visible,.ipad .close-detail:focus-visible{outline:2px solid #bceaff;outline-offset:3px}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.insight-wide{grid-column:1/-1}
+.insight-box{min-width:0;padding:20px;border:1px solid #d0e6f322;border-radius:16px;background:linear-gradient(140deg,#abcfe20b,#0c1e2c24)}
+.insight-box h3,.detail-card .insight-box h3{font-size:15px;line-height:1.5;font-weight:500;margin:0 0 14px;color:#e1eff8}
+.insight-box p{font-size:13px;line-height:1.8;color:#afc4d0;margin:10px 0}
+.insight-section-title{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.insight-section-title>span{font-size:11px;color:#a9c3d1}
+.insight-box .insight-footnote{font-size:11px;line-height:1.7;color:#94adbd;margin:14px 0 0}
+.insight-box .device-facts{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;font-size:14px}
+.insight-box .device-facts .fact-note{grid-column:1/-1}
+.insight-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.insight-kpis>div{border:1px solid #d3e7f329;border-radius:14px;padding:18px 14px;background:linear-gradient(145deg,#a9d8f114,#17293833);min-width:0}
+.insight-kpis span{display:block;color:#b0c7d5;font-size:12px;margin-bottom:10px}
+.insight-kpis strong{font-size:24px;line-height:1.4;font-weight:500;color:#edf8ff;overflow-wrap:anywhere}
+.insight-kpis small{font-size:11px;color:#a9c5d5;font-weight:400}
+.insight-condition{display:flex;align-items:center;gap:20px}
+.insight-ring{flex:0 0 100px;width:100px;height:100px;border-radius:50%;background:conic-gradient(#b2def2 var(--progress),#c4e8ff14 0);display:grid;place-items:center;position:relative}
+.insight-ring:before{content:'';position:absolute;inset:7px;border-radius:50%;background:#283846}
+.insight-ring strong{z-index:1;font-size:29px;font-weight:500;color:#e7f6ff}.insight-ring small{font-size:13px;margin-left:2px}
+.insight-condition h3{margin-bottom:6px}.insight-condition p{font-size:12px;margin:0}
+.insight-box .insight-next-date{font-size:24px;line-height:1.3;color:#e5f4fc;margin:8px 0}
+.insight-pill{display:inline-block;font-size:11px;color:#cee8f4;border:1px solid #b8dce93b;border-radius:20px;padding:4px 10px}
+.insight-bars{display:flex;gap:10px;height:185px;padding-top:10px}
+.insight-bar-col{flex:1;min-width:0;display:flex;align-items:center;flex-direction:column;gap:8px}
+.insight-bar-col>span{font-size:11px;color:#d1e6f3;white-space:nowrap}
+.insight-bar-track{width:100%;flex:1;display:flex;align-items:flex-end;border-bottom:1px solid #b8d4e333;background:repeating-linear-gradient(to top,transparent 0,transparent calc(33.33% - 1px),#cbe6f30b calc(33.33% - 1px),#cbe6f30b 33.33%)}
+.insight-bar-track i{display:block;width:65%;max-width:44px;margin:0 auto;min-height:2px;border-radius:5px 5px 0 0;background:linear-gradient(to top,#5c91b388,#c5e6f5);box-shadow:0 0 14px #a4daef16}
+.insight-bar-col:last-child i{background:linear-gradient(to top,#448798,#adf2e8)}
+.insight-bar-col>small{font-size:11px;color:#a6bfce}
+.insight-stack{display:flex;gap:3px;height:17px;border-radius:6px;overflow:hidden;margin:20px 0}
+.insight-stack i,.insight-ranking dt i{background:#bce4f2}.insight-stack i[style*="--segment:1"],.insight-ranking i[style*="--segment:1"]{background:#7db9cd}.insight-stack i[style*="--segment:2"],.insight-ranking i[style*="--segment:2"]{background:#7297b8}.insight-stack i[style*="--segment:3"],.insight-ranking i[style*="--segment:3"]{background:#526c8c}
+.insight-ranking{margin:0}.insight-ranking>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #c8e2f017;padding:10px 0;font-size:13px}.insight-ranking dt{color:#c4d7e2;display:flex;gap:8px;align-items:center}.insight-ranking dt i{width:8px;height:8px;border-radius:2px}.insight-ranking dd{margin:0;color:#e2f0f9}.insight-ranking small{display:inline-block;min-width:44px;text-align:right;color:#97b4c6;font-size:11px}
+.insight-timeline{list-style:none;padding:0;margin:0}.insight-timeline li{display:flex;gap:24px;padding:17px 0;border-bottom:1px solid #cde5f01c}.insight-timeline li:last-child{border-bottom:0}.insight-timeline time{flex:0 0 135px;font-size:13px;color:#cce9f5}.insight-timeline strong{font-size:14px;font-weight:400;color:#e0edf5;line-height:1.7;display:block}.insight-timeline span{display:block;margin-top:6px;font-size:11px;color:#9cbdce}
+.insight-history{width:100%;border-collapse:collapse;font-size:13px;text-align:left}.insight-history th{font-weight:400;font-size:11px;color:#a2bfce}.insight-history th,.insight-history td{padding:12px 8px;border-bottom:1px solid #d4e9f119;line-height:1.6}.insight-history td{color:#d1e3ee}.insight-history td:first-child{white-space:nowrap}
+.environment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.environment-grid>div{min-width:0}.environment-grid p{font-size:11px;margin:0}.environment-grid strong{display:block;font-size:23px;font-weight:400;color:#e2f3fc}.environment-grid small{font-size:11px}.environment-grid svg{width:100%;height:auto;color:#9dd6e9;display:block}.spark-labels{display:flex;justify-content:space-between;font-size:10px;color:#8faec1}
+@media(max-width:750px){.insight-kpis{grid-template-columns:1fr 1fr}.insight-grid{grid-template-columns:1fr}.insight-box .device-facts{grid-template-columns:1fr}.environment-grid{grid-template-columns:1fr 1fr}.ipad .detail-card{padding:20px}.insight-intro{flex-wrap:wrap}.insight-timeline li{gap:12px}.insight-timeline time{flex-basis:104px}.insight-history th,.insight-history td{padding:10px 4px}.insight-box{padding:16px}}
+
+/* Compact, non-scrolling projection cards; share iPad data, not its layout. */
+.table #info-panel>.table-quick-facts{display:grid;grid-template-columns:minmax(0,1fr) 100px;align-items:center;column-gap:16px;padding:14px 20px;margin-bottom:12px;flex-basis:0;flex-shrink:0;min-height:min-content}
+.table #info-panel .table-quick-facts h2{font-size:var(--edit-label,22px);line-height:1.4;margin:0 0 6px}
+.table #info-panel .table-quick-facts .device-facts{font-size:calc(var(--edit-body,15px) + 3px);line-height:1.4}
+.table #info-panel .table-quick-facts .device-facts>div{padding:7px 0;gap:4px 10px}
+.table #info-panel>.table-energy{padding:16px 20px;display:grid;grid-template-rows:auto auto minmax(90px,1fr) auto;min-height:340px;margin-bottom:12px}
+.table #info-panel .table-energy h2,.table #info-panel .table-plan h2{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;font-size:var(--edit-label,22px)}
+.table-energy h2 small{font-size:14px;color:var(--muted)}
+.table-energy-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;min-height:99px}
+.table-energy-numbers{display:flex;flex-direction:column;gap:8px;font-size:16px;color:#bfd4e1}
+.table-energy-numbers span{display:block;line-height:1.4}
+.table-energy-numbers strong{font-size:36px;color:#edf8ff;font-weight:500;margin:0 5px}
+.table-energy-numbers b{font-size:22px;color:#dceefa;font-weight:500;margin:0 5px}
+.table-gauge{position:relative;flex:0 0 100px;text-align:center;align-self:flex-start}
+.table-gauge svg{display:block;width:78px;height:78px;margin:0 auto;overflow:visible;transform:rotate(-90deg)}
+.table-gauge circle{fill:none;stroke-width:6;stroke-linecap:round}.table-gauge-track{stroke:#badcf21a}.table-gauge-fill{stroke:#bce9f4}
+.table-gauge>strong{position:absolute;top:23px;left:0;right:0;font-size:23px;font-weight:500;color:#ebf9ff;line-height:1.4}.table-gauge strong small{font-size:12px}
+.table-gauge-label{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:#afc8d7}
+.table-energy-bars{display:flex;gap:10px;min-height:0}
+.table-energy-column{display:flex;flex:1;min-width:0;flex-direction:column;align-items:center;gap:6px}
+.table-energy-column>span{font-size:13px;color:#e1f0fa;white-space:nowrap;font-variant-numeric:tabular-nums}
+.table-energy-column>small{font-size:13px;color:#b3cad8}
+.table-energy-track{display:flex;align-items:flex-end;flex:1;min-height:0;width:100%;border-bottom:1px solid #b4d4e633;background:repeating-linear-gradient(to top,transparent 0,transparent calc(33.33% - 1px),#cae9f512 calc(33.33% - 1px),#cae9f512 33.33%)}
+.table-energy-track i{display:block;width:68%;margin:0 auto;border-radius:4px 4px 0 0;background:linear-gradient(to top,#5c91b388,#c5e6f5);min-height:2px;transform-origin:center bottom}
+.table-energy-column:last-child i{background:linear-gradient(to top,#448798,#adf2e8)}
+.table-chart-note{font-size:12px;color:#9fb9cb;margin:10px 0 0;line-height:1.4}
+.table #info-panel>.table-plan{padding:16px 20px;margin-bottom:10px;min-height:min-content}
+.table-plan ol{padding:0;margin:0;list-style:none}.table-plan li{padding:9px 0;border-top:1px solid #d2e8f21c}.table-plan li>div{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.table-plan time{font-size:16px;color:#d2edfa}.table-plan small{font-size:12px;color:#a1bfcf}.table-plan p{font-size:calc(var(--edit-body,15px) + 1px);line-height:1.5;color:#deebf3;margin:5px 0 0}
+.table-insight-note{flex:none;font-size:11px;line-height:1.5;margin:0;text-align:center;color:#9fb4c4}
+
+.table-quick-copy{min-width:0}
+.table .table-quick-facts .table-gauge{align-self:center}

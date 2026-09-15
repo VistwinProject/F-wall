@@ -10,7 +10,7 @@ await fs.cp(path.join(root,'public'),out,{recursive:true});
 await fs.cp(path.join(root,'src'),path.join(out,'src'),{recursive:true});
 await fs.cp(path.join(root,'node_modules/three/build'),path.join(out,'vendor'),{recursive:true});
 await fs.cp(path.join(root,'node_modules/three/examples/jsm'),path.join(out,'vendor-addons'),{recursive:true});
-const assets=text=>text.replace(/(["'`])\/(src\/|vendor\/|vendor-addons\/|anlb-orb\/|appliances\/|device-audio\/|f-intro\.wav|f-completion\.wav|floorplan-lineart-v2\.png|TOP\.png)/g,(_,quote,asset)=>quote+base+asset);
+const assets=text=>text.replace(/(["'`])\/(src\/|vendor\/|vendor-addons\/|anlb-orb\/|appliances\/|backgrounds\/|device-audio\/|f-intro\.wav|f-completion\.wav|floorplan-lineart-v2\.png|TOP\.png)/g,(_,quote,asset)=>quote+base+asset);
 async function rewrite(dir){for(const entry of await fs.readdir(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory())await rewrite(file);else if(/\.(js|css)$/.test(file)){const source=await fs.readFile(file,'utf8');await fs.writeFile(file,assets(source));}}}
 await rewrite(path.join(out,'src'));
 let app=await fs.readFile(path.join(out,'src/app.js'),'utf8');
