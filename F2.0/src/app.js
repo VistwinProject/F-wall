@@ -1,7 +1,7 @@
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING} from './devices.js';
 import {Session} from './session.js';
 import {PANEL_CONTENT,TABLE_CONTENT,IPAD_SUMMARY,panelFacts} from './panel-content.js';
-import {tableInsights,tableGauge} from './table-insights.js';
+import {tableInsights,tableGauge,tableSnapshotNote} from './table-insights.js';
 import {ipadDetail,insightPanel} from './ipad-insights.js';
 import {applianceIcon} from './appliance-icons.js';
 import {wallOperation} from './wall-operations.js';
@@ -107,7 +107,7 @@ let noticeTimer;
 function notify(text){notice.textContent=text;notice.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('show'),3500);}
 
 function infoMarkup(d){
-  if(!d)return `<h1>感應 待機 中</h1><section class="metric-box waiting-message"><div class="waiting-dots">● ● ●</div><h2>請將物件放上感應區</h2><p>感應後將顯示該家電的運作狀態與快速資訊，<br>詳細資訊請於 iPad 查看</p></section><section class="metric-box system-status"><div><span>系統狀態</span><b>${state?.online?'正常運作':'連線中斷'}</b></div><div><span>資料來源</span><b>展示數據</b></div></section>`;
+  if(!d)return `<h1>感應待機中</h1><section class="metric-box waiting-message"><div class="waiting-dots">● ● ●</div><h2>請將物件放上感應區</h2><p>感應後將顯示該家電的運作狀態與快速資訊，<br>詳細資訊請於 iPad 查看</p></section><section class="metric-box system-status"><div><span>系統狀態</span><b>${state?.online?'正常運作':'連線中斷'}</b></div><div><span>資料來源</span><b>展示數據</b></div></section><footer class="table-waiting-note">${tableSnapshotNote()}</footer>`;
   if(role!=='table')return `<section class="metric-box panel-facts-detail">${panelFacts(d.id,role)}</section>`;
   const content=TABLE_CONTENT[d.id],label=PANEL_CONTENT[d.id].label;
   return `<h1>${label}</h1><section class="metric-box usage panel-facts-detail table-quick-facts"><div class="table-quick-copy"><h2>${content.heading}</h2>${panelFacts(d.id,'table')}</div>${tableGauge(d.id)}</section>${tableInsights(d.id)}`;
