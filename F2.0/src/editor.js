@@ -1,5 +1,5 @@
 import {DEVICES,LEFT,RIGHT,WALL_HUB,SCREEN,TABLE_HUB,SLOTS} from './devices.js';
-import {WALL_ROUTES,between,svgPoints} from './geometry.js';
+import {WALL_ROUTES,wallRoutes,between,svgPoints} from './geometry.js';
 import {wallSilhouette} from './wall-silhouettes.js';
 import {wallPreset} from './wall-preset.js';
 import {ipadPreset} from './ipad-preset.js';
@@ -7,7 +7,7 @@ import {tablePreset} from './table-preset.js';
 const clone=v=>structuredClone(v);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const baseSlots=clone(SLOTS),baseHub=clone(TABLE_HUB),baseRoutes=clone(WALL_ROUTES),baseBoxes=Object.fromEntries(DEVICES.map(d=>[d.id,clone(d.box)]));
+const baseSlots=clone(SLOTS),baseHub=clone(TABLE_HUB),baseBoxes=Object.fromEntries(DEVICES.map(d=>[d.id,clone(d.box)]));
 const common={lineWidth:.014063,beamWidth:.013542,minCorePx:2};
 export const defaults={
  wall:{...common,blocks:{...baseBoxes,hub:clone(WALL_HUB),screen:clone(SCREEN)},frame:[130,50,1610,985,31],vlines:[310,460,625,760,1150,1290,1435,1600],hlines:[335,550,760,900],panels:Object.fromEntries(DEVICES.map(d=>[d.id,{box:clone(d.panel),source:d.id,hidden:false}])),panelText:{title:15,rowGap:15},panelPad:[10,10,10,10]},
@@ -31,6 +31,18 @@ function merge(base,raw){
  return Object.fromEntries(Object.entries(base).map(([k,v])=>[k,merge(v,raw?.[k])]));
 }
 export function loadTuning(role){
+ if(role==='wall'){
+  const revision='2026-09-15-wall-tuning-2';
+  try{
+   if(localStorage.getItem('f2-wall-preset-revision')!==revision){
+    const tuning=localStorage.getItem('f2-tuning-wall'),positions=localStorage.getItem('f2-layout-wall');
+    if(tuning||positions)localStorage.setItem('f2-wall-backup-before-'+revision,JSON.stringify({tuning,positions}));
+    localStorage.setItem('f2-tuning-wall',JSON.stringify(wallPreset.tuning));
+    localStorage.setItem('f2-layout-wall',JSON.stringify(wallPreset.positions||{}));
+    localStorage.setItem('f2-wall-preset-revision',revision);
+   }
+  }catch{}
+ }
  let raw;try{raw=JSON.parse(localStorage.getItem('f2-tuning-'+role)||'null');}catch{}
  const t=merge(defaults[role],raw);
  if(role==='wall')t.frameWidth=clamp(Number.isFinite(raw?.frameWidth)?raw.frameWidth:defaults.wall.frameWidth,0,.04);
@@ -170,9 +182,7 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
     const operation=scene.querySelector(`[data-operation="${id}"]`);
     operation.style.cssText=`left:${silhouette.x}px;top:${silhouette.y}px;width:${silhouette.w}px;height:${silhouette.h}px`;
     operation.style.clipPath=`polygon(${silhouette.contours[0].map(p=>`${(p[0]-silhouette.x)/silhouette.w*100}% ${(p[1]-silhouette.y)/silhouette.h*100}%`).join(',')})`;
-    const route=baseRoutes[id],a=baseBoxes[id],hb=defaults.wall.blocks.hub;
-    // Preserve the original route shape while moving both anchors continuously.
-    WALL_ROUTES[id]=route.map((p,i)=>{const t=i/(route.length-1);return [p[0]+(x-a[0])*(1-t)+(WALL_HUB[0]-hb[0])*t,p[1]+(y-a[1])*(1-t)+(WALL_HUB[1]-hb[1])*t];});
+    WALL_ROUTES[id]=wallRoutes(tune)[id];
     scene.querySelector(`[data-wire="${id}"]`).setAttribute('points',svgPoints(WALL_ROUTES[id]));
    }
    for(const el of scene.querySelectorAll('[data-panel]'))if(!tune.panels[el.dataset.panel])el.remove();
@@ -194,16 +204,26 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
  }
  function placeIcons(){
   const used=[],ip=stage.querySelector('#info-panel'),left=parseFloat(ip.style.left),right=left+parseFloat(ip.style.width),top=parseFloat(ip.style.top);
+  const routes=SLOTS.map(p=>between(p,TABLE_HUB,tune.slotSize/2+2,tune.hubSize/2+2));
+  const touchesRoute=q=>routes.some(([a,b])=>{
+   const dx=b[0]-a[0],dy=b[1]-a[1],length=dx*dx+dy*dy;
+   const t=length?Math.max(0,Math.min(1,((q[0]-a[0])*dx+(q[1]-a[1])*dy)/length)):0;
+   return Math.hypot(q[0]-a[0]-t*dx,q[1]-a[1]-t*dy)<60;
+  });
   SLOTS.forEach((p,i)=>{
    let result=null;
+   const outward=i===1||i===7,angle=outward?Math.atan2(p[1]-TABLE_HUB[1],p[0]-TABLE_HUB[0]):-Math.PI/2;
    for(let radius=tune.slotSize/2+86;radius<700&&!result;radius+=38)for(let j=0;j<32;j++){
-    const a=-Math.PI/2+j*Math.PI/16,q=[p[0]+Math.cos(a)*radius,p[1]+Math.sin(a)*radius];
+    const offset=outward?(j%2?1:-1)*Math.ceil(j/2):j;
+    const a=angle+offset*Math.PI/16,q=[p[0]+Math.cos(a)*radius,p[1]+Math.sin(a)*radius];
+    if(outward&&(q[0]-p[0])*(p[0]-TABLE_HUB[0])+(outward?(q[1]-p[1])*(p[1]-TABLE_HUB[1]):0)<=0&&outward)continue;
     if(q[0]<52||q[0]>1868||q[1]<52||q[1]>948||(q[0]>left-55&&q[0]<right+55&&q[1]>top-55&&q[1]<top+1005))continue;
     if(SLOTS.some(s=>Math.hypot(q[0]-s[0],q[1]-s[1])<tune.slotSize/2+70)||Math.hypot(q[0]-TABLE_HUB[0],q[1]-TABLE_HUB[1])<tune.hubSize/2+70||used.some(s=>Math.hypot(q[0]-s[0],q[1]-s[1])<110))continue;
+    if(touchesRoute(q))continue;
     result=q;break;
    }
    const icon=scene.querySelector(`[data-slot-icon="${i+1}"]`),leader=scene.querySelector(`[data-icon-leader="${i+1}"]`);icon.style.visibility=result?'':'hidden';leader.style.visibility=result?'':'hidden';
-   if(result){used.push(result);icon.style.left=result[0]+'px';icon.style.top=result[1]+'px';leader.setAttribute('points',svgPoints(between(p,result,tune.slotSize/2+7,54)));}
+   if(result){used.push(result);icon.style.left=result[0]+'px';icon.style.top=result[1]+'px';leader.setAttribute('points',svgPoints(between(p,result,tune.slotSize/2+7,44)));}
   });
  }
  function styleCards(){const ip=stage.querySelector('#info-panel');for(const[k,v]of Object.entries(tune.cards)){const el=ip?.querySelector('.'+k);if(el)el.style.flexGrow=v;}updateMetrics();}

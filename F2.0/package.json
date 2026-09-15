@@ -9,6 +9,7 @@
     "demo": "node server/index.mjs --sim --demo"
   },
   "dependencies": {
+    "nfc-pcsc": "^0.8.1",
     "three": "^0.185.1",
     "ws": "^8.18.0"
   }

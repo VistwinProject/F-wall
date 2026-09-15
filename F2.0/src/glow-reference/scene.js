@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { LINE_VERT, LINE_FRAG, BEAM_VERT, BEAM_FRAG } from './shaders.js'
 import { ribbon } from './ribbon.js'
+import { wallRouteRibbon } from './wall-route-ribbon.js'
 import { col } from './stage.js'
 import { PARAMS } from './params.js'
 
@@ -77,7 +78,9 @@ export function createGlowLines(worldW, items) {
   const gains = {}
 
   for (const it of items) {
-    const geo = ribbon(it.pts, (it.width ?? PARAMS.line.width) * worldW, !!it.closed)
+    const geo = it.wallRoute
+      ? wallRouteRibbon(it.pts, (it.width ?? PARAMS.line.width) * worldW, !!it.closed)
+      : ribbon(it.pts, (it.width ?? PARAMS.line.width) * worldW, !!it.closed)
     const mats = [
       lineMaterial(worldW, PARAMS.line.idle, 'halo', it.minCorePx),
       lineMaterial(worldW, PARAMS.line.idle, 'core', it.minCorePx),
@@ -110,7 +113,9 @@ export function createGlowBeams(worldW, items) {
   const tailUnits = PARAMS.beam.tailWidths * worldW
 
   return items.map((it, index) => {
-    const geo = ribbon(it.pts, (it.width ?? PARAMS.beam.width) * worldW, false)
+    const geo = it.wallRoute
+      ? wallRouteRibbon(it.pts, (it.width ?? PARAMS.beam.width) * worldW)
+      : ribbon(it.pts, (it.width ?? PARAMS.beam.width) * worldW, false)
     const len = geo.userData.length || 1
 
     // ── 以下三行與牆面 webgl/TraceBeam.js 完全相同 ──
@@ -126,6 +131,7 @@ export function createGlowBeams(worldW, items) {
       // MIN_CORE_PX 同上，不給就是 1.0 ＝ 原本的行為。
       defines: {
         COMETS: PARAMS.beam.comets,
+        ...(it.wallRoute ? { WALL_ROUND_HEAD: 1 } : {}),
         ...(it.minCorePx ? { MIN_CORE_PX: it.minCorePx.toFixed(2) } : {}),
       },
       vertexShader: BEAM_VERT,
@@ -134,7 +140,9 @@ export function createGlowBeams(worldW, items) {
       side: THREE.DoubleSide,
       // 同上：預乘式加法，不要用 AdditiveBlending。
       blending: THREE.CustomBlending,
-      blendEquation: THREE.AddEquation,
+      // Wall routes share grid rails: keep the strongest signal rather than
+      // accumulating their halos before bloom at the common core entrance.
+      blendEquation: it.wallRoute ? THREE.MaxEquation : THREE.AddEquation,
       blendSrc: THREE.OneFactor,
       blendDst: THREE.OneFactor,
       depthWrite: false,
@@ -149,6 +157,7 @@ export function createGlowBeams(worldW, items) {
         uProgress: { value: 0 },
         uOn: { value: 0 },
         uTailLen: { value: tailLen },
+        uHeadRadius: { value: Math.max((it.width ?? PARAMS.beam.width) * worldW * .12, (it.minCorePx ?? 2) * worldW / 1920) / len },
         uTailSpan: { value: tailSpan },
         uEndFade: { value: (PARAMS.beam.endFadeWidths * worldW) / len },
         uBase: { value: PARAMS.beam.base },

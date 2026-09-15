@@ -1,0 +1,14 @@
+.wall-panel .device-facts>div{flex-wrap:wrap;column-gap:6px;white-space:normal}
+.wall-panel .device-facts dt,.wall-panel .device-facts dd{white-space:normal;overflow-wrap:anywhere}
+.wall-panel .device-facts dd{margin-left:auto}
+.wall-panel .device-facts .fact-note{display:block}
+.wall-panel .device-facts .fact-note dd{margin:0;text-align:left}
+.detail-body .panel-facts-detail{grid-column:1/-1}
+.panel-facts-detail .device-facts{margin:0}
+.panel-facts-detail .device-facts>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;padding:12px 0;border-bottom:1px solid #ffffff18}
+.panel-facts-detail .device-facts dt{color:var(--muted)}
+.panel-facts-detail .device-facts dd{margin:0;color:var(--text)}
+.panel-facts-detail .device-facts .fact-note{display:block;line-height:1.7}
+.detail-backdrop{background:rgba(7,10,14,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.detail-backdrop .glass.detail-card{background:linear-gradient(145deg,rgba(46,61,76,.76),rgba(22,33,46,.66));backdrop-filter:blur(26px) saturate(110%);-webkit-backdrop-filter:blur(26px) saturate(110%);border:1px solid rgba(210,233,249,.30);box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)}
+.detail-backdrop .panel-facts-detail{background:rgba(17,27,39,.22)}

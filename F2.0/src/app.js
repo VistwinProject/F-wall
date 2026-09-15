@@ -1,5 +1,6 @@
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING,TREND} from './devices.js';
 import {Session} from './session.js';
+import {PANEL_CONTENT,panelFacts} from './panel-content.js';
 import {applianceIcon} from './appliance-icons.js';
 import {wallOperation} from './wall-operations.js';
 import {Glow} from './glow.js';
@@ -8,7 +9,8 @@ import {wallSilhouette} from './wall-silhouettes.js';
 import {createIntro} from './intro.js';
 import {createDeviceAudio} from './device-audio.js';
 import {createCompletionAudio} from './completion-audio.js';
-import {ring,rect,between,WALL_ROUTES,svgPoints} from './geometry.js';
+import {setupTableAudio,tableVoice} from './table-audio.js';
+import {ring,rect,between,WALL_ROUTES,wallRoutes,svgPoints} from './geometry.js';
 
 const params=new URLSearchParams(location.search);
 const role=location.pathname.includes('wall')||location.port==='6274'?'wall':location.pathname.includes('ipad')||location.port==='6275'?'ipad':'table';
@@ -39,6 +41,7 @@ const posStyle=(key,x,y)=>{const p=positioned(key,x,y);return `left:${p[0]}px;to
 const TABLE_ICON_POSITIONS=[[705,600],[1030,625],[810,305],[1080,325],[1245,180],[1410,325],[1680,305],[1470,625],[1800,600]];
 
 function buildWall(){
+  Object.assign(WALL_ROUTES,wallRoutes(tune));
   stage.innerHTML=`<div id="scene" class="wall-scene"></div>`;scene=stage.querySelector('#scene');
   const frames=`<rect x="130" y="50" width="1610" height="985" rx="31"/><g>${[310,460,625,760,1150,1290,1435,1600].map(x=>`<path d="M${x} 50V1035"/>`).join('')}${[335,550,760,900].map(y=>`<path d="M130 ${y}H1740"/>`).join('')}</g>`;
   scene.innerHTML=svg(`<g class="wall-grid">${frames}</g><g id="wall-links">${DEVICES.map(d=>`<polyline data-wire="${d.id}" class="wire" points="${svgPoints(WALL_ROUTES[d.id])}"/>`).join('')}</g><g class="masks">${boxMarkup(SCREEN)}${boxMarkup(WALL_HUB,'data-core="true"')}${DEVICES.map(d=>boxMarkup(d.box,`data-mask="${d.id}"`)).join('')}</g>`);
@@ -48,7 +51,7 @@ function buildWall(){
     const operation=document.createElement('div');operation.className='wall-operation';operation.dataset.operation=d.id;operation.style.cssText=`left:${x-w*.4}px;top:${y-h*.4}px;width:${w*.8}px;height:${h*.8}px`;operation.innerHTML=wallOperation(d.id);scene.append(operation);
     const[px,py,pw,ph]=d.panel;
     const panel=document.createElement('section');panel.className='glass wall-panel';panel.dataset.panel=d.id;panel.dataset.move='panel-'+d.id;panel.style.cssText=`${posStyle('panel-'+d.id,px,py)};width:${pw}px;height:${ph}px`;
-    panel.innerHTML=`<h2>${d.label}</h2><div class="wall-code"><span>${d.code}</span><span>運轉中 ●</span></div><dl>${d.rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;scene.append(panel);
+    panel.innerHTML=`<h2 class="wall-panel-heading"><span>${PANEL_CONTENT[d.id].label}</span><span class="wall-panel-status">運轉中</span></h2>${panelFacts(d.id,'wall')}`;scene.append(panel);
   }
   glow=new Glow(scene,1920,1080);
 }
@@ -65,6 +68,7 @@ function buildTable(){
   });
   scene.insertAdjacentHTML('beforeend',`<div class="table-core" style="left:${TABLE_HUB[0]}px;top:${TABLE_HUB[1]}px"></div><div class="core-caption" style="left:${TABLE_HUB[0]}px;top:946px">SYSTEM CORE</div>`);
   glow=new Glow(scene,1920,1000);
+  import('./table-orb.js').then(({createTableOrb})=>createTableOrb(scene.querySelector('.table-core'))).catch(error=>console.warn('Table orb could not load:',error));
 }
 function graphPosition(id){const d=BY_ID[id];return positioned('node-'+id,d.pos[0]*1920,d.pos[1]*1080);}
 function hubPosition(){return positioned('hub',...GRAPH_HUB);}
@@ -74,7 +78,7 @@ function buildIpad(){
   for(const[ids,right]of [[LEFT,false],[RIGHT,true]])ids.forEach((id,i)=>{
     const d=BY_ID[id],x=right?1620:40,y=right?60+i*290:60+i*220;
     const card=document.createElement('button');card.className=`glass device-card${right?' right':''}`;card.dataset.device=id;card.dataset.move='card-'+id;card.style.cssText=posStyle('card-'+id,x,y);
-    card.innerHTML=`<span class="device-indicator"></span><span class="device-copy"><span>${d.label}</span><span class="device-reading">${d.sub}</span></span>`;scene.append(card);
+    card.innerHTML=`<span class="device-indicator"></span><span class="device-copy"><span>${PANEL_CONTENT[id].label}</span><span class="device-reading">${d.sub}</span></span>`;scene.append(card);
   });
   for(const d of DEVICES){
     const p=graphPosition(d.id);const node=document.createElement('button');node.className='graph-node';node.dataset.node=d.id;node.dataset.move='node-'+d.id;node.setAttribute('aria-label',d.label+'詳細資料');node.style.cssText=`left:${p[0]}px;top:${p[1]}px`;node.innerHTML=applianceIcon(d.id);scene.append(node);
@@ -85,6 +89,17 @@ function buildIpad(){
 if(role==='wall')buildWall();else if(role==='table')buildTable();else buildIpad();
 if(role!=='wall')stage.insertAdjacentHTML('beforeend',`<div class="welcome" id="welcome"><div><p class="welcome-eyebrow">歡　迎　來　到</p><h1>AI 大腦控制塔</h1><p class="welcome-instruction">請拿取前方設備裝置，放置相對的感應範圍，<br>開始將居家設備連結到 AI 大腦！</p>${role==='ipad'?'<button data-action="start">點擊任意位置開始</button>':''}</div></div>`);
 
+if(role==='table'){
+  const welcome=stage.querySelector('#welcome'),content=welcome.firstElementChild;
+  const sphere=document.createElement('div');sphere.className='intro-sphere table-welcome-orb';sphere.setAttribute('aria-hidden','true');
+  content.insertBefore(sphere,content.querySelector('.welcome-instruction'));
+  let disposed=false,disposeOrb;
+  addEventListener('pagehide',()=>{disposed=true;disposeOrb?.();},{once:true});
+  import('./intro-quantum.js').then(({createIntroQuantum})=>{
+    if(disposed)return;
+    disposeOrb=createIntroQuantum(sphere,()=>tableVoice,()=>!welcome.classList.contains('dismissed'));
+  }).catch(error=>console.warn('Table welcome orb unavailable:',error));
+}
 const tools=document.createElement('div');tools.className='tools';
 tools.innerHTML=`<details id="sim-tray"><summary><b>替代 NFC 卡片</b><span id="tray-count">0/9 已放上</span><span class="tray-arrow">展開</span></summary><div class="sim-body"><div class="preview-heading"><span>F 2.0 重製版</span><span id="server-status">連線中</span></div><p>點選卡片模擬放上／拿走，三個介面同步更新。</p><div class="sim-cards">${DEVICES.map((d,i)=>`<button data-toggle="${i+1}" title="鍵盤 ${i+1}"><small>${i+1}</small>${d.label}</button>`).join('')}</div><div class="sim-actions"><button data-action="start">開始體驗</button><button data-action="all">全部放上</button><button data-action="clear">全部拿走</button><button data-action="demo" id="demo-button">自動展示</button><button data-action="reset">重置</button></div><p class="key-help">鍵盤 1–9 放卡 · A 全放 · 0 全拿 · E 校正</p><nav><a href="http://${location.hostname}:6274/wall" target="_blank">牆面</a><a href="http://${location.hostname}:6273/table" target="_blank">桌面</a><a href="http://${location.hostname}:6275/ipad" target="_blank">iPad</a></nav></div></details>`;
 app.append(tools);
@@ -98,6 +113,7 @@ function chart(d){
 }
 function infoMarkup(d){
   if(!d)return `<h1>感應 待機 中</h1><section class="metric-box waiting-message"><div class="waiting-dots">● ● ●</div><h2>請將物件放上感應區</h2><p>感應後將顯示該家電的即時用電、累積消耗與<br>預測性維護排程</p></section><section class="metric-box system-status"><div><span>系統狀態</span><b>${state?.online?'正常運作':'連線中斷'}</b></div><div><span>資料來源</span><b>展示數據</b></div></section>`;
+  if(role!=='table')return `<section class="metric-box panel-facts-detail">${panelFacts(d.id,role)}</section>`;
   const percent=Math.round(d.month/d.target*100);
   return `<h1>${d.label}${metric(d)}</h1><section class="metric-box usage"><h2>${today(d)}</h2><div class="today-value"><span><strong data-count="${d.value}">${d.value}</strong> ${d.unit}</span><span class="delta">較昨日<br><b>${d.delta<0?'↓':d.delta>0?'↑':'－'} ${Math.abs(d.delta)}%</b></span></div><div class="month"><span>本月累積${d.id==='socket'?'用電量':metric(d)}</span><span><strong data-count="${d.month}">${d.month.toLocaleString('en-US')}</strong> / 目標 ${d.target.toLocaleString('en-US')} ${monthUnit(d)}</span></div><div class="progress"><div><i style="width:${Math.min(100,percent)}%"></i></div><b data-count="${percent}" data-count-suffix="%">${percent}%</b></div></section><section class="metric-box trend"><h2>${metric(d)}趨勢</h2>${chart(d)}</section><section class="metric-box maintenance"><h2>維養排程</h2><table><thead><tr><th>項目</th><th>上次維養</th><th>下次維養</th><th>狀態</th></tr></thead><tbody>${d.maintenance.map((name,i)=>`<tr><td>${name}</td><td>2026/${['05/20','04/20','05/10','03/15'][i]}</td><td>2026/${['06/20','07/20','08/10','09/15'][i]}</td><td>${i===0?'即將到期':'正常'}</td></tr>`).join('')}</tbody></table></section>`;
 }
@@ -164,9 +180,23 @@ function renderWall(active){
   for(const y of tune.hlines)addLight(paths,'h'+y,[[fx,y],[fx+fw,y]],false,.8,.65,3);
   for(const d of DEVICES){
     const on=active.includes(d.id);scene.querySelector(`[data-panel="${d.id}"]`)?.classList.toggle('active',on);scene.querySelector(`[data-photo="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-wire="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-operation="${d.id}"]`).classList.toggle('active',on);
-    if(on){wallSilhouette(d,tune).contours.forEach((points,i)=>addLight(paths,'frame-'+d.id+'-'+i,points,false,1.9));addLight(paths,'route-'+d.id,WALL_ROUTES[d.id],false,1.1,.8);addLight(paths,'packet-'+d.id,WALL_ROUTES[d.id],true,3);}
+    const silhouette=wallSilhouette(d,tune);
+    let mask=scene.querySelector(`[data-mask="${d.id}"]`);
+    if(mask.tagName.toLowerCase()!=='path'){
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.dataset.mask=d.id;path.setAttribute('fill','#000');mask.replaceWith(path);mask=path;
+    }
+    mask.setAttribute('d',silhouette.path);mask.removeAttribute('transform');
+    if(on){silhouette.contours.forEach((points,i)=>addLight(paths,'frame-'+d.id+'-'+i,points,false,1.9));addLight(paths,'route-'+d.id,WALL_ROUTES[d.id],false,1.1,.8);addLight(paths,'packet-'+d.id,WALL_ROUTES[d.id],true,3);}
   }
-  if(active.length){const[x,y,w,h]=WALL_HUB;addLight(paths,'core',rect(x-w/2,y-h/2,w,h),false,2);}
+  const[x,y,w,h]=WALL_HUB,coreContour=rect(x-w/2,y-h/2,w,h);
+  let coreMask=scene.querySelector('[data-core]');
+  if(coreMask.tagName.toLowerCase()!=='path'){
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.dataset.core='true';path.setAttribute('fill','#000');coreMask.replaceWith(path);coreMask=path;
+  }
+  coreMask.setAttribute('d','M '+coreContour.map(p=>p.join(' ')).join(' L ')+' Z');
+  if(active.length)addLight(paths,'core',coreContour,false,2);
   for(const[id,p]of Object.entries(tune.panels))scene.querySelector(`[data-panel="${id}"]`)?.classList.toggle('active',active.includes(p.source));
   glow.setPaths(paths);
 }
@@ -229,6 +259,7 @@ function renderGraph(){
 }
 function render(eventType='state'){
   intro?.sync(state);
+  glow.visible=role==='wall'||state.session||!!fullEditor?.open;
   const active=role==='wall'&&params.has('all')?DEVICES.map(d=>d.id):state.active;
   if(role==='wall')renderWall(active);else if(role==='table')renderTable();else renderGraph();
   const welcome=stage.querySelector('#welcome');if(welcome){welcome.classList.toggle('dismissed',state.session);welcome.inert=state.session;}
@@ -240,19 +271,22 @@ function render(eventType='state'){
   if(['snapshot','tag-present','tag-remove','reader-disconnected','session-end'].includes(eventType))startRotation();
 }
 session=new Session(role);state=session.state;
-intro=createIntro({stage,role,notify});
-completionAudio=createCompletionAudio({stage,role,notify});
+if(role==='table')setupTableAudio({session,notify});
+intro=createIntro({stage,role,notify,session});
+completionAudio=createCompletionAudio({stage,role,notify,session});
 createDeviceAudio({session,role,notify});
 session.addEventListener('change',({detail:event})=>{state=event.state;if(event.type==='audio-stop')dispatchEvent(new Event('f-stop-audio'));render(event.type);});
 render();if(role==='table')updateFocus(null);
 fullEditor=createEditor({role,stage,scene,tune,positions:overrides,refresh:()=>render(),notify,initialOpen:params.has('edit')});
+glow.visible=role==='wall'||state.session||fullEditor.open;
+glow.prewarm(tune);
 
 function send(type,fields){if(!session.send(type,fields)){notify('連線中斷，正在重新連線；恢復後可繼續操作。');return false;}return true;}
 function toggle(slot){if(!state.sim){notify('現場模式請使用實體 NFC 卡片。');return;}send('simulate',{action:'toggle',slot_index:Number(slot)});}
 function closeDetail(){document.querySelector('.detail-backdrop')?.remove();detail=null;}
 function showDetail(id){
   if(!state.active.includes(id)){notify('請先將對應家電放上感應區。');return;}
-  closeDetail();detail=id;const d=BY_ID[id];
+  closeDetail();detail=id;const d=role==='table'?BY_ID[id]:{...BY_ID[id],label:PANEL_CONTENT[id].label};
   const modal=document.createElement('div');modal.className='detail-backdrop';modal.innerHTML=`<section class="glass detail-card" role="dialog" aria-modal="true" aria-label="${d.label}詳細資料"><button class="close-detail" data-action="close-detail" aria-label="關閉">×</button><div class="detail-header"><img src="/appliances/${id}.webp" alt=""><div><p>${d.code} · 已連線</p><h1>${d.label}</h1><p>${d.sub}</p></div></div><div class="detail-body">${infoMarkup(d)}</div><h3>AI 連動關係</h3><div class="relation-list">${RELATIONS.filter(([a,b])=>a===id||b===id).map(([a,b,label])=>`<div><span>${label}</span><b>${state.active.includes(a)&&state.active.includes(b)?'已串聯':'等待設備'}</b></div>`).join('')}</div><p class="sample-label">展示數據 · 維養排程為初代內容範例</p></section>`;
   modal.addEventListener('click',e=>{if(e.target===modal)closeDetail();});app.append(modal);modal.querySelector('.close-detail').focus();
   modal.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();modal.querySelector('.close-detail').focus();}});
@@ -275,12 +309,13 @@ document.addEventListener('click',event=>{
   }
 });
 document.addEventListener('keydown',event=>{
-  if(event.target.matches('input,textarea,select')||event.metaKey||event.ctrlKey||event.altKey)return;
+  if(event.target.matches('input,textarea,select')||event.target.isContentEditable||event.metaKey||event.ctrlKey||event.altKey||event.repeat)return;
   if(event.key==='Escape'){closeDetail();return;}
   if(!state.sim)return;
-  if(/^[1-9]$/.test(event.key)){event.preventDefault();toggle(Number(event.key));}
+  const digit=/^Numpad[0-9]$/.test(event.code)?event.code.slice(-1):event.key;
+  if(/^[1-9]$/.test(digit)){event.preventDefault();toggle(Number(digit));}
   else if(event.key.toLowerCase()==='a')send('simulate',{action:'all'});
-  else if(event.key==='0')send('simulate',{action:'clear'});
+  else if(digit==='0'){event.preventDefault();send('simulate',{action:'clear'});}
 });
 if(params.has('fps')){
   const meter=document.createElement('div');meter.className='fps';app.append(meter);let last=performance.now(),frames=0,start=last,longest=0;

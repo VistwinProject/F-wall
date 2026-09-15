@@ -9,11 +9,13 @@ import { DEVICES, BY_ID, TIMING } from '../src/devices.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const live = process.argv.includes('--live');
-const sim = process.argv.includes('--sim') && !live;
+const sim = process.argv.includes('--sim') || (live && !process.argv.includes('--no-sim'));
 const slots = new Map();
+let introPhase='ready',introToken=0;
+const connectedReaders = new Map();
 let session = false, revision = 0, demoTimer = null, demoRunning = false;
 const mime = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml' };
-const snapshot = () => ({type:'snapshot',version:2,revision,session,sim,demo:demoRunning,completionAudioReady,slots:[...slots].map(([slot_index,data])=>({slot_index,...data}))});
+const snapshot = () => ({type:'snapshot',version:2,revision,session,sim,demo:demoRunning,introPhase,introToken,completionAudioReady,slots:[...slots].map(([slot_index,data])=>({slot_index,...data}))});
 let completionAudioReady=false, finalAudioSlot=null;
 const servers = [];
 mime['.wav']='audio/wav';
@@ -70,7 +72,7 @@ function runDemo(){
   }
   demoTimer=setTimeout(tick,TIMING.step);
 }
-if(sim)for(let i=1;i<=9;i++)slots.set(i,{reader:'Virtual reader '+i});
+if(sim&&!live)for(let i=1;i<=9;i++)slots.set(i,{reader:'Virtual reader '+i});
 wss.on('connection',(client,req)=>{
   const role=new URL(req.url,'http://localhost').searchParams.get('role');
   client.send(JSON.stringify(snapshot()));
@@ -79,6 +81,11 @@ wss.on('connection',(client,req)=>{
     let msg;try{msg=JSON.parse(String(raw));}catch{return;}
     if(!msg||typeof msg!=='object')return;
     if(msg.type==='ping'){client.send(JSON.stringify({type:'pong'}));return;}
+    if(msg.type==='intro-play'&&role==='ipad'&&!session){introToken++;introPhase='requested';broadcast({type:'intro-state',phase:introPhase,token:introToken});return;}
+    if(msg.type==='intro-skip'&&role==='ipad'&&!session){introPhase='done';broadcast({type:'intro-state',phase:introPhase,token:introToken});return;}
+    if(msg.type==='intro-status'&&role==='table'&&!session&&msg.token===introToken&&['requested','playing','error'].includes(introPhase)&&['playing','done','error'].includes(msg.phase)){introPhase=msg.phase;broadcast({type:'intro-state',phase:introPhase,token:introToken});return;}
+    if(msg.type==='completion-play'&&role==='ipad'&&session&&completionAudioReady){broadcast({type:'completion-play'});return;}
+    if(msg.type==='session-end'||(msg.type==='simulate'&&msg.action==='clear')){introPhase='ready';introToken++;broadcast({type:'intro-state',phase:introPhase,token:introToken});}
     if(msg.type==='device-audio-finished'&&role==='table'){
       const slot=Number(msg.slot_index),s=slots.get(slot);
       if(finalAudioSlot===slot&&s?.data?.id===msg.id&&s?.uid===msg.uid&&new Set([...slots.values()].map(v=>v.data?.id).filter(Boolean)).size===9){completionAudioReady=true;finalAudioSlot=null;broadcast({type:'completion-audio-ready'});}
@@ -103,7 +110,7 @@ for(const [port,role]of [[6273,'table'],[6274,'wall'],[6275,'ipad']]){
   const server=http.createServer(serve);
   server.on('upgrade',(req,socket,head)=>wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req)));
   server.on('error',err=>{console.error(`${role}: ${err.message}`);process.exitCode=1;for(const s of servers)s.close();});
-  server.listen(port,'0.0.0.0',()=>console.log(`F 2.0 ${role}: http://localhost:${port}/${role} (${sim?'NFC simulation':'hardware'})`));
+  server.listen(port,'0.0.0.0',()=>console.log(`F 2.0 ${role}: http://localhost:${port}/${role} (${live?(sim?'hardware + NFC simulation':'hardware'):'NFC simulation'})`));
   servers.push(server);
 }
 if(live){
@@ -115,8 +122,9 @@ if(live){
     const nfc=new NFC();
     nfc.on('reader',reader=>{
       let slot=readerMap[reader.reader.name];
-      if(slot==null)slot=Array.from({length:9},(_,i)=>i+1).find(i=>!slots.has(i));
-      if(!Number.isInteger(slot)||slot<1||slot>9||slots.has(slot)){console.error('Invalid or occupied NFC slot:',reader.reader.name);return;}
+      if(slot==null)slot=Array.from({length:9},(_,i)=>i+1).find(i=>!connectedReaders.has(i));
+      if(!Number.isInteger(slot)||slot<1||slot>9||connectedReaders.has(slot)){console.error('Invalid or occupied NFC slot:',reader.reader.name);return;}
+      connectedReaders.set(slot,reader);
       slots.set(slot,{reader:reader.reader.name});broadcast({type:'reader-connected',slot_index:slot,reader:reader.reader.name});
       reader.on('card',card=>{
         const uid=card.uid.toUpperCase(),data=uidMap[uid];
@@ -124,7 +132,7 @@ if(live){
         else{slots.set(slot,{reader:reader.reader.name,uid,known:false});broadcast({type:'tag-present',slot_index:slot,uid,known:false});}
       });
       reader.on('card.off',()=>remove(slot));
-      reader.on('end',()=>{slots.delete(slot);broadcast({type:'reader-disconnected',slot_index:slot});});
+      reader.on('end',()=>{connectedReaders.delete(slot);slots.delete(slot);broadcast({type:'reader-disconnected',slot_index:slot});});
       reader.on('error',err=>console.error('Reader:',err.message));
     });
     nfc.on('error',err=>console.error('NFC:',err.message));

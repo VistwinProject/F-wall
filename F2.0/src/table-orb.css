@@ -1,0 +1,5 @@
+.table-core .intro-quantum{position:absolute;inset:-12%;width:124%;height:124%;display:block;pointer-events:none;opacity:0;transition:opacity 1.2s ease;transform-origin:center}
+.table-core.quantum-ready .intro-quantum{opacity:1}
+.table-core .intro-quantum[hidden]{display:none}
+.table .core-caption.audio-caption{width:620px;max-width:calc(100% - 40px);font-size:20px;line-height:1.55;letter-spacing:.04em;font-weight:400;text-align:center;white-space:normal;color:#e9f3fa;text-shadow:0 2px 8px #000b;pointer-events:none}
+.table .core-caption.audio-caption:empty{visibility:hidden}

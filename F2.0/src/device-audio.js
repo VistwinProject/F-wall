@@ -1,8 +1,9 @@
 import {BY_ID} from './devices.js';
+import {registerVoiceAudio,prepareVoiceAudio,claimVoice} from './table-audio.js';
 
 export function createDeviceAudio({session,role,notify}){
  if(role!=='table')return;
- const audio=new Audio();audio.preload='none';
+ const audio=registerVoiceAudio(new Audio(),'device');audio.preload='none';
  const button=document.createElement('button');button.className='device-audio-unlock';button.textContent='點此播放家電語音';button.hidden=true;document.querySelector('#app').append(button);
  let present=new Map(),previous=new Map(),pending=null,current=null,timer=null,fadeFrame=null,generation=0;
  const occupancy=state=>new Map(Object.entries(state.slots).filter(([,s])=>BY_ID[s?.data?.id]).map(([slot,s])=>[slot,{slot,id:s.data.id,uid:s.uid,key:`${slot}:${s.uid||s.data.id}:${s.data.id}`} ]));
@@ -27,14 +28,16 @@ export function createDeviceAudio({session,role,notify}){
   timer=null;const item=pending;if(!exists(item)){pending=null;button.hidden=true;return;}
   pending=null;current=item;button.hidden=true;audio.volume=1;
   const attempt=++generation;audio.src=`/device-audio/${item.id}.wav`;
-  try{await audio.play();}
+  try{await prepareVoiceAudio();if(attempt!==generation)return;await audio.play();if(attempt!==generation)audio.pause();}
   catch(error){
    if(attempt!==generation)return;current=null;
    if(error.name==='NotAllowedError'&&exists(item)){pending=item;button.hidden=false;}
    else notify(`${BY_ID[item.id].label}語音無法播放，已略過。`);
   }
  }
- function schedule(item){stop();pending=item;timer=setTimeout(play,500);}
+ function schedule(item){claimVoice('device');stop();pending=item;timer=setTimeout(play,500);}
+ addEventListener('f-audio-claim',e=>{if(e.detail!=='device')stop();});
+ addEventListener('f-table-audio-unlocked',()=>{if(pending&&timer===null)play();});
  button.addEventListener('click',()=>{if(pending&&timer===null)play();});
  audio.addEventListener('ended',()=>{const finished=current;current=null;if(exists(finished))session.send('device-audio-finished',{slot_index:Number(finished.slot),id:finished.id,uid:finished.uid});});
  audio.addEventListener('error',()=>{if(!current)return;const name=BY_ID[current.id].label;stop();notify(`${name}語音載入失敗，已略過。`);});

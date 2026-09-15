@@ -25,16 +25,29 @@ export function between(a,b,startRadius=0,endRadius=0){
   const dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy)||1;
   return [[a[0]+dx*startRadius/length,a[1]+dy*startRadius/length],[b[0]-dx*endRadius/length,b[1]-dy*endRadius/length]];
 }
-// Paths avoid the fixed television mask and enter the physical core perpendicularly.
-export const WALL_ROUTES={
-  hrv:rounded([[470,170],[650,170],[650,416],[955,416],[955,550]]),
-  ac:rounded([[1440,170],[1325,170],[1325,416],[955,416],[955,550]]),
-  dehum:[[460,540],[955,540]],
-  purifier:[[1425,550],[955,550]],
-  sensor:rounded([[310,900],[310,712],[740,712],[740,644],[955,644],[955,550]]),
-  light:rounded([[625,885],[760,885],[760,740],[890,740],[890,550],[955,550]]),
-  socket:[[960,900],[960,550]],
-  curtain:rounded([[1290,900],[1115,900],[1115,750],[1045,750],[1045,550],[955,550]]),
-  bathfan:rounded([[1600,900],[1600,764],[1170,764],[1170,644],[955,644],[955,550]]),
-};
+// SVG wires and animated lights share routes derived from the editable grid.
+export const WALL_ROUTES={};
+export function wallRoutes({vlines:v,hlines:h,blocks:b}){
+  const [upper,middle,lower,bottom]=h;
+  const [sensorX,hrvX,leftX,socketX,,rightX,acX,bathX]=v;
+  const [hubX]=b.hub;
+  // Start on the framework inside each appliance mask, never at an
+  // off-grid appliance center. Every visible segment stays on a grid rail.
+  const vertical=(id,x)=>[[x,b[id][1]]];
+  const routes={
+    hrv:[...vertical('hrv',hrvX),[hrvX,upper],[leftX,upper],[leftX,middle]],
+    ac:[...vertical('ac',acX),[acX,upper],[rightX,upper],[rightX,middle]],
+    dehum:[[b.dehum[0],middle]],
+    purifier:[[b.purifier[0],middle]],
+    sensor:[...vertical('sensor',sensorX),[sensorX,lower],[leftX,lower],[leftX,middle]],
+    light:[...vertical('light',leftX),[leftX,middle]],
+    socket:[[b.socket[0],bottom],[socketX,bottom],[socketX,middle]],
+    curtain:[...vertical('curtain',rightX),[rightX,middle]],
+    bathfan:[...vertical('bathfan',bathX),[bathX,lower],[rightX,lower],[rightX,middle]],
+  };
+  return Object.fromEntries(Object.entries(routes).map(([id,points])=>{
+    points.push([hubX,middle]);
+    return [id,points.filter((p,i)=>!i||p[0]!==points[i-1][0]||p[1]!==points[i-1][1])];
+  }));
+}
 export const svgPoints=points=>points.map(p=>p.join(',')).join(' ');

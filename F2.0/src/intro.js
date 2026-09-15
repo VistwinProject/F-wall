@@ -1,56 +1,42 @@
-// iPad narration: an explicit gesture starts audio; a second gesture after
-// narration finishes starts the shared session. Table has no audio player.
-export function createIntro({stage,role,notify}){
- if(role!=='ipad')return {sync(){}};
- const welcome=stage.querySelector('#welcome'),content=welcome.firstElementChild;
- const audio=new Audio('/f-intro.wav');audio.preload='metadata';
- const start=welcome.querySelector('[data-action="start"]');
- start.classList.add('intro-prompt');start.textContent='點選任意位置播放前導語音';start.hidden=false;
- const controls=document.createElement('div');controls.className='intro-controls';controls.innerHTML='<span class="intro-status" role="status" aria-live="polite"></span>';content.append(controls);
- const status=controls.querySelector('.intro-status');
- const sphere=document.createElement('div');sphere.className='intro-sphere';sphere.setAttribute('aria-hidden','true');
- sphere.innerHTML=`<div class="intro-orb-halo"></div><div class="intro-orb"><div class="intro-orb-flow"></div><div class="intro-orb-depth"></div><svg viewBox="0 0 240 160" class="intro-orb-waves" fill="none"><path d="M0 80C30 80 34 28 60 50S96 128 120 80 157 25 180 65 210 80 240 80"/><path d="M0 80C29 80 35 112 60 92S91 32 120 80 157 130 180 85 210 80 240 80"/><path d="M0 80C40 80 52 57 80 80S115 109 140 76 179 66 200 80 230 80 240 80"/></svg><div class="intro-orb-specular"></div></div>`;
- content.insertBefore(sphere,content.querySelector('.welcome-instruction'));
- let visible=false,phase='ready',token=0,context,analyser,source,bins,frame,last=0;
- function connectAudio(){
-  if(context)return;const AudioContext=window.AudioContext||window.webkitAudioContext;if(!AudioContext)return;
-  try{context=new AudioContext();analyser=context.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=.82;source=context.createMediaElementSource(audio);source.connect(analyser);analyser.connect(context.destination);bins=new Uint8Array(analyser.frequencyBinCount);}catch{context?.close();context=null;}
- }
- function animate(t){
-  if(!visible||audio.paused)return;frame=requestAnimationFrame(animate);if(t-last<40)return;last=t;
-  let level=.15;if(analyser&&context.state==='running'){analyser.getByteFrequencyData(bins);level=bins.reduce((n,v)=>n+v,0)/bins.length/255;}
-  sphere.style.setProperty('--voice',String(Math.min(1,level*2.5)));
- }
- function halt(){cancelAnimationFrame(frame);sphere.classList.remove('speaking');sphere.style.setProperty('--voice','0');}
- function retryPrompt(){phase='ready';halt();start.hidden=false;start.textContent='點選任意位置重新播放前導語音';status.textContent='語音未能播放，請點選重試';}
- async function play(){
-  const attempt=token;phase='starting';start.hidden=true;status.textContent='語音準備中';connectAudio();
-  try{
-   await context?.resume();if(!visible||attempt!==token)return;
-   await audio.play();if(!visible||attempt!==token){audio.pause();return;}
-   phase='playing';status.textContent='前導語音播放中';sphere.classList.add('speaking');cancelAnimationFrame(frame);frame=requestAnimationFrame(animate);
-  }catch{if(visible&&attempt===token)retryPrompt();}
- }
- audio.addEventListener('ended',()=>{if(!visible)return;phase='done';halt();status.textContent='';start.textContent='點選任意位置開始體驗';start.hidden=false;});
- audio.addEventListener('error',()=>{if(!visible)return;retryPrompt();notify('前導語音載入失敗，請點選首頁重試。');});
- welcome.addEventListener('click',e=>{
-  if(visible&&phase==='done')return;
-  // Preview shortcut: a second click skips narration, not the start screen.
-  if(visible&&(phase==='starting'||phase==='playing')){
+import {registerVoiceAudio,prepareVoiceAudio,claimVoice} from './table-audio.js';
+export function createIntro({stage,role,notify,session}){
+ if(role==='wall')return {sync(){}};
+ const welcome=stage.querySelector('#welcome');
+ if(role==='ipad'){
+  const button=welcome.querySelector('[data-action="start"]');button.classList.add('intro-prompt');
+  let current=session.state;
+  welcome.addEventListener('click',e=>{
+   if(current.session||current.introPhase==='done')return;
    e.preventDefault();e.stopImmediatePropagation();
-   token++;audio.pause();halt();phase='done';status.textContent='';
-   start.textContent='點選任意位置開始體驗';start.hidden=false;
-   return;
-  }
-  e.preventDefault();e.stopImmediatePropagation();
-  if(visible&&phase==='ready'){audio.currentTime=0;play();}
- },true);
- addEventListener('f-stop-audio',()=>{token++;audio.pause();halt();phase='ready';status.textContent='';if(visible){start.textContent='點選任意位置播放前導語音';start.hidden=false;}});
- addEventListener('pagehide',()=>{visible=false;token++;audio.pause();halt();context?.close();},{once:true});
+   const busy=['requested','playing'].includes(current.introPhase);
+   if(!session.send(busy?'intro-skip':'intro-play'))notify('尚未連線，請稍後再試。');
+  },true);
+  return {sync(state){
+   current=state;button.hidden=!!state.session;
+   button.textContent=state.introPhase==='done'?'點選任意位置開始體驗':state.introPhase==='playing'?'前導語音播放中 · 點選可略過':state.introPhase==='requested'?'等待 Table 播放 · 點選可略過':state.introPhase==='error'?'點選重試前導語音（請先啟用 Table 語音）':'點選任意位置播放前導語音';
+  }};
+ }
+ const audio=registerVoiceAudio(new Audio('/f-intro.wav'),'intro');audio.preload='metadata';
+ let current=session.state,played=-1,attempt=0,playingToken=-1;
+ function stop(){attempt++;audio.pause();audio.currentTime=0;}
+ async function play(token){
+  const run=++attempt;playingToken=token;claimVoice('intro');
+  try{
+   await prepareVoiceAudio();if(run!==attempt)return;
+   audio.currentTime=0;await audio.play();
+   if(run!==attempt){audio.pause();return;}
+   session.send('intro-status',{phase:'playing',token});
+  }catch{if(run===attempt){session.send('intro-status',{phase:'error',token});notify('請先在 Table 點選「啟用語音」，再由 iPad 重試。');}}
+ }
+ audio.addEventListener('ended',()=>session.send('intro-status',{phase:'done',token:playingToken}));
+ audio.addEventListener('error',()=>{stop();session.send('intro-status',{phase:'error',token:playingToken});});
+ addEventListener('f-audio-claim',e=>{if(e.detail!=='intro')stop();});
+ addEventListener('f-stop-audio',stop);
+ addEventListener('f-table-audio-unlocked',()=>{if(!current.session&&['requested','error'].includes(current.introPhase))play(current.introToken);});
+ addEventListener('pagehide',stop,{once:true});
  return {sync(state){
-  if(!state.ready)return;const next=!state.session;if(next===visible)return;visible=next;token++;
-  audio.pause();halt();status.textContent='';
-  if(next){phase='ready';audio.currentTime=0;start.textContent='點選任意位置播放前導語音';start.hidden=false;}
-  else start.hidden=true;
+  current=state;
+  if(state.session||['ready','done','error'].includes(state.introPhase)){if(!audio.paused)stop();return;}
+  if(state.introPhase==='requested'&&played!==state.introToken){played=state.introToken;play(played);}
  }};
 }

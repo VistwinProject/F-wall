@@ -3,8 +3,8 @@ export const wallPreset = {
   "view": "wall",
   "tuning": {
     "lineWidth": 0.01,
-    "beamWidth": 0.0095,
-    "minCorePx": 1.3,
+    "beamWidth": 0.04,
+    "minCorePx": 1,
     "blocks": {
       "hrv": [
         470,
@@ -31,8 +31,8 @@ export const wallPreset = {
         370
       ],
       "sensor": [
-        310,
-        900,
+        320,
+        885,
         225,
         115
       ],
@@ -55,8 +55,8 @@ export const wallPreset = {
         185
       ],
       "bathfan": [
-        1600,
-        900,
+        1605,
+        905,
         195,
         180
       ],
@@ -74,8 +74,8 @@ export const wallPreset = {
       ]
     },
     "frame": [
-      125,
-      65,
+      110,
+      55,
       1610,
       985,
       30
@@ -83,12 +83,12 @@ export const wallPreset = {
     "vlines": [
       310,
       460,
-      625,
+      655,
       760,
       1150,
-      1290,
+      1280,
       1435,
-      1600
+      1595
     ],
     "hlines": [
       335,
@@ -101,59 +101,59 @@ export const wallPreset = {
         "source": "hrv",
         "hidden": false,
         "box": [
-          150,
+          120,
           95,
-          145,
-          140
+          195,
+          145
         ]
       },
       "ac": {
         "source": "ac",
         "hidden": false,
         "box": [
-          1615,
+          1610,
           110,
-          150,
-          140
+          215,
+          145
         ]
       },
       "dehum": {
         "source": "dehum",
         "hidden": false,
         "box": [
-          220,
-          360,
-          130,
-          140
+          150,
+          325,
+          205,
+          205
         ]
       },
       "purifier": {
         "source": "purifier",
         "hidden": false,
         "box": [
-          1495,
-          375,
-          180,
-          140
+          1490,
+          385,
+          175,
+          145
         ]
       },
       "sensor": {
         "source": "sensor",
         "hidden": false,
         "box": [
-          160,
-          695,
-          135,
-          140
+          140,
+          610,
+          200,
+          205
         ]
       },
       "light": {
         "source": "light",
         "hidden": false,
         "box": [
-          455,
-          810,
-          90,
+          570,
+          630,
+          200,
           145
         ]
       },
@@ -161,36 +161,36 @@ export const wallPreset = {
         "source": "socket",
         "hidden": false,
         "box": [
-          710,
-          815,
-          120,
-          145
+          695,
+          840,
+          140,
+          175
         ]
       },
       "curtain": {
         "source": "curtain",
         "hidden": false,
         "box": [
-          1205,
-          650,
-          120,
-          145
+          1170,
+          680,
+          180,
+          115
         ]
       },
       "bathfan": {
         "source": "bathfan",
         "hidden": false,
         "box": [
-          1530,
-          660,
-          165,
-          140
+          1510,
+          630,
+          215,
+          175
         ]
       }
     },
     "panelText": {
-      "title": 15,
-      "rowGap": 15
+      "title": 18,
+      "rowGap": 30
     },
     "panelPad": [
       10,
@@ -198,8 +198,8 @@ export const wallPreset = {
       10,
       10
     ],
-    "frameWidth": 0.002,
-    "showImages": false,
+    "frameWidth": 0.0015,
+    "showImages": true,
     "previewImages": false,
     "images": {
       "hrv": {

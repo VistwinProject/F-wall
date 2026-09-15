@@ -1,20 +1,26 @@
-export function createCompletionAudio({stage,role,notify}){
- if(role!=='ipad')return {sync(){}};
- const overlay=stage.querySelector('#completion'),audio=new Audio('/f-completion.wav');audio.preload='metadata';
- const button=document.createElement('button');button.textContent='播放全屋連接完成語音';button.hidden=true;overlay.firstElementChild.append(button);
- let visible=false,muted=false,generation=0;
- function stop(){generation++;audio.pause();audio.currentTime=0;button.hidden=true;}
- async function play(){
-  if(!visible||muted)return;const attempt=++generation;button.hidden=true;
-  try{await audio.play();}
-  catch(error){if(attempt!==generation||!visible)return;if(error.name==='NotAllowedError')button.hidden=false;else notify('全屋連接完成語音暫時無法播放。');}
+import {registerVoiceAudio,prepareVoiceAudio,claimVoice} from './table-audio.js';
+export function createCompletionAudio({role,session,notify}){
+ if(role==='ipad'){
+  let visible=false;
+  return {sync(show,silent=false){if(show&&!visible&&!silent)session.send('completion-play');visible=show;}};
  }
- button.addEventListener('click',e=>{e.stopPropagation();play();});
- addEventListener('f-stop-audio',()=>{muted=true;stop();});
- addEventListener('pagehide',()=>{visible=false;stop();},{once:true});
- return {sync(show,silent=false){
-  muted=silent;
-  if(show===visible){if(muted&&!audio.paused)stop();return;}
-  visible=show;stop();if(show&&!muted)play();
- }};
+ if(role!=='table')return {sync(){}};
+ const audio=registerVoiceAudio(new Audio('/f-completion.wav'),'completion');audio.preload='metadata';
+ const button=document.createElement('button');button.className='device-audio-unlock';button.textContent='播放全屋連接完成語音';button.hidden=true;document.querySelector('#app').append(button);
+ let attempt=0,wanted=false;
+ function stop(){attempt++;wanted=false;audio.pause();audio.currentTime=0;button.hidden=true;}
+ async function play(){
+  if(!wanted)return;const run=++attempt;claimVoice('completion');button.hidden=true;
+  try{await prepareVoiceAudio();if(run!==attempt)return;await audio.play();if(run!==attempt)audio.pause();}
+  catch{if(run===attempt){button.hidden=false;notify('請在 Table 啟用語音後重試。');}}
+ }
+ button.addEventListener('click',play);
+ addEventListener('f-table-audio-unlocked',()=>{if(wanted&&audio.paused)play();});
+ addEventListener('f-audio-claim',e=>{if(e.detail!=='completion')stop();});
+ session.addEventListener('change',({detail:{type,state,event}})=>{
+  if(type==='audio-stop'||!state.session||state.active.length<9||event?.suppressAudio){stop();return;}
+  if(type==='completion-play'){wanted=true;play();}
+ });
+ addEventListener('pagehide',stop,{once:true});
+ return {sync(){}};
 }

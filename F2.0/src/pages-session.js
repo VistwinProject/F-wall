@@ -40,6 +40,11 @@ export class PagesSession extends EventTarget{
    emit({type:'tag-present',...data,suppressAudio:silent,completionAudioReady:s.completionAudioReady});
   };
   const stopAudio=()=>{s.cancelledAudio=true;s.completionAudioReady=false;emit({type:'audio-stop'});};
+  if(type==='intro-play'&&this.role==='ipad'&&!s.session){s.introToken=(s.introToken||0)+1;s.introPhase='requested';emit({type:'intro-state',phase:s.introPhase,token:s.introToken});}
+  else if(type==='intro-skip'&&this.role==='ipad'&&!s.session){s.introPhase='done';emit({type:'intro-state',phase:s.introPhase,token:s.introToken||0});}
+  else if(type==='intro-status'&&this.role==='table'&&!s.session&&msg.token===s.introToken&&['requested','playing','error'].includes(s.introPhase)&&['playing','done','error'].includes(msg.phase)){s.introPhase=msg.phase;emit({type:'intro-state',phase:s.introPhase,token:s.introToken});}
+  else if(type==='completion-play'&&this.role==='ipad'&&s.session&&s.completionAudioReady&&!s.suppressCompletionAudio&&!s.cancelledAudio)emit({type:'completion-play'});
+  if(type==='session-end'||(type==='simulate'&&msg.action==='clear')){s.introPhase='ready';s.introToken=(s.introToken||0)+1;emit({type:'intro-state',phase:s.introPhase,token:s.introToken});}
   if(type==='session-start')start();
   else if(type==='session-end'){stopDemo();stopAudio();s.slots.forEach(v=>{if(v.data)remove(v.slot_index);});s.session=false;emit({type:'session-end'});}
   else if(type==='simulate'){

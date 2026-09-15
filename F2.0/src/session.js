@@ -6,6 +6,9 @@ export function reduce(previous,event){
     next.slots=Object.fromEntries(event.slots.map(({slot_index,...rest})=>[slot_index,rest]));
     next.completionAudioReady=!!event.completionAudioReady;
     next.session=event.session;next.sim=event.sim;next.demo=event.demo;next.ready=true;
+    next.introPhase=event.introPhase||'ready';next.introToken=event.introToken||0;
+  }else if(event.type==='intro-state'){
+    next.introPhase=event.phase;next.introToken=event.token;
   }else if(event.type==='tag-present'){
     next.suppressCompletionAudio=!!event.suppressAudio;
     next.completionAudioReady=!!event.completionAudioReady;next.cancelledAudio=false;

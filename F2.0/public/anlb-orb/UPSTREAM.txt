@@ -1,0 +1,5 @@
+Source: https://github.com/LerSent001/orb
+License: MIT, see LICENSE
+Renderer: user-provided export + approved v12 speech modulation, copied unchanged.
+Renderer SHA-256: e4e507648ebeb3cb6dda3168b4b50f2d21177040b8aeb66e4f888d4ac4059250
+Portable wrapper/demo added 2026-09-15.

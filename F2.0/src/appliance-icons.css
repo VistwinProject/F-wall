@@ -1,7 +1,7 @@
 /* iPad-only monochrome architectural background and operating-device symbols. */
 /* The table reuses the same symbols; its slot containers exist only visually while occupied. */
-.table .table-slot-icon{position:absolute;z-index:4;width:86px;height:86px;transform:translate(-50%,-50%);pointer-events:none;}
-.table .table-slot-icon .node-icon{position:static;display:block;transform:none;width:86px;height:86px;}
+.table .table-slot-icon{position:absolute;z-index:4;width:72px;height:72px;transform:translate(-50%,-50%);pointer-events:none;}
+.table .table-slot-icon .node-icon{position:static;display:block;transform:none;width:72px;height:72px;}
 .table .table-slot-icon .node-icon:after{display:none;}
 .table .slot-icon-leader{fill:none;stroke:#dcefff;stroke-width:1;opacity:0;transition:opacity .28s;}
 .table .slot-icon-leader.active{opacity:.4;}

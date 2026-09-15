@@ -130,6 +130,9 @@ export const BEAM_FRAG = /* glsl */ `
   uniform float uProgress;   // 「射向中樞」畫到哪了：0~1
   uniform float uOn;         // 整條的淡入淡出
   uniform float uTailLen;
+  #ifdef WALL_ROUND_HEAD
+  uniform float uHeadRadius;
+  #endif
   uniform float uBase;
   uniform float uBaseSoft;
   uniform float uBreathe;   // 呼吸倍率（每幀由 CPU 餵，九台共用同一個值）
@@ -213,7 +216,16 @@ float ridge(float c, float sharp, float dSide) {
     float prog = (ph - (1.0 - uTravel)) / uTravel;
     if (prog < 0.0) return 0.0;
     float d = prog * (1.0 + uTailSpan) - t;    // > 0 表示在頭部後方
-    if (d < 0.0) return 0.0;
+    if (d < 0.0) {
+      #ifdef WALL_ROUND_HEAD
+      // A soft longitudinal cap combines with the transverse ridge instead
+      // of clipping the bright head at an interpolated triangle boundary.
+      float ahead = -d / max(uHeadRadius, 0.000001);
+      return exp(-0.5 * ahead * ahead) * (1.0 - smoothstep(2.0, 3.0, ahead));
+      #else
+      return 0.0;
+      #endif
+    }
     return max(0.0, (exp(-d / uTailLen) - 0.04) / 0.96);
   }
 
