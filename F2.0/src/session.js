@@ -2,6 +2,7 @@ import {BY_ID} from './devices.js';
 // One reducer used by every view. A slot removal deliberately has no device ID.
 export function reduce(previous,event){
   const next={...previous,slots:{...previous.slots}};
+  if(Number.isInteger(event.revision))next.revision=event.revision;
   if(event.type==='snapshot'){
     next.slots=Object.fromEntries(event.slots.map(({slot_index,...rest})=>[slot_index,rest]));
     next.completionAudioReady=!!event.completionAudioReady;
@@ -40,7 +41,7 @@ export class Session extends EventTarget{
     let url;try{url=new URL(address);url.searchParams.set('role',this.role);this.socket=new WebSocket(url);}catch{this.retry();return;}
     this.socket.onopen=()=>{this.delay=1000;this.state={...this.state,online:true};this.emit('connection');};
     this.socket.onmessage=({data})=>{try{const event=JSON.parse(data);this.state=reduce(this.state,event);this.emit(event.type,event);}catch(error){console.warn('Ignored malformed state message',error);}};
-    this.socket.onclose=()=>{this.state={...this.state,online:false};this.emit('connection');this.retry();};
+    this.socket.onclose=()=>{this.state={...this.state,online:false,ready:false};this.emit('connection');this.retry();};
     this.socket.onerror=()=>this.socket.close();
   }
   retry(){clearTimeout(this.timer);this.delay=Math.min(this.delay||1000,8000);this.timer=setTimeout(()=>this.connect(),this.delay);this.delay*=1.6;}

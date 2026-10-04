@@ -1,3 +1,4 @@
+import {reportRendered,installRenderHeartbeat} from './display-report.js';
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING} from './devices.js';
 import {Session} from './session.js';
 import {PANEL_CONTENT,TABLE_CONTENT,IPAD_SUMMARY,panelFacts} from './panel-content.js';
@@ -15,6 +16,8 @@ import {setupTableAudio,tableVoice} from './table-audio.js';
 import {ring,rect,between,WALL_ROUTES,wallRoutes,svgPoints} from './geometry.js';
 
 const params=new URLSearchParams(location.search);
+const silentTest=params.has('mute');
+if(silentTest){const badge=document.createElement('div');badge.textContent='F 本機驗證 · 靜音';badge.style.cssText='position:fixed;top:4px;left:4px;z-index:99999;color:white;background:#234;padding:5px;font:12px sans-serif';document.body.append(badge);}
 const role=location.pathname.includes('wall')||location.port==='6274'?'wall':location.pathname.includes('ipad')||location.port==='6275'?'ipad':'table';
 const tune=loadTuning(role);
 let fullEditor;
@@ -267,13 +270,18 @@ function render(eventType='state'){
   tools.querySelector('#server-status').textContent=state.online?'三端同步已連線':'重新連線中';
   tools.querySelector('#demo-button').textContent=state.demo?'停止展示':'自動展示';
   for(const b of tools.querySelectorAll('[data-toggle]')){b.classList.toggle('selected',!!state.slots[b.dataset.toggle]?.data);b.setAttribute('aria-pressed',String(!!state.slots[b.dataset.toggle]?.data));b.disabled=!state.online;}
+  let connectionNotice=document.querySelector('#f-disconnected');
+  if(!connectionNotice){connectionNotice=document.createElement('div');connectionNotice.id='f-disconnected';connectionNotice.textContent='連線中斷 · 保留最後畫面 · 等待重新同步';connectionNotice.style.cssText='position:fixed;top:5px;right:5px;z-index:99999;background:#823c15;color:white;padding:8px;font:14px sans-serif';document.body.append(connectionNotice);}
+  connectionNotice.hidden=state.online&&state.ready;
+  reportRendered(session,state,role);
   if(['snapshot','tag-present','tag-remove','reader-disconnected','session-end'].includes(eventType))startRotation();
 }
 session=new Session(role);state=session.state;
-if(role==='table')setupTableAudio({session,notify});
-intro=createIntro({stage,role,notify,session});
-completionAudio=createCompletionAudio({stage,role,notify,session});
-createDeviceAudio({session,role,notify});
+if(!silentTest&&role==='table')setupTableAudio({session,notify});
+intro=silentTest?{sync(){}}:createIntro({stage,role,notify,session});
+completionAudio=silentTest?{sync(){}}:createCompletionAudio({stage,role,notify,session});
+if(!silentTest)createDeviceAudio({session,role,notify});
+installRenderHeartbeat(session);
 session.addEventListener('change',({detail:event})=>{state=event.state;if(event.type==='audio-stop')dispatchEvent(new Event('f-stop-audio'));render(event.type);});
 render();if(role==='table')updateFocus(null);
 fullEditor=createEditor({role,stage,scene,tune,positions:overrides,refresh:()=>render(),notify,initialOpen:params.has('edit')});
