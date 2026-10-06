@@ -1,0 +1,9 @@
+{
+  "mode": "live",
+  "browser": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "windows": {
+    "table": {"x": 0, "y": 40, "width": 1100, "height": 720},
+    "wall": {"x": 80, "y": 80, "width": 1100, "height": 720},
+    "ipad": {"x": 160, "y": 120, "width": 1024, "height": 768}
+  }
+}

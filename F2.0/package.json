@@ -1,0 +1,17 @@
+{
+  "name": "f-control-tower-remake",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.mjs --sim",
+    "live": "node server/index.mjs --live",
+    "demo": "node server/index.mjs --sim --demo",
+    "check": "node scripts/check-release.mjs && node --test tests/*.test.mjs && node tests/ipad-insights.mjs"
+  },
+  "dependencies": {
+    "nfc-pcsc": "^0.8.1",
+    "three": "^0.185.1",
+    "ws": "^8.18.0"
+  }
+}

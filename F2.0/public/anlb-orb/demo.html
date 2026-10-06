@@ -1,0 +1,7 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ANLB 語音球｜可攜示範</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#080f19;color:#eaf3fa;font:16px system-ui;text-align:center}main{max-width:960px;margin:auto;padding:24px}h1{font-size:24px}#orb{width:min(520px,85vw);height:min(520px,85vw);margin:auto}button,label{display:inline-block;background:#1b3044;color:inherit;border:1px solid #39526b;border-radius:10px;padding:12px;margin:5px;cursor:pointer}input{max-width:280px}audio{width:min(540px,100%);margin:16px}p{color:#aab9c8;line-height:1.7}#mode{color:#8acbff}a{color:#8acbff}</style>
+<main><h1>ANLB 語音球</h1><p>核准 v12 外觀 · 獨立元件示範</p><div id="orb"></div><p id="mode" role="status">正在準備球體…</p>
+<button id="simulate">無聲動態示範</button><button id="quiet">斷句／停頓</button><button id="end">整場結束 → 待機</button><br>
+<label>選擇本機旁白 <input id="file" type="file" accept="audio/*"></label><button id="play">播放所選旁白</button><br><audio id="audio" controls></audio>
+<p>無聲示範使用合成音量；選擇音檔後才會依實際聲音起伏。<br>斷句、暫停和單支音檔播放完，球仍保持思考。整場結束才回待機。<br>音檔留在你的電腦，不會上傳。</p></main>
+<script type="module" src="./demo.js"></script></html>
