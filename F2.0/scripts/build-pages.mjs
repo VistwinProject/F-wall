@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {REPORT_TYPES} from '../src/table-reports.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const role=process.argv[2],repo={wall:'F-wall',table:'F-table',ipad:'F-Ipad'}[role];
 if(!repo)throw Error('Usage: node scripts/build-pages.mjs wall|table|ipad');
@@ -10,9 +11,15 @@ await fs.cp(path.join(root,'public'),out,{recursive:true});
 await fs.cp(path.join(root,'src'),path.join(out,'src'),{recursive:true});
 await fs.cp(path.join(root,'node_modules/three/build'),path.join(out,'vendor'),{recursive:true});
 await fs.cp(path.join(root,'node_modules/three/examples/jsm'),path.join(out,'vendor-addons'),{recursive:true});
-const assets=text=>text.replace(/(["'`])\/(src\/|vendor\/|vendor-addons\/|anlb-orb\/|appliances\/|backgrounds\/|device-audio\/|f-intro\.wav|f-completion\.wav|floorplan-lineart-v2\.png|TOP\.png)/g,(_,quote,asset)=>quote+base+asset);
+const assets=text=>text.replace(/(["'`])\/(src\/|vendor\/|vendor-addons\/|anlb-orb\/|appliances\/|backgrounds\/|device-audio\/|table-reports\/|f-intro\.wav|f-completion\.wav|floorplan-lineart-v2\.png|TOP\.png)/g,(_,quote,asset)=>quote+base+asset);
 async function rewrite(dir){for(const entry of await fs.readdir(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory())await rewrite(file);else if(/\.(js|css)$/.test(file)){const source=await fs.readFile(file,'utf8');await fs.writeFile(file,assets(source));}}}
 await rewrite(path.join(out,'src'));
+const reports=await fs.readFile(path.join(out,'src/table-reports.js'),'utf8');
+for(const report of REPORT_TYPES){
+  const url=base+report.video.replace(/^\//,'');
+  if(!reports.includes(url))throw Error(`Report video is missing the Pages base: ${url}`);
+  await fs.access(path.join(out,report.video.replace(/^\//,'')));
+}
 let app=await fs.readFile(path.join(out,'src/app.js'),'utf8');
 app="import {PagesSession} from './pages-session.js';\n"+app;
 app=app.replace(/^const role=.*;$/m,`const role='${role}';`).replace('new Session(role)','new PagesSession(role)');
