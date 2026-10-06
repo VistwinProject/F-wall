@@ -1,34 +1,91 @@
-// User-provided transcripts aligned to local audio word timestamps. No global timing offset.
+// User-provided transcripts aligned to local audio. Each track declares its timing method.
 export const AUDIO_CAPTIONS = {
-  "purifier": {
-    "text": "空氣清淨機正以自動模式運轉，隨時偵測粉塵變化。目前 PM2.5 僅有 8，空氣清爽，濾網壽命還有65%。",
-    "duration": 12.25,
-    "timing": "speech-word-aligned",
+  "intro": {
+    "text": "你看不見 AI 大腦，但我一直都在。串聯家中感測與設備，我是最懂這棟房子的無形管家，不只接收數據，更理解家的狀態，在異常前預判、提早處理。而你，不需看懂系統，用手機就能掌握「家的健康與維養報告」。這就是 ANLB 的 AI 大腦，讓房子懂得照顧自己，也照顧住在裡面的人。",
+    "duration": 28.959,
+    "timing": "speech-pause-estimated",
     "cues": [
       {
         "start": 0,
-        "end": 3.4,
+        "end": 3.39,
+        "text": "你看不見 AI 大腦，但我一直都在。"
+      },
+      {
+        "start": 3.39,
+        "end": 5.96,
+        "text": "串聯家中感測與設備，"
+      },
+      {
+        "start": 5.96,
+        "end": 9.34,
+        "text": "我是最懂這棟房子的無形管家，"
+      },
+      {
+        "start": 9.34,
+        "end": 10.83,
+        "text": "不只接收數據，"
+      },
+      {
+        "start": 10.83,
+        "end": 12.91,
+        "text": "更理解家的狀態，"
+      },
+      {
+        "start": 12.91,
+        "end": 15.42,
+        "text": "在異常前預判、提早處理。"
+      },
+      {
+        "start": 15.42,
+        "end": 17.82,
+        "text": "而你，不需看懂系統，"
+      },
+      {
+        "start": 17.82,
+        "end": 21.96,
+        "text": "用手機就能掌握「家的健康與維養報告」。"
+      },
+      {
+        "start": 21.96,
+        "end": 24.82,
+        "text": "這就是 ANLB 的 AI 大腦，"
+      },
+      {
+        "start": 24.82,
+        "end": 28.959,
+        "text": "讓房子懂得照顧自己，也照顧住在裡面的人。"
+      }
+    ]
+  },
+  "purifier": {
+    "text": "空氣清淨機正以自動模式運轉，同時偵測粉塵變化。目前 PM2.5 為 18，目標7.9以下，濾網壽命還有63%。",
+    "duration": 12.81,
+    "timing": "speech-pause-aligned",
+    "cues": [
+      {
+        "start": 0,
+        "end": 2.94,
         "text": "空氣清淨機正以自動模式運轉，"
       },
       {
-        "start": 3.4,
-        "end": 5.68,
-        "text": "隨時偵測粉塵變化。"
+        "start": 2.94,
+        "end": 5.37,
+        "text": "同時偵測粉塵變化。"
       },
       {
-        "start": 5.68,
-        "end": 8.28,
-        "text": "目前 PM2.5 僅有 8，"
+        "start": 5.37,
+        "end": 8.25,
+        "text": "目前 PM2.5 為 18，"
       },
       {
-        "start": 8.28,
-        "end": 9.56,
-        "text": "空氣清爽，"
+        "start": 8.25,
+        "end": 10.09,
+        "text": "目標7.9以下，"
       },
       {
-        "start": 9.56,
-        "end": 12.25,
-        "text": "濾網壽命還有65%。"
+        "start": 10.09,
+        "end": 12.81,
+        "text": "濾網壽命還有63%。"
       }
     ]
   },
@@ -124,34 +181,44 @@ export const AUDIO_CAPTIONS = {
     ]
   },
   "bathfan": {
-    "text": "主衛暖風機運轉中，設定 28 度，剩餘 12 分鐘。它會在您沐浴前預先暖房、帶走濕氣，本月已為您運轉 34 次。",
-    "duration": 13.41,
-    "timing": "speech-word-aligned",
+    "text": "浴室暖風機運轉中，目前18度，目標24度，剩餘 15 分鐘。它會在您沐浴前預先暖房、溫差保護啟動中，本月累積運轉820小時。",
+    "duration": 15.93,
+    "timing": "speech-pause-aligned",
     "cues": [
       {
         "start": 0,
-        "end": 2,
-        "text": "主衛暖風機運轉中，"
+        "end": 2.27,
+        "text": "浴室暖風機運轉中，"
       },
       {
-        "start": 2,
-        "end": 3.82,
-        "text": "設定 28 度，"
+        "start": 2.27,
+        "end": 3.71,
+        "text": "目前18度，"
       },
       {
-        "start": 3.82,
-        "end": 5.58,
-        "text": "剩餘 12 分鐘。"
+        "start": 3.71,
+        "end": 5.26,
+        "text": "目標24度，"
       },
       {
-        "start": 5.58,
-        "end": 9.92,
-        "text": "它會在您沐浴前預先暖房、帶走濕氣，"
+        "start": 5.26,
+        "end": 7.27,
+        "text": "剩餘 15 分鐘。"
       },
       {
-        "start": 9.92,
-        "end": 13.41,
-        "text": "本月已為您運轉 34 次。"
+        "start": 7.27,
+        "end": 10.62,
+        "text": "它會在您沐浴前預先暖房、"
+      },
+      {
+        "start": 10.62,
+        "end": 12.56,
+        "text": "溫差保護啟動中，"
+      },
+      {
+        "start": 12.56,
+        "end": 15.93,
+        "text": "本月累積運轉820小時。"
       }
     ]
   },

@@ -16,7 +16,7 @@ export function createIntro({stage,role,notify,session}){
    button.textContent=state.introPhase==='done'?'點選任意位置開始體驗':state.introPhase==='playing'?'前導語音播放中 · 點選可略過':state.introPhase==='requested'?'等待 Table 播放 · 點選可略過':state.introPhase==='error'?'點選重試前導語音（請先啟用 Table 語音）':'點選任意位置播放前導語音';
   }};
  }
- const audio=registerVoiceAudio(new Audio('/f-intro.wav'),'intro');audio.preload='metadata';
+ const audio=registerVoiceAudio(new Audio('/f-intro.wav?v=20261006-new'),'intro');audio.preload='metadata';
  let current=session.state,played=-1,attempt=0,playingToken=-1;
  function stop(){attempt++;audio.pause();audio.currentTime=0;}
  async function play(token){

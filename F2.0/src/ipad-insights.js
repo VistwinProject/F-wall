@@ -1,5 +1,3 @@
-import {panelFacts} from './panel-content.js';
-
 // Fixed exhibit snapshot, not live telemetry. Client values remain in PANEL_CONTENT.
 export const EXHIBITION={start:'2026-10-11',end:'2027-04-30'};
 export const SNAPSHOT=EXHIBITION.start;
@@ -29,18 +27,63 @@ function bars(values,labels,unit){
   return `<div class="insight-bars" role="img" aria-label="${labels.map((label,i)=>`${label} ${n(values[i],3)} ${unit}`).join('；')}">${values.map((v,i)=>`<div class="insight-bar-col"><span>${n(v,3)}</span><div class="insight-bar-track"><i style="height:${v/max*100}%"></i></div><small>${labels[i]}</small></div>`).join('')}</div>`;
 }
 function trend(id,kind){const d=INSIGHTS[id],energy=kind==='energy',values=[...(energy?d.past:d.pastActivity),energy?d.energy:d.activity],unit=energy?'kWh':d.unit;
-  return `<section class="insight-box"><div class="insight-section-title"><h3>${energy?'用電趨勢':d.activityName+'趨勢'}</h3><span>${unit}</span></div>${bars(values,MONTH_LABELS,unit)}<p class="insight-footnote">¹ 10 月統計至 11 日；前五個月為完整月份，不直接比較增減。</p></section>`;
+  return `<section class="insight-box"><div class="insight-section-title"><h3>${energy?'用電趨勢':d.activityName+'趨勢'}</h3><span>${unit}</span></div>${bars(values,MONTH_LABELS,unit)}</section>`;
 }
 function daily(id){const d=INSIGHTS[id],values=dailyValues(d.energy),groups=[values.slice(0,4),values.slice(4,8),values.slice(8)].map(a=>a.reduce((sum,v)=>sum+v,0));
  return `<section class="insight-box"><div class="insight-section-title"><h3>本月用電分布</h3><span>合計 ${n(d.energy,3)} kWh</span></div>${bars(groups,['1–4 日','5–8 日','9–11 日'],'kWh')}<p class="insight-footnote">三段用電加總對應本月累積值。</p></section>`;
 }
-function breakdown(){return `<section class="insight-box"><h3>設備耗電排行</h3><div class="insight-stack" role="img" aria-label="客廳冷氣 162、除濕機 48、電暖器 36、其他設備 38，合計 284 kWh">${SOCKET_BREAKDOWN.map(([label,value],i)=>`<i style="width:${value/284*100}%;--segment:${i}" title="${label} ${value} kWh"></i>`).join('')}</div><dl class="insight-ranking">${SOCKET_BREAKDOWN.map(([label,value],i)=>`<div><dt><i style="--segment:${i}"></i>${label}</dt><dd>${value} kWh <small>${n(value/284*100)}%</small></dd></div>`).join('')}</dl><p class="insight-footnote">指定前三名合計 246 kWh，其餘 38 kWh 歸入其他設備。較上月下降 8% 採相同統計期間比較：上月 1–11 日約 308.7 kWh。</p></section>`;}
-function environment(){const lines=[['溫度','°C',[25.1,25.3,25.7,26.2,26.4,26]],['濕度','%',[68,69,71,74,73,72]],['CO₂','ppm',[612,645,708,782,756,734]],['PM2.5','',[12,11,10,9,8,8]]];return `<section class="insight-box insight-wide"><h3>今日環境變化</h3><div class="environment-grid">${lines.map(([label,unit,values])=>{const lo=Math.min(...values)-1,hi=Math.max(...values)+1;const points=values.map((v,i)=>`${10+i*48},${70-(v-lo)/(hi-lo)*50}`).join(' ');return `<div><p>${label}<strong>${values.at(-1)} <small>${unit}</small></strong></p><svg viewBox="0 0 260 90" role="img" aria-label="${label} 00、03、06、09、12、15 時數值：${values.join('、')} ${unit}"><path d="M10 72H250" stroke="currentColor" opacity=".15"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><div class="spark-labels"><span>00:00</span><span>15:00</span></div></div>`;}).join('')}</div><p class="insight-footnote">歷史曲線為示意；最後一筆對齊業主指定數值。其餘感測通道尚待規格確認。</p></section>`;}
-function gauge(d){return `<section class="insight-box insight-condition"><div class="insight-ring" role="img" aria-label="${d.gaugeLabel} ${d.gauge}%" style="--progress:${d.gauge}%"><strong>${d.gauge}<small>%</small></strong></div><div><h3>${d.gaugeLabel}</h3><p>${d.gaugeNote}</p></div></section>`;}
-export function insightPanel(id,view='overview'){
- const d=INSIGHTS[id];
- if(view==='trends')return `<div class="insight-grid">${id==='sensor'?environment():''}${trend(id,'energy')}${trend(id,'activity')}${id==='socket'?breakdown():daily(id)}<section class="insight-box"><h3>數據說明</h3><p>${d.note}</p><p>累積數值為啟用至展示基準日的總計；近六個月圖表僅呈現其中一段。</p>${id==='socket'?'<p>9 月完整月用電為模擬 600 kWh；9 月 1–11 日約 308.7 kWh 作為同期比較基準。</p>':''}<p class="insight-footnote">展示估算，非實際電表或感測器紀錄。</p></section></div>`;
- if(view==='maintenance')return `<div class="insight-grid"><section class="insight-box insight-wide"><div class="insight-section-title"><h3>維護保養計畫</h3><span>展示排程</span></div><ol class="insight-timeline">${d.plan.map(([date,item,status])=>`<li><time>${date}</time><div><strong>${item}</strong><span>${status}</span></div></li>`).join('')}</ol></section><section class="insight-box insight-wide"><h3>近期保養紀錄</h3><table class="insight-history"><thead><tr><th>日期</th><th>項目</th><th>結果</th></tr></thead><tbody>${[...d.history].sort((a,b)=>b[0].localeCompare(a[0])).map(row=>`<tr>${row.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="insight-footnote">歷史紀錄與延伸排程為模擬；指定維養月份與濾網更換倒數保留業主資料。</p></section></div>`;
- return `<div class="insight-grid"><section class="insight-box insight-wide"><div class="insight-section-title"><h3>設備現況</h3><span>開展日模擬資料</span></div><div class="panel-facts-detail">${panelFacts(id)}</div></section><div class="insight-kpis insight-wide">${[['本月用電',d.energy,'kWh'],['累積用電',d.totalEnergy,'kWh'],['本月'+d.activityName,d.activity,d.unit],['累積'+d.activityName,d.totalActivity,d.unit]].map(([label,v,unit])=>`<div><span>${label}</span><strong>${n(v,2)} <small>${unit}</small></strong></div>`).join('')}</div>${gauge(d)}<section class="insight-box"><h3>下一項保養</h3><p class="insight-next-date">${d.plan[0][0]}</p><p>${d.plan[0][1]}</p><span class="insight-pill">${d.plan[0][2]}</span></section>${id==='socket'?breakdown():id==='sensor'?environment():daily(id)}</div>`;
+function breakdown(){return `<section class="insight-box"><h3>設備耗電排行</h3><div class="insight-stack" role="img" aria-label="客廳冷氣 162、除濕機 48、電暖器 36、其他設備 38，合計 284 kWh">${SOCKET_BREAKDOWN.map(([label,value],i)=>`<i style="width:${value/284*100}%;--segment:${i}" title="${label} ${value} kWh"></i>`).join('')}</div><dl class="insight-ranking">${SOCKET_BREAKDOWN.map(([label,value],i)=>`<div><dt><i style="--segment:${i}"></i>${label}</dt><dd>${value} kWh <small>${n(value/284*100)}%</small></dd></div>`).join('')}</dl><p class="insight-footnote">本月共 284 kWh，較上月同期下降 8%；客廳冷氣占約 57%。</p></section>`;}
+function environment(){const lines=[['溫度','°C',[25.1,25.3,25.7,26.2,26.4,26]],['濕度','%',[68,69,71,74,73,72]],['CO₂','ppm',[612,645,708,782,756,734]],['PM2.5','',[12,11,10,9,8,8]]];return `<section class="insight-box insight-wide"><h3>今日環境變化</h3><div class="environment-grid">${lines.map(([label,unit,values])=>{const lo=Math.min(...values)-1,hi=Math.max(...values)+1;const points=values.map((v,i)=>`${10+i*48},${70-(v-lo)/(hi-lo)*50}`).join(' ');return `<div><p>${label}<strong>${values.at(-1)} <small>${unit}</small></strong></p><svg viewBox="0 0 260 90" role="img" aria-label="${label} 00、03、06、09、12、15 時數值：${values.join('、')} ${unit}"><path d="M10 72H250" stroke="currentColor" opacity=".15"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><div class="spark-labels"><span>00:00</span><span>15:00</span></div></div>`;}).join('')}</div><p class="insight-footnote">今日環境趨勢示意。</p></section>`;}
+function gauge(d){return `<section class="insight-box insight-condition insight-wide"><div class="insight-ring" role="img" aria-label="${d.gaugeLabel} ${d.gauge}%" style="--progress:${d.gauge}%"><strong>${d.gauge}<small>%</small></strong></div><div><h3>${d.gaugeLabel}</h3><p>${d.gaugeNote}</p></div></section>`;}
+// Owner-provided Q&A: screenshots dated 2026-09-30. Dates are kept as supplied.
+export const DEVICE_QA={
+ socket:[
+  ['這個插座接的是什麼設備？','目前偵測為客廳電暖機，今日耗電 1.8 kWh。'],
+  ['這個設備最近耗電正常嗎？','近 7 日耗電較前一週增加 12%，仍在正常範圍內，建議持續觀察。'],
+ ],
+ light:[
+  ['客廳燈今天開了多久？','客廳燈今天累積使用 5.2 小時。'],
+  ['這盞燈還能用多久？','目前累積使用 8,200 小時，額定壽命 25,000 小時，剩餘約 16,800 小時。'],
+ ],
+ ac:[
+  ['家裡哪一台冷氣最耗電？','客廳冷氣本月耗電 162 kWh，是家中冷氣耗電最高的一台。'],
+  ['冷氣下一次維養是什麼時候，要維養什麼項目？','下次建議維養為 2026/10，項目包含濾網清洗、出風口清潔與冷媒壓力檢查。'],
+ ],
+ hrv:[
+  ['新風機會很耗電嗎？','本週新風機耗電 12.6 kWh，占全戶用電約 4.8%。主要啟動原因為 CO₂ 偏高。'],
+  ['新風機什麼時候需要保養？','濾網剩餘壽命 72%，預估 124 天後建議更換濾網。'],
+ ],
+ bathfan:[
+  ['洗完澡後，浴室多久會恢復乾燥？','最近 30 天平均需要 42 分鐘。暖風機啟動後，浴室濕度會由 85% 下降至 65%。'],
+  ['浴室暖風機下一次維養是什麼時候？','預計 2027/06。建議檢查風扇模組、排風管道與加熱元件。目前設備健康度 94%。'],
+ ],
+ sensor:[
+  ['梅雨季節到了，最近空氣品質真的好嗎？','最近濕度偏高，平均 72%；CO₂ 與 PM2.5 仍在良好範圍，但建議注意除濕與通風。'],
+  ['感測器需要維養嗎？','建議每 12 個月校正一次，目前距離下次校正約 5 個月。'],
+ ],
+ dehum:[
+  ['最近除濕機是不是很常開？','最近 7 天共運轉 32 小時，較上月增加 41%，主要因為濕度偏高。'],
+  ['除濕機下一次維養是什麼時候？','預計 2027/03 進行維養，建議清潔集水箱、濾網與排水管。'],
+ ],
+ purifier:[
+  ['最近家裡空氣品質好嗎？','最近 30 天平均 PM2.5 為 8 μg/m³，有 3 次因烹飪造成 PM2.5 超過 35，空氣清淨機已自動啟動淨化，目前整體空氣品質為優良。'],
+  ['空氣清淨機什麼時候需要換濾網？','上次維養為 2026/05/12。AI 依據設備運轉時數、空氣品質紀錄及居住環境評估，預估下次維養為 2026/06/26、濾網更換為 2026/08/20。'],
+ ],
+ curtain:[
+  ['今天窗簾有幫我遮陽嗎？','有，下午西曬時段窗簾自動關閉 2.5 小時，降低室內升溫。'],
+  ['窗簾馬達需要維養嗎？','馬達累積運轉 8,200 次，距離建議保養週期約剩 1,800 次。'],
+ ],
+};
+function questions(id){return `<div class="insight-questions"><p class="question-hint">選擇問題，查看智慧回覆</p>${DEVICE_QA[id].map(([question,answer],i)=>`<section class="insight-question"><button type="button" id="question-${id}-${i}" data-insight-question aria-expanded="false" aria-controls="answer-${id}-${i}"><span class="question-number">0${i+1}</span><span>${question}</span><span class="question-toggle" aria-hidden="true">＋</span></button><div class="insight-answer" id="answer-${id}-${i}" role="region" aria-labelledby="question-${id}-${i}" hidden><span>智慧回覆</span><p>${answer}</p></div></section>`).join('')}</div>`;}
+function usageSummary(d){return `<div class="insight-kpis insight-wide">${[['本月用電',d.energy,'kWh'],['累積用電',d.totalEnergy,'kWh'],['本月'+d.activityName,d.activity,d.unit],['累積'+d.activityName,d.totalActivity,d.unit]].map(([label,v,unit])=>`<div><span>${label}</span><strong>${n(v,2)} <small>${unit}</small></strong></div>`).join('')}</div>`;}
+function maintenanceCondition(id){
+ const d=INSIGHTS[id],notes={light:'已使用 8,200 小時，約剩 16,800 小時；預估 2033 年更換。',hrv:'預估 124 天後更換濾網。',purifier:'預估 98 天後更換濾網。',curtain:'累積運轉 8,200 次，距離下次保養約 1,800 次。'};
+ return notes[id]?gauge({...d,gaugeNote:notes[id]}):'';
 }
-export function ipadDetail(id){return `<div class="ipad-insights" data-insight-device="${id}"><div class="insight-intro"><span>設備使用與維養</span><span>展示基準日 ${SNAPSHOT.replaceAll('-','/')}</span></div><p class="insight-disclaimer">以業主數值為基準，統一模擬至開展日；用電、時數、趨勢及保養紀錄為模擬展示資料。</p><p class="insight-disclaimer">展期 ${EXHIBITION.start.replaceAll('-','/')} – ${EXHIBITION.end.replaceAll('-','/')}</p><div class="insight-tabs" role="tablist" aria-label="家電詳細資訊">${[['overview','總覽'],['trends','用量趨勢'],['maintenance','維護保養']].map(([key,label],i)=>`<button id="insight-tab-${key}" role="tab" type="button" data-insight-view="${key}" aria-selected="${i===0}" aria-controls="insight-panel" tabindex="${i===0?0:-1}">${label}</button>`).join('')}</div><div id="insight-panel" role="tabpanel" aria-labelledby="insight-tab-overview">${insightPanel(id)}</div></div>`;}
+export function insightPanel(id,view='qa'){
+ const d=INSIGHTS[id];
+ if(view==='trends')return `<div class="insight-grid">${usageSummary(d)}${id==='sensor'?environment():''}${trend(id,'energy')}${trend(id,'activity')}${id==='socket'?breakdown():daily(id)}</div>`;
+ if(view==='maintenance')return `<div class="insight-grid">${maintenanceCondition(id)}<section class="insight-box insight-wide"><h3>維護保養計畫</h3><ol class="insight-timeline">${d.plan.map(([date,item,status])=>`<li><time>${date}</time><div><strong>${item}</strong><span>${status}</span></div></li>`).join('')}</ol></section><section class="insight-box insight-wide"><h3>近期保養紀錄</h3><table class="insight-history"><thead><tr><th>日期</th><th>項目</th><th>結果</th></tr></thead><tbody>${[...d.history].sort((a,b)=>b[0].localeCompare(a[0])).map(row=>`<tr>${row.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></section></div>`;
+ return questions(id);
+}
+export function ipadDetail(id){return `<div class="ipad-insights" data-insight-device="${id}"><div class="insight-tabs" role="tablist" aria-label="家電詳細資訊">${[['qa','智慧問答'],['trends','用量趨勢'],['maintenance','維護保養']].map(([key,label],i)=>`<button id="insight-tab-${key}" role="tab" type="button" data-insight-view="${key}" aria-selected="${i===0}" aria-controls="insight-panel" tabindex="${i===0?0:-1}">${label}</button>`).join('')}</div><div id="insight-panel" role="tabpanel" aria-labelledby="insight-tab-qa">${insightPanel(id)}</div><p class="insight-disclaimer" hidden>10 月統計至 11 日；前五個月為完整月份，不直接比較增減。</p></div>`;}

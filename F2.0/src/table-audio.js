@@ -39,6 +39,13 @@ export function setupTableAudio({session,notify}){
     try{await prepareVoiceAudio();button.hidden=true;dispatchEvent(new Event('f-table-audio-unlocked'));}
     catch{notify('音訊尚未啟用，請再點一次。');}
   });
+  // The Windows exhibition launcher permits autoplay. Keep the manual fallback
+  // when the browser or an enterprise policy still requires a user gesture.
+  if(new URLSearchParams(location.search).has('exhibition')){
+    prepareVoiceAudio().then(()=>{
+      if(context?.state==='running'){button.hidden=true;dispatchEvent(new Event('f-table-audio-unlocked'));}
+    }).catch(()=>{});
+  }
   session.addEventListener('change',({detail:{type,state,event}})=>{
     // A show spans intro, device tracks, their pauses and the closing track.
     // Neither silence, NFC removal nor a single audio ended event ends it.

@@ -3,8 +3,8 @@
 .table .table-slot-icon{position:absolute;z-index:4;width:72px;height:72px;transform:translate(-50%,-50%);pointer-events:none;}
 .table .table-slot-icon .node-icon{position:static;display:block;transform:none;width:72px;height:72px;}
 .table .table-slot-icon .node-icon:after{display:none;}
-.table .slot-icon-leader{fill:none;stroke:#dcefff;stroke-width:1;opacity:0;transition:opacity .28s;}
-.table .slot-icon-leader.active{opacity:.4;}
+/* Compensate for the compact sensor drawing's transparent bottom padding. */
+.table .table-slot-icon .icon-sensor{transform:translateY(26px);}
 .ipad .completion{background:rgba(16,21,27,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 .ipad .floorplan{opacity:.76;filter:grayscale(1);}
 :is(.ipad .graph-node,.table .table-slot-icon){z-index:6;overflow:visible;}
@@ -48,3 +48,5 @@
 @keyframes device-curtain-right{0%,15%,100%{transform:translateX(0)}45%,70%{transform:translateX(8px)}}
 @keyframes device-heat{from{stroke-dashoffset:0}to{stroke-dashoffset:24}}
 @media(prefers-reduced-motion:reduce){:is(.ipad .graph-node,.table .table-slot-icon).active .node-icon,:is(.ipad .graph-node,.table .table-slot-icon).active .appliance-icon *{animation:none!important;}:is(.ipad .graph-node,.table .table-slot-icon).active .icon-air,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-clean-air,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-heat,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-signal,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-rays,:is(.ipad .graph-node,.table .table-slot-icon).active .icon-electric{opacity:1;}}
+/* SVG relations are a fallback, not an extra sharp stroke over WebGL light. */
+.ipad .graph-scene.has-webgl-glow #graph-lines .relation{display:none}

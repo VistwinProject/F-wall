@@ -6,6 +6,7 @@
 .op-tracer{stroke:#f5fcff;stroke-width:1.2;fill:none;offset-rotate:auto;offset-anchor:0px 0px;animation:op-transit var(--speed,2.8s) linear infinite;animation-delay:var(--delay,0s)}
 .op-part{stroke:#aac4d080;fill:#0d1721;stroke-width:.8}.op-chip{fill:#112532;stroke:#a9cad5;stroke-width:.9}.op-label{font:5px 'PingFang TC','Microsoft JhengHei',sans-serif;text-anchor:middle;fill:#e1edf4;stroke:none;letter-spacing:.2px;paint-order:stroke;filter:drop-shadow(0 1px 1px #000)}
 .op-rotor{transform-box:view-box;transform-origin:0 0;animation:op-spin 1.6s linear infinite;fill:#a2ccda70;stroke:#d0eef7;stroke-width:.7}.op-hub{fill:#f1fcff;stroke:none}
+.wall-operation[data-operation="hrv"] circle.op-part{fill:none}
 .op-filter{stroke:#ccdcc7;stroke-width:.65}.op-filter .op-part{fill:#b9dcb50b}.op-coil{stroke:currentColor;stroke-width:1.6;filter:drop-shadow(0 0 1px currentColor)}
 .op-exchanger{stroke:#cddce9;fill:#7495ac17}.op-fin{stroke:#c9dae5;stroke-width:.7;opacity:.5}.op-transfer{stroke:#ffe3a7;stroke-dasharray:2 3;animation:op-stream 2s linear infinite;opacity:.7}
 .op-divider{stroke:#aac4d040;stroke-dasharray:2 4;stroke-width:.65}.op-drain{stroke:#78bcdb;stroke-width:1;opacity:.65}.op-drop{fill:#8ed9fc;stroke:#c6efff;stroke-width:.5;animation:op-drip 2.6s ease-in infinite;animation-delay:var(--delay,0s)}

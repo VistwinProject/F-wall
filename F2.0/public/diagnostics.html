@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>F 區 NFC 診斷</title>
+<style>body{font:16px system-ui;background:#101a25;color:#e8f3ff;max-width:1100px;margin:32px auto;padding:20px}h1{font-size:28px}table{width:100%;border-collapse:collapse}td,th{padding:12px;border-bottom:1px solid #43515e;text-align:left}button{padding:12px;margin:16px 0}pre{white-space:pre-wrap;background:#1e2b38;padding:16px}a{color:#8ed8ff}</style>
+<h1>F 區｜9 台 NFC 實測</h1><p id="status">連線中…</p><p>逐台插入 reader 並貼上槽位標籤；感應已登記卡片後，對照 Wall／Table／iPad。未固定槽位時，重插順序可能改變編號。</p>
+<table><thead><tr><th>槽位</th><th>Reader</th><th>UID</th><th>家電</th><th>固定對照</th></tr></thead><tbody id="rows"></tbody></table>
+<button id="export" disabled>匯出目前 9 台 reader-map.json</button><p>將匯出檔放進安裝包的 server 資料夾，再 Stop → Start。若重新插拔後 reader 名稱改變，請重新校對位置。</p>
+<p><a href="/ipad">iPad 畫面</a> · <a href="http://localhost:6273/table">主機 Table</a> · <a href="http://localhost:6274/wall">主機 Wall</a></p>
+<h2>最近硬體事件</h2><pre id="events"></pre><h2>錯誤</h2><pre id="errors"></pre>
+<script type="module">
+let last;
+const rows=document.querySelector('#rows'),button=document.querySelector('#export');
+async function update(){try{
+ const r=await fetch('/health',{cache:'no-store',signal:AbortSignal.timeout(2000)});if(!r.ok)throw Error(r.status);last=await r.json();
+ document.querySelector('#status').textContent=`${last.mode==='live'?'實體 NFC':'模擬'}模式｜已連接 ${last.nfc.connected} / 9 台｜已辨識 ${new Set(last.slots.filter(s=>s.data).map(s=>s.data.id)).size} / 9 種家電`;
+ rows.replaceChildren();for(let slot=1;slot<=9;slot++){
+  const s=last.slots.find(s=>s.slot_index===slot),tr=document.createElement('tr');
+  for(const value of [slot,s?.reader||'未連接',s?.uid||'—',s?.data?.label||(s?.known===false?'未登記卡片':'—'),last.nfc.mapped.includes(slot)?'已固定':'尚未固定']){const td=document.createElement('td');td.textContent=value;tr.append(td);}rows.append(tr);
+ }
+ button.disabled=last.mode!=='live'||last.nfc.connected!==9||new Set(last.slots.map(s=>s.reader)).size!==9;
+ document.querySelector('#events').textContent=last.nfc.events.slice().reverse().map(e=>JSON.stringify(e)).join('\n')||'等待硬體事件';
+ document.querySelector('#errors').textContent=last.nfc.errors.join('\n')||'目前無錯誤';
+ }catch(e){document.querySelector('#status').textContent='服務已停止或連線中斷';button.disabled=true;}finally{setTimeout(update,1000);}}
+button.onclick=()=>{if(button.disabled)return;const map=Object.fromEntries(last.slots.map(s=>[s.reader,s.slot_index]));const url=URL.createObjectURL(new Blob([JSON.stringify(map,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='reader-map.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};update();
+</script></html>

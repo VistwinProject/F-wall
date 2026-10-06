@@ -3,6 +3,7 @@ import {registerVoiceAudio,prepareVoiceAudio,claimVoice} from './table-audio.js'
 
 export function createDeviceAudio({session,role,notify}){
  if(role!=='table')return;
+ const versions={purifier:'20260923-v3',bathfan:'20260923-v2'};
  const audio=registerVoiceAudio(new Audio(),'device');audio.preload='none';
  const button=document.createElement('button');button.className='device-audio-unlock';button.textContent='點此播放家電語音';button.hidden=true;document.querySelector('#app').append(button);
  let present=new Map(),previous=new Map(),pending=null,current=null,timer=null,fadeFrame=null,generation=0;
@@ -27,7 +28,7 @@ export function createDeviceAudio({session,role,notify}){
  async function play(){
   timer=null;const item=pending;if(!exists(item)){pending=null;button.hidden=true;return;}
   pending=null;current=item;button.hidden=true;audio.volume=1;
-  const attempt=++generation;audio.src=`/device-audio/${item.id}.wav`;
+  const attempt=++generation;audio.src=`/device-audio/${item.id}.wav${versions[item.id]?'?v='+versions[item.id]:''}`;
   try{await prepareVoiceAudio();if(attempt!==generation)return;await audio.play();if(attempt!==generation)audio.pause();}
   catch(error){
    if(attempt!==generation)return;current=null;
