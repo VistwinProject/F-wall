@@ -1,7 +1,7 @@
 import {createRestoredOrb} from './restored-orb.js';
 // One MediaElementAudioSource per media element; reuse across reconnections.
 const audioGraphs = new WeakMap();
-export function mountOrb(container) {
+export function mountOrb(container,{createRenderer=createRestoredOrb}={}) {
   const canvas=document.createElement('canvas'), status=document.createElement('div');
   canvas.style.cssText='display:block;width:100%;height:100%;';
   status.hidden=true; status.setAttribute('role','status');
@@ -9,7 +9,15 @@ export function mountOrb(container) {
   let active=false, disposed=false, cleanup=null;
   let resolveReady,rejectReady;
   const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
-  const renderer=createRestoredOrb({canvas,status,onReady:resolveReady,onError:rejectReady});
+  canvas.dataset.orbHealth='starting';
+  const renderer=createRenderer({canvas,status,onReady:resolveReady,
+    onFrame(){if(!disposed)canvas.dataset.orbHealth='ready';},
+    onError(error){
+      if(disposed)return;
+      canvas.dataset.orbHealth='error';canvas.dataset.orbError=error.message;
+      canvas.style.visibility='hidden';
+      rejectReady(error);
+    }});
   // Keep errors visible even when the caller does not await ready.
   ready.catch(()=>{});
   const api={ready,canvas,
@@ -44,7 +52,7 @@ export function mountOrb(container) {
       return cleanup;
     },
     disconnectAudio(){cleanup?.();cleanup=null;},
-    dispose(){if(disposed)return;cleanup?.();renderer.dispose();disposed=true;canvas.remove();status.remove();}
+    dispose(){if(disposed)return;disposed=true;cleanup?.();renderer.dispose();canvas.remove();status.remove();}
   };
   return api;
 }

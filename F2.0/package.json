@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server/index.mjs --sim",
     "live": "node server/index.mjs --live",
-    "demo": "node server/index.mjs --sim --demo"
+    "demo": "node server/index.mjs --sim --demo",
+    "check": "node scripts/check-release.mjs && node --test tests/*.test.mjs && node tests/ipad-insights.mjs"
   },
   "dependencies": {
     "nfc-pcsc": "^0.8.1",

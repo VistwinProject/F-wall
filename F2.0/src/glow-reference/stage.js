@@ -45,13 +45,15 @@ export function col(hex) {
 // 固定面積之後不管容器多怪，緩衝都維持在 1.6 MP 上下。
 const AREA = (PARAMS.refWidth * PARAMS.refWidth) / 1.6 // ≈ 1600×1000
 
-export function createStage(canvas, aspect, { transparent = true } = {}) {
+export function createStage(canvas, aspect, { transparent = true, antialias = true } = {}) {
   const H = Math.round(Math.sqrt(AREA / aspect))
   const W = Math.round(H * aspect)
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    // iPad 關閉：光線先畫進 EffectComposer 的中繼緩衝（本來就沒有 MSAA），
+    //   畫布上的 MSAA 只作用在最後一張全螢幕貼圖，畫面不變但多耗記憶體頻寬。
+    antialias,
     alpha: transparent,
     // ⚠ 必須是 true（＝ WebGL 預設）。shader 現在輸出的 alpha 是「該像素的亮度」
     //   （見 shaders.js 的 uAlphaLuma），色值本身沒有再除以 alpha ——

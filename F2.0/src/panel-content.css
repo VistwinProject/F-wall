@@ -12,18 +12,6 @@
 .detail-backdrop{background:rgba(7,10,14,.28);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .detail-backdrop .glass.detail-card{background:linear-gradient(145deg,rgba(46,61,76,.76),rgba(22,33,46,.66));backdrop-filter:blur(26px) saturate(110%);-webkit-backdrop-filter:blur(26px) saturate(110%);border:1px solid rgba(210,233,249,.30);box-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)}
 .detail-backdrop .panel-facts-detail{background:rgba(17,27,39,.22)}
-.table-device-visual{display:grid;place-items:center;flex:0 1 260px;min-height:120px;margin:8px 0 24px}
-.table .table-device-visual .node-icon{position:static;transform:none;width:180px;height:180px;color:#dcefff;pointer-events:none}
-.table .table-device-visual .node-icon:after{display:none}
-.table .table-quick-facts{flex:0 0 auto;padding:26px 24px}
-.table .table-quick-facts h2{font-size:28px;color:var(--text);line-height:1.5;margin-bottom:18px}
-.table-quick-facts .device-facts{font-size:24px;line-height:1.6}
-.table-quick-facts .device-facts>div{gap:8px 12px;padding:16px 0}
-.table-quick-facts .device-facts>div:last-child{border-bottom:0}
-.table-quick-facts .device-facts dd{overflow-wrap:anywhere}
-.table-detail-hint{margin:auto 0 4px;text-align:center;font-size:18px;line-height:1.7;color:var(--muted)}
-.ipad .device-reading{white-space:normal;line-height:1.4;font-size:14px}
-
 /* iPad device analytics: client snapshot plus explicitly simulated history. */
 .ipad .detail-card{width:min(1080px,96vw);padding:28px;scrollbar-width:thin;scrollbar-color:#92b8cc55 transparent}
 /* Absolute glass overlays scroll inside this panel and leave a viewport-sized
@@ -77,40 +65,104 @@
 .environment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.environment-grid>div{min-width:0}.environment-grid p{font-size:11px;margin:0}.environment-grid strong{display:block;font-size:23px;font-weight:400;color:#e2f3fc}.environment-grid small{font-size:11px}.environment-grid svg{width:100%;height:auto;color:#9dd6e9;display:block}.spark-labels{display:flex;justify-content:space-between;font-size:10px;color:#8faec1}
 @media(max-width:750px){.insight-kpis{grid-template-columns:1fr 1fr}.insight-grid{grid-template-columns:1fr}.insight-box .device-facts{grid-template-columns:1fr}.environment-grid{grid-template-columns:1fr 1fr}.ipad .detail-card{padding:20px}.insight-intro{flex-wrap:wrap}.insight-timeline li{gap:12px}.insight-timeline time{flex-basis:104px}.insight-history th,.insight-history td{padding:10px 4px}.insight-box{padding:16px}}
 
-/* Compact, non-scrolling projection cards; share iPad data, not its layout. */
-.table #info-panel>.table-quick-facts{display:grid;grid-template-columns:minmax(0,1fr) 100px;align-items:center;column-gap:16px;padding:14px 20px;margin-bottom:12px;flex-basis:0;flex-shrink:0;min-height:min-content}
-.table #info-panel .table-quick-facts h2{font-size:var(--edit-label,22px);line-height:1.4;margin:0 0 6px}
-.table #info-panel .table-quick-facts .device-facts{font-size:calc(var(--edit-body,15px) + 5px);line-height:1.4}
-.table #info-panel .table-quick-facts .device-facts>div{padding:7px 0;gap:4px 10px}
-.table #info-panel>.table-energy{padding:16px 20px;display:grid;grid-template-rows:auto auto minmax(90px,1fr) auto;min-height:340px;margin-bottom:12px}
-.table #info-panel .table-energy h2,.table #info-panel .table-plan h2{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;font-size:var(--edit-label,22px)}
-.table-energy h2 small{font-size:14px;color:var(--muted)}
-.table-energy-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;min-height:99px}
-.table-energy-numbers{display:flex;flex-direction:column;gap:8px;font-size:18px;color:#bfd4e1}
-.table-energy-numbers span{display:block;line-height:1.4}
-.table-energy-numbers strong{font-size:36px;color:#edf8ff;font-weight:500;margin:0 5px}
-.table-energy-numbers b{font-size:22px;color:#dceefa;font-weight:500;margin:0 5px}
-.table-gauge{position:relative;flex:0 0 100px;text-align:center;align-self:flex-start}
-.table-gauge svg{display:block;width:78px;height:78px;margin:0 auto;overflow:visible;transform:rotate(-90deg)}
-.table-gauge circle{fill:none;stroke-width:6;stroke-linecap:round}.table-gauge-track{stroke:#badcf21a}.table-gauge-fill{stroke:#bce9f4}
-.table-gauge>strong{position:absolute;top:23px;left:0;right:0;font-size:23px;font-weight:500;color:#ebf9ff;line-height:1.4}.table-gauge strong small{font-size:12px}
-.table-gauge-label{display:block;margin-top:4px;font-size:14px;line-height:1.3;color:#afc8d7}
-.table-energy-bars{display:flex;gap:10px;min-height:0}
-.table-energy-column{display:flex;flex:1;min-width:0;flex-direction:column;align-items:center;gap:6px}
-.table-energy-column>span{font-size:15px;color:#e1f0fa;white-space:nowrap;font-variant-numeric:tabular-nums}
-.table-energy-column>small{font-size:15px;color:#b3cad8}
-.table-energy-track{display:flex;align-items:flex-end;flex:1;min-height:0;width:100%;border-bottom:1px solid #b4d4e633;background:repeating-linear-gradient(to top,transparent 0,transparent calc(33.33% - 1px),#cae9f512 calc(33.33% - 1px),#cae9f512 33.33%)}
-.table-energy-track i{display:block;width:68%;margin:0 auto;border-radius:4px 4px 0 0;background:linear-gradient(to top,#5c91b388,#c5e6f5);min-height:2px;transform-origin:center bottom}
-.table-energy-column:last-child i{background:linear-gradient(to top,#448798,#adf2e8)}
-.table-chart-note{font-size:14px;color:#9fb9cb;margin:10px 0 0;line-height:1.4}
-.table #info-panel>.table-plan{padding:16px 20px;margin-bottom:10px;min-height:min-content}
-.table-plan ol{padding:0;margin:0;list-style:none}.table-plan li{padding:9px 0;border-top:1px solid #d2e8f21c}.table-plan li>div{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.table-plan time{font-size:18px;color:#d2edfa}.table-plan small{font-size:16px;color:#a1bfcf}.table-plan p{font-size:calc(var(--edit-body,15px) + 4px);line-height:1.5;color:#deebf3;margin:5px 0 0}
-.table-insight-note{flex:none;font-size:11px;line-height:1.5;margin:0;text-align:center;color:#9fb4c4}
+/* iPad main screen font sizes (2026-09-24). */
+.ipad .brand{font-size:20px}
+.ipad .brand b{width:36px;height:36px;border-radius:9px;font-size:20px}
+.ipad .status-right{font-size:20px}
+.ipad #complete-badge{font-size:25px}
+.ipad .device-copy{font-size:30px}
+.ipad .graph-hub span{width:104px;height:104px;font-size:30px;line-height:32px}
+.ipad .graph-hub span,.ipad .graph-hub.active span{border:0;background:none;box-shadow:none}
+.ipad .reset{font-size:25px}
 
-.table-quick-copy{min-width:0}
-.table .table-quick-facts .table-gauge{align-self:center}
+/* iPad appliance detail panel: font sizes x1.5 (2026-09-24). */
+.ipad .detail-header h1{font-size:39px}
+.ipad .detail-header p{font-size:18px}
+.ipad .detail-card h3{font-size:24px}
+.ipad .detail-card .relation-list>div{font-size:18px}
+.ipad .detail-card .sample-label{font-size:16.5px}
+.ipad .detail-card .insight-intro{font-size:19.5px}
+.ipad .detail-card .insight-intro>span:last-child{font-size:18px}
+.ipad .detail-card .insight-disclaimer{font-size:18px}
+.ipad .detail-card .insight-tabs button{font-size:21px}
+.ipad .detail-card .insight-box h3{font-size:22.5px}
+.ipad .detail-card .insight-box p{font-size:19.5px}
+.ipad .detail-card .insight-section-title>span{font-size:16.5px}
+.ipad .detail-card .insight-box .insight-footnote{font-size:16.5px}
+.ipad .detail-card .insight-box .device-facts{font-size:21px}
+.ipad .detail-card .insight-kpis span{font-size:18px}
+.ipad .detail-card .insight-kpis strong{font-size:36px}
+.ipad .detail-card .insight-kpis small{font-size:16.5px}
+.ipad .detail-card .insight-ring{flex-basis:140px;width:140px;height:140px}
+.ipad .detail-card .insight-ring strong{font-size:43.5px}
+.ipad .detail-card .insight-ring small{font-size:19.5px}
+.ipad .detail-card .insight-condition p{font-size:18px}
+.ipad .detail-card .insight-box .insight-next-date{font-size:36px}
+.ipad .detail-card .insight-pill{font-size:16.5px}
+.ipad .detail-card .insight-bars{height:240px}
+.ipad .detail-card .insight-bar-col>span,.ipad .detail-card .insight-bar-col>small{font-size:16.5px}
+.ipad .detail-card .insight-ranking>div{font-size:19.5px}
+.ipad .detail-card .insight-ranking small{min-width:66px;font-size:16.5px}
+.ipad .detail-card .insight-timeline time{flex-basis:200px;font-size:19.5px}
+.ipad .detail-card .insight-timeline strong{font-size:21px}
+.ipad .detail-card .insight-timeline span{font-size:16.5px}
+.ipad .detail-card .insight-history{font-size:19.5px}
+.ipad .detail-card .insight-history th{font-size:16.5px}
+.ipad .detail-card .environment-grid p,.ipad .detail-card .environment-grid small{font-size:16.5px}
+.ipad .detail-card .environment-grid strong{font-size:34.5px}
+.ipad .detail-card .spark-labels{font-size:15px}
+.ipad .device-card{width:300px}
 
+/* iPad performance: the glow canvas repaints every frame, so frosted blur
+   behind the cards and the detail overlay was recomputed on every frame. */
+.ipad .device-card.glass{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(145deg,rgba(241,250,255,.12),rgba(198,225,239,.025) 38%,rgba(164,197,216,.065)),rgba(18,28,38,.86)}
+.ipad .detail-backdrop{background:rgba(7,10,14,.55);backdrop-filter:none;-webkit-backdrop-filter:none}
+/* While the detail panel is open, hold the animations behind its frosted card. */
+.ipad.detail-open .graph-node .node-icon,.ipad.detail-open .graph-node .appliance-icon *,.ipad.detail-open .device-card .device-indicator::before{animation-play-state:paused}
+/* The start prompt keeps breathing after the welcome screen is hidden. */
+.ipad .welcome.dismissed .intro-prompt{animation:none}
+/* iPad completion screen: text x1.5 (2026-09-24). */
+.ipad .completion p{font-size:28px;letter-spacing:12px;margin-bottom:40px}
+.ipad .completion h1{font-size:68px;letter-spacing:3px;margin-bottom:44px}
+.ipad .completion h2{font-size:36px}
+.ipad .completion button{font-size:27px;padding:16px 36px;border-radius:40px;margin-top:44px}
 
-.table #info-panel .system-status{bottom:48px}
-.table-waiting-note{position:absolute;left:34px;right:34px;bottom:18px;text-align:center}
-.table-waiting-note .table-insight-note{margin:0;font-size:12px;line-height:1.5}
+/* Two touch-friendly questions; answers expand without timers or network work. */
+.insight-questions{display:grid;gap:16px}
+.question-hint{margin:0 0 2px;color:#b0c7d5;font-size:18px;line-height:1.6}
+.insight-question{border:1px solid #d0e6f32d;border-radius:16px;background:linear-gradient(140deg,#abcfe20e,#0c1e2c24);overflow:hidden}
+.insight-question>button{display:flex;align-items:center;gap:16px;width:100%;min-height:88px;padding:22px;text-align:left;border:0;background:transparent;color:#edf8ff;font:inherit;font-size:22px;line-height:1.6;cursor:pointer}
+.insight-question>button[aria-expanded=true]{background:#b4dcee12}
+.insight-question>button:focus-visible{outline:2px solid #bceaff;outline-offset:-4px;border-radius:16px}
+.question-number{flex:none;font-size:16px;letter-spacing:2px;color:#a5cfdf}
+.question-toggle{margin-left:auto;flex:none;color:#bceaff;font-size:26px}
+.insight-answer{margin:0 22px;padding:20px 0 24px;border-top:1px solid #cce5f122}
+.insight-answer[hidden]{display:none}
+.insight-answer>span{font-size:16px;color:#a5cfdf}
+.insight-answer p{font-size:21px;line-height:1.85;color:#e1edf5;margin:10px 0 0;overflow-wrap:anywhere}
+@media(max-width:600px){.insight-question>button{padding:18px;gap:12px;font-size:20px}.insight-answer{margin:0 18px}.insight-answer p{font-size:19px}}
+
+/* Table report videos follow the current NFC device. */
+.table #info-panel{display:grid;grid-template-rows:minmax(0,1fr);padding:30px 0 40px;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Separate heading sizes can be adjusted without changing the phone geometry. */
+.table-reports{--app-name-size:40px;--report-name-size:25px;--report-heading-height:calc(max(var(--app-name-size),var(--report-name-size)) * 1.4);display:grid;place-items:start center;container-type:size;flex:1;min-height:0;grid-area:1 / 1}
+.table-report{display:flex;flex-direction:column;gap:14px;min-height:0;width:min(calc(100cqw - 8px),calc((100cqh - var(--report-heading-height) - 14px - 24px) * 578 / 1216 + 24px))}
+.table-report header{display:flex;flex:none;align-items:center;justify-content:space-between;gap:12px;padding:0;min-height:var(--report-heading-height)}
+.table #info-panel .table-report h1{margin:0;font-size:var(--app-name-size);font-weight:500;line-height:1.4;letter-spacing:0;white-space:nowrap}
+.table #info-panel .table-report h2{margin:0 0 0 auto;font-size:var(--report-name-size);font-weight:500;line-height:1.4;color:#c7d2db;text-align:right;white-space:nowrap}
+.table-report-heading{margin-left:auto;align-self:flex-end;text-align:right}
+.table #info-panel .table-report-heading :is(p,h2){margin:0;font-size:var(--report-name-size);font-weight:500;line-height:1.12;white-space:nowrap;text-align:right}
+.table-report-heading p{color:#effbff}
+.table-report-media{position:relative;flex:none;min-height:0;background:transparent}
+.table-report-phone{position:relative;box-sizing:border-box;width:100%;padding:10px;border:2px solid #64666b;border-radius:48px;background:#08090b;overflow:hidden;isolation:isolate;clip-path:inset(0 round 48px);box-shadow:inset 0 0 0 2px #24262b}
+/* All three recordings are 578 × 1280; hide the top 64px status bar. */
+.table-report-crop{position:relative;overflow:hidden;width:100%;aspect-ratio:578/1216;border-radius:36px;background:#000}
+.table-report-video{position:absolute;left:0;top:0;display:block;width:100%;height:auto;transform:translateY(-5%)}
+.table-report-idle{padding-top:calc(var(--report-heading-height) + 14px)}
+.table-report-idle .table-report-phone{background:linear-gradient(145deg,#e6edf015,#9eabb005 38%,#a4b0b80d),rgba(20,24,29,.48);border-color:#cfe7f23d;box-shadow:inset 0 1px 0 #ffffff3d,inset 0 -1px 0 #699db521;backdrop-filter:blur(18px) saturate(1.18);-webkit-backdrop-filter:blur(18px) saturate(1.18)}
+.table-report-idle .table-report-crop{background:transparent}
+.table-report-waiting{display:flex;box-sizing:border-box;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;color:#effbff}
+.table #info-panel .table-report-waiting h1{font-size:40px;line-height:1.4;white-space:normal}
+.table #info-panel .table-report-waiting h2{margin:24px 0 0;font-size:25px;text-align:center;white-space:normal}
+.table-report-waiting p{color:#b0c7d5;font-size:20px;line-height:1.7}
+.detail-body .table-reports{min-height:540px}

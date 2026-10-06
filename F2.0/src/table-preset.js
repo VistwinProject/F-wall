@@ -5,63 +5,73 @@ export const tablePreset = {
     "lineWidth": 0.007,
     "beamWidth": 0.007,
     "minCorePx": 1.5,
+    "sensingOffset": [
+      101.39828416059125,
+      -60.4350580824807
+    ],
+    "phoneScale": 0.9231556296934783,
+    "projection": {
+      "on": true,
+      "width": 1390,
+      "height": 600,
+      "corners": [
+        120,
+        120,
+        120,
+        120
+      ],
+      "maskOn": true,
+      "maskWidth": 220,
+      "maskHeight": 80,
+      "maskX": 0,
+      "maskBottom": 0,
+      "maskRadius": 16
+    },
     "panelPct": 25.5,
     "slotSize": 84,
     "hubSize": 240,
     "slots": [
       [
-        705,
-        740
+        614.4,
+        735
       ],
       [
-        895,
-        625
+        844.8,
+        615
       ],
       [
-        865,
-        442
+        844.8,
+        415
       ],
       [
-        1104,
-        470
+        1075.2,
+        440
       ],
       [
-        1245,
-        330
+        1248,
+        305
       ],
       [
-        1390,
-        470
+        1420.8,
+        440
       ],
       [
-        1625,
-        442
+        1651.2,
+        415
       ],
       [
-        1595,
-        625
+        1651.2,
+        615
       ],
       [
-        1785,
-        740
+        1875.6,
+        735
       ]
     ],
     "hub": [
       1248,
       740
     ],
-    "cards": {
-      "usage": 0.3,
-      "trend": 1,
-      "maintenance": 1.5
-    },
-    "font": {
-      "scale": 1,
-      "title": 25,
-      "stat": 50,
-      "label": 20,
-      "body": 15
-    },
     "bg": {
       "on": true,
       "spread": 101,
@@ -89,8 +99,8 @@ export const tablePreset = {
   },
   "positions": {
     "info": [
-      28.799999999999997,
-      30
+      -54.91298847048852,
+      46.58299846185642
     ]
   }
 };

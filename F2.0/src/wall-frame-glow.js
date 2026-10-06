@@ -68,8 +68,10 @@ export function createWallFrameGlow(stage,width,height){
   });
   const geometry=new THREE.PlaneGeometry(2,2),scene=new THREE.Scene(),camera=new THREE.Camera();
   const mesh=new THREE.Mesh(geometry,material);mesh.frustumCulled=false;scene.add(mesh);
+  let enabled=true;
   return {
-    set({frame,vlines,hlines,lineWidth,frameWidth,minCorePx}){
+    set({frame,vlines,hlines,lineWidth,frameWidth,minCorePx,showFrame=true}){
+      enabled=showFrame;
       uniforms.frame.value.set(...frame.slice(0,4));uniforms.radius.value=frame[4];
       uniforms.halfWidth.value=(frameWidth??lineWidth)*width*.5;uniforms.minCore.value=minCorePx;
       uniforms.vertical.value.fill(0);uniforms.horizontal.value.fill(0);
@@ -77,7 +79,7 @@ export function createWallFrameGlow(stage,width,height){
       uniforms.nv.value=Math.min(vlines.length,32);uniforms.nh.value=Math.min(hlines.length,32);
     },
     render(time){
-      if(uniforms.halfWidth.value<=0)return;
+      if(!enabled||uniforms.halfWidth.value<=0)return;
       uniforms.gain.value=PARAMS.line.on*(PARAMS.breathe.lo+(1-PARAMS.breathe.lo)*(.5+.5*Math.cos(time*Math.PI*2/3)));
       const renderer=stage.renderer,previous=renderer.autoClear;
       renderer.autoClear=false;renderer.render(scene,camera);renderer.autoClear=previous;

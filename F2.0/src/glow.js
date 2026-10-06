@@ -8,19 +8,56 @@ import {Scene} from 'three';
 // Adapter for the existing three-view geometry API. The reference shaders,
 // ribbon, bloom stage, materials and parameters are retained without edits.
 export class Glow {
-  paths=new Map();idlePaths=new Map();disabled=false;visible=true;sequence=0;time=0;
+  paths=new Map();idlePaths=new Map();disabled=false;_visible=true;paused=false;sequence=0;time=0;
+  get visible(){return this._visible;}
+  set visible(value){
+    const next=!!value;if(next===this._visible)return;this._visible=next;
+    cancelAnimationFrame(this.frame);this.frame=0;
+    if(next&&!this.disabled&&this.animate){this.last=performance.now();this.frame=requestAnimationFrame(this.animate);}
+  }
   constructor(container,width,height){
+    this.container=container;
     this.width=width;this.height=height;
+    // iPad: ~30 renders per second (?glowfps=60 to compare). Thresholds sit just
+    // below the frame interval so 60/120 Hz displays skip whole frames evenly.
+    const fps=Number(new URLSearchParams(location.search).get('glowfps'))||30;
+    this.minFrameMs=container.classList.contains('graph-scene')?(fps>=60?14:1000/fps-3):0;this.lastRender=0;
     this.stableRidge=!container.classList.contains('wall-scene');
     if(new URLSearchParams(location.search).has('nofx')){this.disabled=true;return;}
-    const canvas=document.createElement('canvas');canvas.className='glow-canvas';container.prepend(canvas);
+    const canvas=document.createElement('canvas');canvas.className='glow-canvas';container.prepend(canvas);this.canvas=canvas;
     try{
-      this.stage=createStage(canvas,width/height,{transparent:!container.classList.contains('wall-scene')});
+      this.stage=createStage(canvas,width/height,{transparent:!container.classList.contains('wall-scene'),antialias:!container.classList.contains('graph-scene')});
+      container.classList.add('has-webgl-glow');
       canvas.style.width='100%';canvas.style.height='100%';
-      canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();this.disabled=true;cancelAnimationFrame(this.frame);canvas.hidden=true;});
+      canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();this.disabled=true;cancelAnimationFrame(this.frame);canvas.hidden=true;container.classList.remove('has-webgl-glow');});
       this.last=performance.now();this.animate=this.animate.bind(this);this.frame=requestAnimationFrame(this.animate);
       addEventListener('pagehide',()=>this.dispose(),{once:true});
-    }catch(error){this.disabled=true;canvas.hidden=true;console.warn('Reference glow unavailable; SVG fallback retained.',error);}
+    }catch(error){this.disabled=true;canvas.hidden=true;container.classList.remove('has-webgl-glow');console.warn('Reference glow unavailable; SVG fallback retained.',error);}
+  }
+  // Keep the bloom viewport at the frame edges when table content is translated.
+  // Move the camera by the inverse offset so light stays aligned with its routes.
+  setViewportOffset(x,y,{width=this.width,height=this.height}={}){
+    if(!this.stage)return;
+    const marginX=(width-this.width)/2,marginY=(height-this.height)/2;
+    this.canvas.style.width=width+'px';this.canvas.style.height=height+'px';
+    this.canvas.style.transform=`translate(${-x-marginX}px, ${-y-marginY}px)`;
+    const {camera,world,renderer,composer}=this.stage;
+    // Extend the view, not the geometry: retain the same world units per pixel.
+    camera.left=-marginX/this.width*world.w;
+    camera.right=world.w+marginX/this.width*world.w;
+    camera.top=-marginY/this.height*world.h;
+    camera.bottom=world.h+marginY/this.height*world.h;
+    camera.updateProjectionMatrix();
+    const bufferWidth=Math.round(world.w*width/this.width*PARAMS.dpr);
+    const bufferHeight=Math.round(world.h*height/this.height*PARAMS.dpr);
+    const sizeKey=bufferWidth+':'+bufferHeight;
+    if(this.viewportSize!==sizeKey){
+      renderer.setSize(bufferWidth,bufferHeight,false);composer.setSize(bufferWidth,bufferHeight);
+      this.viewportSize=sizeKey;this.emptyRendered=false;
+    }
+    this.stage.camera.position.x=-x/this.width*this.stage.world.w;
+    this.stage.camera.position.y=-y/this.height*this.stage.world.h;
+    this.stage.camera.updateMatrixWorld();
   }
   setPaths(definitions){
     if(this.disabled)return;
@@ -78,7 +115,13 @@ export class Glow {
   }
   animate(now){
     if(this.disabled)return;
-    if(!this.visible||document.hidden){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    if(!this.visible||this.paused||document.hidden){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    // Clear the last fading path once, then skip empty bloom passes.
+    const empty=!this.paths.size&&!this.frameGlow;
+    if(empty&&this.emptyRendered){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    if(this.minFrameMs&&now-this.lastRender<this.minFrameMs){this.frame=requestAnimationFrame(this.animate);return;}
+    this.lastRender=now;
+    this.emptyRendered=empty;
     const dt=Math.min(.05,(now-this.last)/1000);this.last=now;this.time+=dt;
     const wave=period=>PARAMS.breathe.lo+(1-PARAMS.breathe.lo)*(.5+.5*Math.cos(this.time*2*Math.PI/period));
     for(const[key,item]of this.paths){
@@ -138,6 +181,7 @@ export class Glow {
     this.paths.delete(key);this.idlePaths.delete(key);
   }
   dispose(){
+    this.container?.classList.remove('has-webgl-glow');
     this.disabled=true;cancelAnimationFrame(this.frame);clearTimeout(this.warmupTimer);
     for(const key of [...this.paths.keys(),...this.idlePaths.keys()])this.disposePath(key);
     if(this.warmupResources){
