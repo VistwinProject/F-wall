@@ -1,0 +1,239 @@
+{
+  "date": "2026-10-08",
+  "timezone": "Asia/Taipei",
+  "result": "9/9 physical card identities verified after loading updated mapping",
+  "scope": "Mac, one ACS ACR122U reader, slot 1; real NFC mode, simulation disabled",
+  "mapping": {
+    "04ABBAA5772681": "hrv",
+    "04BDBAA5772681": "ac",
+    "04ACBAA5772681": "dehum",
+    "04B6BAA5772681": "purifier",
+    "04BCBAA5772681": "sensor",
+    "04ADBAA5772681": "light",
+    "04B7BAA5772681": "socket",
+    "04B5BAA5772681": "curtain",
+    "04B4BAA5772681": "bathfan"
+  },
+  "backup": "F2.0/server/uid-map.backup-formal-20261008-151622.json",
+  "notVerified": [
+    "Windows deployment",
+    "nine readers simultaneously",
+    "fixed reader positions",
+    "three-display application",
+    "audio playback",
+    "reset while card held",
+    "lighting hardware"
+  ],
+  "health": {
+    "type": "snapshot",
+    "version": 2,
+    "revision": 21,
+    "session": true,
+    "sim": false,
+    "demo": false,
+    "introPhase": "ready",
+    "introToken": 0,
+    "completionAudioReady": false,
+    "slots": [
+      {
+        "slot_index": 1,
+        "reader": "ACS ACR122U PICC Interface",
+        "uid": "04B4BAA5772681",
+        "known": true,
+        "data": {
+          "id": "bathfan",
+          "label": "浴室暖風機",
+          "description": "浴室暖風乾燥"
+        }
+      }
+    ],
+    "displayStatus": {
+      "type": "f-status",
+      "revision": 21,
+      "required": [
+        "table",
+        "wall",
+        "graph"
+      ],
+      "displays": {
+        "table": {
+          "connected": false,
+          "instances": 0,
+          "ready": false,
+          "lastSeen": null
+        },
+        "wall": {
+          "connected": false,
+          "instances": 0,
+          "ready": false,
+          "lastSeen": null
+        },
+        "graph": {
+          "connected": false,
+          "instances": 0,
+          "ready": false,
+          "lastSeen": null
+        },
+        "ipad": {
+          "connected": false,
+          "instances": 0,
+          "ready": false,
+          "lastSeen": null
+        }
+      },
+      "ready": false
+    },
+    "app": "f-control-tower",
+    "mode": "live",
+    "instance": null,
+    "graphBundled": true,
+    "led": {
+      "enabled": false,
+      "transport": "disabled",
+      "desired": true,
+      "applied": null,
+      "status": "not-configured",
+      "error": null
+    },
+    "nfc": {
+      "expected": 9,
+      "connected": 1,
+      "mapped": [],
+      "errors": [],
+      "events": [
+        {
+          "at": "2026-10-08T07:24:24.636Z",
+          "type": "reader-connected",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "mapped": false
+        },
+        {
+          "at": "2026-10-08T07:24:24.642Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04B4BAA5772681",
+          "id": "bathfan"
+        },
+        {
+          "at": "2026-10-08T07:25:08.519Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:25:10.545Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04ABBAA5772681",
+          "id": "hrv"
+        },
+        {
+          "at": "2026-10-08T07:25:44.967Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:25:49.646Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04BDBAA5772681",
+          "id": "ac"
+        },
+        {
+          "at": "2026-10-08T07:26:09.767Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:26:12.526Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04ACBAA5772681",
+          "id": "dehum"
+        },
+        {
+          "at": "2026-10-08T07:26:38.087Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:26:41.931Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04B6BAA5772681",
+          "id": "purifier"
+        },
+        {
+          "at": "2026-10-08T07:27:02.055Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:27:03.345Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04BCBAA5772681",
+          "id": "sensor"
+        },
+        {
+          "at": "2026-10-08T07:27:25.767Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:27:27.049Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04ADBAA5772681",
+          "id": "light"
+        },
+        {
+          "at": "2026-10-08T07:27:48.328Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:27:50.341Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04B7BAA5772681",
+          "id": "socket"
+        },
+        {
+          "at": "2026-10-08T07:28:07.592Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:28:09.624Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04B5BAA5772681",
+          "id": "curtain"
+        },
+        {
+          "at": "2026-10-08T07:28:30.600Z",
+          "type": "card.off",
+          "slot": 1
+        },
+        {
+          "at": "2026-10-08T07:28:32.312Z",
+          "type": "card",
+          "slot": 1,
+          "reader": "ACS ACR122U PICC Interface",
+          "uid": "04B4BAA5772681",
+          "id": "bathfan"
+        }
+      ]
+    }
+  }
+}
