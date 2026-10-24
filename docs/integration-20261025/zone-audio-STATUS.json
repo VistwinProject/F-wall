@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "program": "anlb-integration-20261025",
+  "feature": "zone-audio",
+  "repo": "F-wall",
+  "zone": "F",
+  "branch": "codex/zone-audio-v1-20261025",
+  "modifiedAt": "2026-10-25",
+  "stage": "planned",
+  "implemented": false,
+  "offlineVerified": false,
+  "fieldVerified": false,
+  "deployed": false,
+  "fieldBaselineCommit": null,
+  "requirementsBeforeImplementation": [
+    "核對三 repo 共用檔，不把 Wall 當獨立可發聲副本。"
+  ],
+  "standardSha256": "d934091a6e1bd8fde94905ac22efe19bb3d1ba97fb0d8493f9785cd3075682ed"
+}
