@@ -122,3 +122,7 @@
    Screen compositing keeps dark/empty glow pixels neutral to the backdrop. */
 .table .table-frame{isolation:isolate;}
 .table .table-scene>.glow-canvas{mix-blend-mode:screen;}
+
+/* Projection: appliance information frames stay dark, without arrival rim flashes. */
+.wall .wall-panel.glass{border-color:transparent;box-shadow:none}
+.wall .wall-panel.glass::before,.wall .wall-panel.glass::after{display:none;animation:none}

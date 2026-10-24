@@ -33,21 +33,52 @@ export function reduce(previous,event){
 }
 export class Session extends EventTarget{
   state={slots:{},active:[],session:false,online:false,ready:false,sim:false,demo:false,focus:null};
-  constructor(role){super();this.role=role;this.connect();}
+  constructor(role){
+    super();this.role=role;
+    this.onPageHide=()=>this.dispose();
+    this.onPageShow=e=>{if(e.persisted&&this.stopped){this.stopped=false;this.connect();}};
+    globalThis.addEventListener?.('pagehide',this.onPageHide);
+    globalThis.addEventListener?.('pageshow',this.onPageShow);
+    this.connect();
+  }
   connect(){
+    if(this.stopped)return;
+    clearTimeout(this.timer);clearInterval(this.heartbeat);
     const params=new URLSearchParams(location.search);
     const override=params.get('ws');
     const address=override?(override.includes('://')?override:`${location.protocol==='https:'?'wss':'ws'}://${override}`):`${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
-    let url;try{url=new URL(address);url.searchParams.set('role',this.role);this.socket=new WebSocket(url);}catch{this.retry();return;}
-    this.socket.onopen=()=>{this.delay=1000;this.state={...this.state,online:true};this.emit('connection');};
-    this.socket.onmessage=({data})=>{try{const event=JSON.parse(data);this.state=reduce(this.state,event);this.emit(event.type,event);}catch(error){console.warn('Ignored malformed state message',error);}};
-    this.socket.onclose=()=>{this.state={...this.state,online:false,ready:false};this.emit('connection');this.retry();};
-    this.socket.onerror=()=>this.socket.close();
+    let socket;
+    try{const url=new URL(address);url.searchParams.set('role',this.role);socket=this.socket=new WebSocket(url);}catch{this.retry();return;}
+    this.lastMessage=Date.now();
+    this.heartbeat=setInterval(()=>{
+      if(Date.now()-this.lastMessage>30000){this.disconnect(socket);return;}
+      if(socket.readyState===WebSocket.OPEN)this.send('ping');
+    },10000);
+    socket.onopen=()=>{if(this.socket!==socket)return;this.delay=1000;this.state={...this.state,online:true};this.emit('connection');};
+    socket.onmessage=({data})=>{
+      if(this.socket!==socket)return;
+      this.lastMessage=Date.now();
+      try{const event=JSON.parse(data);if(!event||typeof event!=='object')return;if(event.type==='pong')return;this.state=reduce(this.state,event);this.emit(event.type,event);}catch(error){console.warn('Ignored malformed state message',error);}
+    };
+    socket.onclose=()=>this.disconnect(socket);
+    socket.onerror=()=>this.disconnect(socket);
   }
-  retry(){clearTimeout(this.timer);this.delay=Math.min(this.delay||1000,8000);this.timer=setTimeout(()=>this.connect(),this.delay);this.delay*=1.6;}
+  disconnect(socket){
+    if(this.socket!==socket)return;
+    this.socket=null;clearInterval(this.heartbeat);
+    socket.onopen=socket.onmessage=socket.onclose=socket.onerror=null;
+    try{socket.close();}catch{}
+    this.state={...this.state,online:false,ready:false};this.emit('connection');this.retry();
+  }
+  retry(){if(this.stopped)return;clearTimeout(this.timer);this.delay=Math.min(this.delay||1000,8000);this.timer=setTimeout(()=>this.connect(),this.delay);this.delay*=1.6;}
+  dispose(){
+    this.stopped=true;clearTimeout(this.timer);clearInterval(this.heartbeat);
+    if(this.socket)this.disconnect(this.socket);
+  }
   emit(type,event){this.dispatchEvent(new CustomEvent('change',{detail:{type,state:this.state,event}}));}
   send(type,fields={}){
     if(this.socket?.readyState!==WebSocket.OPEN)return false;
-    this.socket.send(JSON.stringify({type,...fields}));return true;
+    if(this.socket.bufferedAmount>256*1024){this.disconnect(this.socket);return false;}
+    try{this.socket.send(JSON.stringify({type,...fields}));return true;}catch{this.disconnect(this.socket);return false;}
   }
 }

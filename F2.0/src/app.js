@@ -1,3 +1,4 @@
+import {quadCssMatrix} from './wall-warp.js';
 import {reportRendered,installRenderHeartbeat} from './display-report.js';
 import {batchFrame} from './frame-batch.js';
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS} from './devices.js';
@@ -14,16 +15,15 @@ import {createIntro} from './intro.js';
 import {createDeviceAudio} from './device-audio.js';
 import {createCompletionAudio} from './completion-audio.js';
 import {setupTableAudio,tableVoice} from './table-audio.js';
-import {ring,rect,between,WALL_ROUTES,wallRoutes,svgPoints} from './geometry.js';
+import {ring,rect,between,WALL_ROUTES,wallRoutes,svgPoints,framePaths} from './geometry.js';
 
 const params=new URLSearchParams(location.search);
 const silentTest=params.has('mute');
-if(silentTest){const badge=document.createElement('div');badge.textContent='F 本機驗證 · 靜音';badge.style.cssText='position:fixed;top:4px;left:4px;z-index:99999;color:white;background:#234;padding:5px;font:12px sans-serif';document.body.append(badge);}
 const role=location.pathname.includes('wall')||location.port==='6274'?'wall':location.pathname.includes('ipad')||location.port==='6275'?'ipad':'table';
 const tune=loadTuning(role);
 let fullEditor;
 const titles={wall:'牆面投影',table:'桌面感應',ipad:'iPad 控制介面'};
-document.title=`F 2.0 重製版 | ${titles[role]}`;
+document.title='';
 document.body.className=role;
 document.body.classList.toggle('no-glass',params.has('noglass'));
 document.body.classList.toggle('projection',params.has('projection'));
@@ -39,7 +39,7 @@ function fit(){
     const factor=p.on?Math.max(1920/width,1000/height):1;
     const surfaceWidth=p.on?width*factor:1920,surfaceHeight=p.on?height*factor:1000;
     const scale=Math.min(innerWidth/surfaceWidth,innerHeight/surfaceHeight);
-    tableSurface.style.cssText=`position:absolute;left:50%;top:50%;width:${surfaceWidth}px;height:${surfaceHeight}px;transform:translate(-50%,-50%) scale(${scale});overflow:hidden;background:#16181d;isolation:isolate`;
+    tableSurface.style.cssText=`position:absolute;left:50%;top:calc(50% + ${(p.offsetY||0)*factor*scale}px);width:${surfaceWidth}px;height:${surfaceHeight}px;transform:translate(-50%,-50%) scale(${scale});overflow:hidden;background:#000;isolation:isolate`;
     const radii=p.corners.map(r=>Math.max(0,Math.min(r,width/2,height/2))*factor+'px').join(' ');
     tableSurface.style.borderRadius=p.on?radii:'38px';
     stage.style.transform='translate(-50%,-50%)';stage.style.borderRadius='0';stage.style.overflow='visible';
@@ -52,11 +52,18 @@ function fit(){
     document.body.style.background='#000';document.documentElement.style.background='#000';
     const frame=tableFrame||stage.querySelector('.table-frame');
     if(frame){frame.style.borderRadius='0';frame.style.border='0';frame.style.inset='0';frame.style.background='transparent';frame.style.overflow='visible';}
-    const gradient=stage.querySelector('.table-gradient-field');if(gradient)tableSurface.prepend(gradient);
+    const gradient=stage.querySelector('.table-background-plane')||tableSurface.querySelector('.table-background-plane');if(gradient){tableSurface.prepend(gradient);gradient.style.transform=quadCssMatrix(tune.bg.quad,surfaceWidth,surfaceHeight);gradient.style.borderRadius=p.on?radii:'38px';}
     let mask=tableSurface.querySelector('.table-ipad-mask');
     if(!mask){mask=document.createElement('div');mask.className='table-ipad-mask';mask.setAttribute('aria-label','iPad 投影黑色遮罩');mask.innerHTML='<span>iPad 黑色遮罩 · 拖曳移動</span>'+['top','right','bottom','left'].map(edge=>`<i data-mask-edge="${edge}"></i>`).join('');tableSurface.append(mask);}
     mask.hidden=!p.maskOn;
-    mask.style.cssText=`position:absolute;z-index:50;background:#000;left:${50+p.maskX/width*100}%;bottom:0;width:${Math.min(width,Math.max(0,p.maskWidth))/width*100}%;height:${Math.min(height,Math.max(0,p.maskHeight))/height*100}%;transform:translateX(-50%);border-radius:${Math.max(0,p.maskRadius)*surfaceWidth/width}px ${Math.max(0,p.maskRadius)*surfaceWidth/width}px 0 0`;
+    const maskWidth=Math.min(width,Math.max(0,p.maskWidth))*surfaceWidth/width;
+    const maskHeight=Math.min(height,Math.max(0,p.maskHeight))*surfaceHeight/height;
+    const maskTransform=maskWidth>0&&maskHeight>0?quadCssMatrix(p.maskQuad,maskWidth,maskHeight):'none';
+    mask.style.cssText=`position:absolute;z-index:50;background:#000;left:${50+p.maskX/width*100}%;bottom:0;width:${Math.min(width,Math.max(0,p.maskWidth))/width*100}%;height:${Math.min(height,Math.max(0,p.maskHeight))/height*100}%;transform-origin:0 0;transform:translateX(-50%) ${maskTransform};border-radius:${Math.max(0,p.maskRadius)*surfaceWidth/width}px ${Math.max(0,p.maskRadius)*surfaceWidth/width}px 0 0`;
+  }else if(role==='wall'){
+    // Mapping coordinates span the entire output; no aspect-ratio letterboxing.
+    stage.style.transform=`translate(-50%,-50%) scale(${innerWidth/1920},${innerHeight/stageHeight})`;
+    stage.style.borderRadius='0';
   }else{const scale=Math.min(innerWidth/1920,innerHeight/stageHeight);stage.style.transform=`translate(-50%,-50%) scale(${scale})`;}
 }
 addEventListener('f-table-projection',fit);
@@ -70,13 +77,12 @@ try{const raw=JSON.parse(localStorage.getItem('f2-layout-'+role)||'{}');if(raw&&
 const positioned=(key,x,y)=>{const v=overrides[key];return Array.isArray(v)&&v.length===2&&v.every(Number.isFinite)?v:[x,y];};
 const posStyle=(key,x,y)=>{const p=positioned(key,x,y);return `left:${p[0]}px;top:${p[1]}px`;};
 // Centers chosen outside all nine sensing circles and the central core.
-const TABLE_ICON_POSITIONS=[[705,600],[1030,625],[810,305],[1080,325],[1245,180],[1410,325],[1680,305],[1470,625],[1800,600]];
 
 function buildWall(){
   Object.assign(WALL_ROUTES,wallRoutes(tune));
   stage.innerHTML=`<div id="scene" class="wall-scene"></div>`;scene=stage.querySelector('#scene');
   const frames=`<rect x="130" y="50" width="1610" height="985" rx="31"/><g>${[310,460,625,760,1150,1290,1435,1600].map(x=>`<path d="M${x} 50V1035"/>`).join('')}${[335,550,760,900].map(y=>`<path d="M130 ${y}H1740"/>`).join('')}</g>`;
-  scene.innerHTML=svg(`<g class="wall-grid">${frames}</g><g id="wall-links">${DEVICES.map(d=>`<polyline data-wire="${d.id}" class="wire" points="${svgPoints(WALL_ROUTES[d.id])}"/>`).join('')}</g><g class="masks">${boxMarkup(SCREEN)}${boxMarkup(WALL_HUB,'data-core="true"')}${DEVICES.map(d=>boxMarkup(d.box,`data-mask="${d.id}"`)).join('')}</g>`);
+  scene.innerHTML=svg(`<g class="wall-grid">${frames}</g><g id="wall-links">${DEVICES.map(d=>`<polyline data-wire="${d.id}" class="wire" points="${svgPoints(WALL_ROUTES[d.id])}"/>`).join('')}</g><g class="masks">${boxMarkup(SCREEN,'data-screen="true"')}${boxMarkup(WALL_HUB,'data-core="true"')}${DEVICES.map(d=>boxMarkup(d.box,`data-mask="${d.id}"`)).join('')}</g>`);
   for(const d of DEVICES){
     const[x,y,w,h]=d.box;
     const photo=document.createElement('img');photo.className='appliance-photo';photo.dataset.photo=d.id;photo.src=`/appliances/${d.id}.webp`;photo.alt='';photo.style.cssText=`left:${x-w/2+8}px;top:${y-h/2+8}px;width:${w-16}px;height:${h-16}px`;scene.append(photo);
@@ -94,8 +100,7 @@ function buildTable(){
   SLOTS.forEach(([x,y],i)=>{
     const item=document.createElement('div');item.className='slot';item.dataset.slot=i+1;item.style.cssText=`left:${x}px;top:${y}px`;
     item.innerHTML=`<button class="slot-circle" data-toggle="${i+1}" aria-label="感應區 ${i+1}"><span>+</span><small>${String(i+1).padStart(2,'0')}</small></button><span class="slot-label">NFC ${String(i+1).padStart(2,'0')}</span><span class="slot-device"></span>`;scene.append(item);
-    const [ix,iy]=TABLE_ICON_POSITIONS[i];
-    const icon=document.createElement('div');icon.className='table-slot-icon';icon.dataset.slotIcon=i+1;icon.style.cssText=`left:${ix}px;top:${iy}px`;icon.hidden=true;scene.append(icon);
+
   });
   scene.insertAdjacentHTML('beforeend',`<div class="table-core" style="left:${TABLE_HUB[0]}px;top:${TABLE_HUB[1]}px"></div><div class="core-caption" style="left:${TABLE_HUB[0]}px;top:946px">SYSTEM CORE</div>`);
   glow=new Glow(scene,1920,1000);
@@ -121,6 +126,15 @@ if(role==='wall')buildWall();else if(role==='table')buildTable();else buildIpad(
 if(role!=='wall')stage.insertAdjacentHTML('beforeend',`<div class="welcome" id="welcome"><div><h1>AI 大腦控制塔</h1><p class="welcome-instruction">請拿取前方設備裝置，放置相對的感應範圍，<br>開始將居家設備連結到 AI 大腦！</p>${role==='ipad'?'<button data-action="start">點擊任意位置開始</button>':''}</div></div>`);
 
 welcomeView=stage.querySelector('#welcome');tableFrame=stage.querySelector('.table-frame');
+function updateHomeCopy(){
+ if(!welcomeView||!tune.homeCopy)return;
+ for(const [key,selector] of [['title','h1'],['instruction','.welcome-instruction']]){
+  const el=welcomeView.querySelector(selector),copy=tune.homeCopy[key];
+  el.textContent=copy.text;el.style.fontSize=copy.size+'px';el.style.whiteSpace='pre-wrap';el.hidden=!copy.text;
+ }
+}
+addEventListener('f-home-copy',updateHomeCopy);updateHomeCopy();
+
 
 if(role==='table'){
   const welcome=stage.querySelector('#welcome'),content=welcome.firstElementChild;
@@ -136,9 +150,6 @@ if(role==='table'){
     disposeOrb=createIntroQuantum(sphere,()=>tableVoice,()=>!welcome.classList.contains('dismissed'));
   }).catch(error=>console.warn('Table welcome orb unavailable:',error));
 }
-const tools=document.createElement('div');tools.className='tools';
-tools.innerHTML=`<details id="sim-tray"><summary><b>替代 NFC 卡片</b><span id="tray-count">0/9 已放上</span><span class="tray-arrow">展開</span></summary><div class="sim-body"><div class="preview-heading"><span>F 2.0 重製版</span><span id="server-status">連線中</span></div><p>點選卡片模擬放上／拿走，三個介面同步更新。</p><div class="sim-cards">${DEVICES.map((d,i)=>`<button data-toggle="${i+1}" title="鍵盤 ${i+1}"><small>${i+1}</small>${d.label}</button>`).join('')}</div><div class="sim-actions"><button data-action="start">開始體驗</button><button data-action="all">全部放上</button><button data-action="clear">全部拿走</button><button data-action="demo" id="demo-button">自動展示</button><button data-action="reset">重置</button></div><p class="key-help">鍵盤 1–9 放卡 · A 全放 · 0 全拿 · E 校正</p><nav><a href="http://${location.hostname}:6274/wall" target="_blank">牆面</a><a href="http://${location.hostname}:6273/table" target="_blank">桌面</a><a href="http://${location.hostname}:6275/ipad" target="_blank">iPad</a></nav></div></details>`;
-app.append(tools);
 const notice=document.createElement('div');notice.className='notice';notice.setAttribute('role','status');app.append(notice);
 let noticeTimer;
 function notify(text){notice.textContent=text;notice.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('show'),3500);}
@@ -190,7 +201,10 @@ function updateFocus(id){
   let animations=[],timer=null,started=false,cancelled=false;
   focusCleanup=()=>{
     cancelled=true;clearTimeout(timer);controller.abort();
-    for(const animation of animations){animation.commitStyles();animation.cancel();}
+    for(const animation of animations){
+      try{animation.commitStyles();}catch(error){console.warn('Report animation no longer rendered',error);}
+      finally{animation.cancel();}
+    }
   };
   const reveal=()=>{
     if(started||cancelled)return;
@@ -226,14 +240,18 @@ function syncReportFocus(preferNew=false){
   updateFocus(state.focus);
 }
 function addLight(paths,key,points,beam=false,width=1.8,opacity=1,period=1.5){paths.push({key,points,beam,width,opacity,period,tuneWidth:beam?tune.beamWidth:tune.lineWidth,minCorePx:tune.minCorePx,phase:paths.length*47});}
+let wallRenderKey;
 function renderWall(active){
+  const key=JSON.stringify([active,tune]);
+  if(key===wallRenderKey)return;wallRenderKey=key;
   glow.setFrame(tune);
   const paths=[],[fx,fy,fw,fh,fr]=tune.frame;
   scene.querySelector('.wall-grid').style.display=tune.showFrame===false?'none':'';
   if(tune.showFrame!==false){
-    addLight(paths,'frame',rect(fx,fy,fw,fh,fr),false,1.1,.8,3);
-    for(const x of tune.vlines)addLight(paths,'v'+x,[[x,fy],[x,fy+fh]],false,.8,.65,3);
-    for(const y of tune.hlines)addLight(paths,'h'+y,[[fx,y],[fx+fw,y]],false,.8,.65,3);
+    const shapes=framePaths(tune);
+    addLight(paths,'frame',shapes[0],false,1.1,.8,3);
+    tune.vlines.forEach((x,i)=>addLight(paths,'v'+x,shapes[1+i],false,.8,.65,3));
+    tune.hlines.forEach((y,i)=>addLight(paths,'h'+y,shapes[1+tune.vlines.length+i],false,.8,.65,3));
   }
   for(const d of DEVICES){
     const on=active.includes(d.id);scene.querySelector(`[data-panel="${d.id}"]`)?.classList.toggle('active',on);scene.querySelector(`[data-photo="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-wire="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-operation="${d.id}"]`).classList.toggle('active',on);
@@ -244,7 +262,7 @@ function renderWall(active){
       path.dataset.mask=d.id;path.setAttribute('fill','#000');mask.replaceWith(path);mask=path;
     }
     mask.setAttribute('d',silhouette.path);mask.removeAttribute('transform');
-    if(on){silhouette.contours.forEach((points,i)=>addLight(paths,'frame-'+d.id+'-'+i,points,false,1.9));addLight(paths,'route-'+d.id,WALL_ROUTES[d.id],false,1.1,.8);addLight(paths,'packet-'+d.id,WALL_ROUTES[d.id],true,3);}
+    if(on){addLight(paths,'route-'+d.id,WALL_ROUTES[d.id],false,1.1,.8);addLight(paths,'packet-'+d.id,WALL_ROUTES[d.id],true,3);}
   }
   const[x,y,w,h]=WALL_HUB,coreContour=rect(x-w/2,y-h/2,w,h);
   let coreMask=scene.querySelector('[data-core]');
@@ -252,22 +270,18 @@ function renderWall(active){
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
     path.dataset.core='true';path.setAttribute('fill','#000');coreMask.replaceWith(path);coreMask=path;
   }
-  coreMask.setAttribute('d','M '+coreContour.map(p=>p.join(' ')).join(' L ')+' Z');
-  if(active.length)addLight(paths,'core',coreContour,false,2);
+  coreMask.setAttribute('d',wallSilhouette({id:'hub'},tune).path);
+
   for(const[id,p]of Object.entries(tune.panels))scene.querySelector(`[data-panel="${id}"]`)?.classList.toggle('active',active.includes(p.source));
   glow.setPaths(paths);
 }
+let tableRenderKey;
 function renderTable(){
+  const key=JSON.stringify([state.slots,state.active,state.sim,state.online,tune]);
+  if(key===tableRenderKey)return;tableRenderKey=key;
   const paths=[];
   SLOTS.forEach((p,i)=>{
     const s=state.slots[i+1],device=BY_ID[s?.data?.id],on=!!device;
-    const icon=scene.querySelector(`[data-slot-icon="${i+1}"]`);
-    if(on){
-      if(icon.dataset.deviceId!==device.id){icon.innerHTML=applianceIcon(device.id);icon.dataset.deviceId=device.id;}
-      icon.setAttribute('aria-label',`感應區 ${i+1}：${device.label}運作中`);icon.hidden=false;icon.classList.add('active');
-    }else{
-      icon.hidden=true;icon.classList.remove('active');icon.replaceChildren();delete icon.dataset.deviceId;icon.removeAttribute('aria-label');
-    }
     const el=scene.querySelector(`[data-slot="${i+1}"]`);el.classList.toggle('active',on);el.classList.toggle('reader-online',!!s?.reader);el.classList.toggle('unknown',s?.known===false);
     el.querySelector('.slot-label').textContent=on?PANEL_CONTENT[device.id].label:`NFC ${String(i+1).padStart(2,'0')}`;
     el.querySelector('.slot-device').textContent=s?.known===false?'未登記卡片':'';
@@ -314,37 +328,41 @@ function renderGraph(){
 }
 function switchTableView(){
   if(role!=='table'||!tableViewsReady)return;
-  const experience=state.session||document.body.classList.contains('editing');
+  const editing=document.body.classList.contains('editing');
+  const experience=editing?!document.body.classList.contains('editing-home'):state.session;
   const mode=experience?'experience':'home';
-  if(mode===tableViewMode&&!(document.body.classList.contains('editing')&&!tableFrame.isConnected))return;
+  // Entering E during a page fade must restore full opacity and keep the mounted page.
+  if(editing&&tableViewAnimation){
+    ++tableViewTransition;tableViewAnimation.cancel();tableViewAnimation=null;
+  }
+  if(mode===tableViewMode&&tableSurface.dataset.view===mode)return;
   const initial=tableViewMode===undefined,transition=++tableViewTransition;
-  const opacity=getComputedStyle(tableSurface).opacity;
   tableViewAnimation?.cancel();
+  tableViewAnimation=null;
+  tableSurface.style.opacity='1';
   tableViewMode=mode;
   const mount=()=>{
+  tableSurface.dataset.view=mode;
   if(experience){
     welcomeView.remove();stage.prepend(tableFrame);updateFocus(state.focus);fit();
   }else{
     focusCleanup();focused=null;
     for(const layer of tableFrame.querySelectorAll('#info-panel>.table-reports'))releaseReportLayer(layer);
-    const bg=tableSurface.querySelector('.table-gradient-field');if(bg)tableFrame.prepend(bg);
+    // Keep the color field inside its calibrated plane across home/experience switches.
+    // Both pages share the calibrated background plane on tableSurface.
     tableFrame.remove();stage.append(welcomeView);welcomeView.classList.remove('dismissed');welcomeView.inert=false;fit();
   }
   dispatchEvent(new Event('f-table-view-change'));
   };
-  // Fade one mounted page out, replace it, then fade the next page in.
-  // Editing needs synchronous mounting so its handles can measure the new page.
-  if(initial||document.body.classList.contains('editing')||matchMedia('(prefers-reduced-motion: reduce)').matches||!tableSurface.animate){mount();return;}
-  tableViewAnimation=tableSurface.animate([{opacity},{opacity:0}],{duration:240,easing:'ease-in',fill:'forwards'});
-  tableViewAnimation.finished.then(()=>{
-    if(transition!==tableViewTransition)return;
-    mount();render();if(experience)syncReportFocus();
-    tableViewAnimation.cancel();
-    tableViewAnimation=tableSurface.animate([{opacity:0},{opacity:1}],{duration:360,easing:'ease-out',fill:'forwards'});
-    return tableViewAnimation.finished.then(()=>{
-      if(transition===tableViewTransition){tableViewAnimation.cancel();tableViewAnimation=null;}
-    });
-  }).catch(()=>{}); // A newer switch cancels the previous animation.
+  // Mount immediately: cards present at boot must not wait on animation promises.
+  // The optional fade never holds the entire projection at zero opacity.
+  mount();
+  if(initial||editing||matchMedia('(prefers-reduced-motion: reduce)').matches||!tableSurface.animate)return;
+  try{
+    const animation=tableViewAnimation=tableSurface.animate([{opacity:.25},{opacity:1}],{duration:360,easing:'ease-out',fill:'none'});
+    const release=()=>{animation.cancel();if(transition===tableViewTransition){tableViewAnimation=null;tableSurface.style.opacity='1';}};
+    animation.finished.then(release,release);
+  }catch(error){tableViewAnimation=null;tableSurface.style.opacity='1';console.warn('Table transition unavailable',error);}
 }
 function render(){
   intro?.sync(state);
@@ -352,12 +370,7 @@ function render(){
   glow.visible=role==='table'?tableFrame.isConnected:role==='wall'||state.session||document.body.classList.contains('editing');
   const active=role==='wall'&&params.has('all')?DEVICES.map(d=>d.id):state.active;
   if(role==='wall')renderWall(active);else if(role==='table'){if(!tableViewsReady||tableFrame.isConnected)renderTable();}else renderGraph();
-  const welcome=stage.querySelector('#welcome');if(welcome){if(role!=='table')welcome.classList.toggle('dismissed',state.session);welcome.inert=state.session;}
-  tools.hidden=!state.sim||params.has('projection');
-  tools.querySelector('#tray-count').textContent=`${state.active.length}/9 已放上`;
-  tools.querySelector('#server-status').textContent=state.online?'三端同步已連線':'重新連線中';
-  tools.querySelector('#demo-button').textContent=state.demo?'停止展示':'自動展示';
-  for(const b of tools.querySelectorAll('[data-toggle]')){b.classList.toggle('selected',!!state.slots[b.dataset.toggle]?.data);b.setAttribute('aria-pressed',String(!!state.slots[b.dataset.toggle]?.data));b.disabled=!state.online;}
+  const welcome=stage.querySelector('#welcome');if(welcome){if(role!=='table')welcome.classList.toggle('dismissed',state.session);welcome.inert=state.session&&!document.body.classList.contains('editing-home');}
   let connectionNotice=document.querySelector('#f-disconnected');
   if(!connectionNotice){connectionNotice=document.createElement('div');connectionNotice.id='f-disconnected';connectionNotice.textContent='連線中斷 · 保留最後畫面 · 等待重新同步';connectionNotice.style.cssText='position:fixed;top:5px;right:5px;z-index:99999;background:#823c15;color:white;padding:8px;font:14px sans-serif';document.body.append(connectionNotice);}
   connectionNotice.hidden=state.online&&state.ready;
@@ -377,13 +390,18 @@ const queueRender=batchFrame(events=>{
 });
 session.addEventListener('change',({detail:event})=>{
   state=event.state;
+  if(role==='table'&&event.type==='session-end'){
+    ++tableViewTransition;tableViewAnimation?.cancel();tableViewAnimation=null;
+    tableViewMode=undefined;tableSurface.style.opacity='1';tableRenderKey=null;
+    fullEditor?.close();closeDetail();completionDismissed=false;
+  }
   if(event.type==='audio-stop')dispatchEvent(new Event('f-stop-audio'));
   intro?.sync(state);
   queueRender(event.type);
 });
 addEventListener('pagehide',()=>{queueRender.cancel();clearTimeout(completionTimer);tableViewTransition++;tableViewAnimation?.cancel();},{once:true});
 render();if(role==='table')updateFocus(null);
-fullEditor=createEditor({role,stage,scene,tune,positions:overrides,refresh:()=>render(),notify,initialOpen:params.has('edit'),onSensingOffset:(x,y)=>glow?.setViewportOffset(x,y,{width:stage.parentElement.clientWidth,height:stage.parentElement.clientHeight})});
+fullEditor=createEditor({role,stage,scene,tune,positions:overrides,refresh:()=>{wallRenderKey=null;tableRenderKey=null;render();},notify,initialOpen:params.has('edit'),onSensingOffset:(x,y)=>glow?.setViewportOffset(x,y,{width:stage.parentElement.clientWidth,height:stage.parentElement.clientHeight})});
 tableViewsReady=true;render();if(role==='table'&&tableFrame.isConnected)syncReportFocus();
 glow.visible=role==='wall'||state.session||fullEditor.open;
 if(glow.visible)glow.prewarm(tune);
@@ -433,10 +451,11 @@ document.addEventListener('click',event=>{
   const toggleButton=event.target.closest('[data-toggle]');if(toggleButton){toggle(toggleButton.dataset.toggle);return;}
   const device=event.target.closest('[data-device],[data-node]');if(device){showDetail(device.dataset.device||device.dataset.node);return;}
   let action=event.target.closest('[data-action]')?.dataset.action;
+  if(fullEditor?.open&&event.target.closest('#welcome'))return;
   if(!action&&role!=='wall'&&event.target.closest('#welcome'))action='start';
   switch(action){
     case 'start':send('session-start');break;
-    case 'reset':closeDetail();completionDismissed=false;send('session-end');break;
+    case 'reset':closeDetail();completionDismissed=false;send('session-end',{recoverTable:role==='ipad'});break;
     case 'all':send('simulate',{action:'all'});break;
     case 'clear':send('simulate',{action:'clear'});break;
     case 'demo':send(state.demo?'demo-stop':'demo-start');break;
@@ -448,6 +467,7 @@ document.addEventListener('click',event=>{
 document.addEventListener('keydown',event=>{
   if(event.target.matches('input,textarea,select')||event.target.isContentEditable||event.metaKey||event.ctrlKey||event.altKey||event.repeat)return;
   if(event.key==='Escape'){closeDetail();return;}
+  if(event.code==='KeyR'||event.key.toLowerCase()==='r'){event.preventDefault();fullEditor?.close();closeDetail();completionDismissed=false;send('session-end');return;}
   if(!state.sim)return;
   const digit=/^Numpad[0-9]$/.test(event.code)?event.code.slice(-1):event.key;
   if(/^[1-9]$/.test(digit)){event.preventDefault();toggle(Number(digit));}

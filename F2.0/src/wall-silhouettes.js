@@ -1,3 +1,4 @@
+import {identityQuad,validQuad,warpPoint,quadCssMatrix} from './wall-warp.js';
 // Hand-drawn, normalized silhouettes. No pixel tracing or small surface details.
 const profiles={
  hrv:{aspect:519/289,paths:['M 5 1 H 95 Q 99 1 99 8 V 92 Q 99 99 95 99 H 5 Q 1 99 1 92 V 8 Q 1 1 5 1 Z']},
@@ -24,7 +25,13 @@ function expandContour(points){
  });
  return [...expanded,expanded[0]];
 }
-export function wallSilhouette(device,tune){
+export function wallSilhouette(device,tune,layer='maskQuads'){
+ if(device.id==='hub'||device.id==='screen'){
+  const [cx,cy,w,h]=tune.blocks[device.id],x=cx-w/2,y=cy-h/2;
+  const raw=tune.maskQuads?.[device.id],quad=validQuad(raw)?raw:identityQuad();
+  const corners=quad.map(([u,v])=>[x+u*w,y+v*h]);
+  return {x,y,w,h,corners,contours:[[...corners,corners[0]]],path:'M '+corners.map(p=>p.join(' ')).join(' L ')+' Z',transform:''};
+ }
  const profile=profiles[device.id],setting=tune.images?.[device.id],scale=setting?.scale??1;
  const [cx,cy,bw,bh]=device.box,availableW=Math.max(1,bw-16),availableH=Math.max(1,bh-16);
  let w=Math.min(availableW,availableH*profile.aspect)*scale,h=w/profile.aspect;
@@ -33,6 +40,11 @@ export function wallSilhouette(device,tune){
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',d);
   const length=path.getTotalLength();return Array.from({length:161},(_,i)=>{const p=path.getPointAtLength(length*i/160);return [p.x,p.y];});
  }));
- const contours=samples.get(device.id).map(points=>expandContour(points.map(p=>[x+p[0]*w/100,y+p[1]*h/100])));
- return {x,y,w,h,path:contours.map(points=>'M '+points.map(p=>p.join(' ')).join(' L ')+' Z').join(' '),transform:'',contours};
+ const raw=tune[layer]?.[device.id],quad=validQuad(raw)?raw:identityQuad();
+ const corners=quad.map(([u,v])=>[x+u*w,y+v*h]);
+ const sourceContours=samples.get(device.id).map(points=>expandContour(points.map(p=>[p[0]*w/100,p[1]*h/100])));
+ const contours=sourceContours.map(points=>points.map(p=>{
+  const [u,v]=warpPoint([p[0]/w,p[1]/h],quad);return [x+u*w,y+v*h];
+ }));
+ return {x,y,w,h,corners,sourceContours,cssTransform:quadCssMatrix(quad,w,h),path:contours.map(points=>'M '+points.map(p=>p.join(' ')).join(' L ')+' Z').join(' '),transform:'',contours};
 }

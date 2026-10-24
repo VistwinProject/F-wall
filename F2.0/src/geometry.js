@@ -1,3 +1,4 @@
+import {warpPoint,identityQuad} from './wall-warp.js';
 export const line=(...points)=>points;
 export function ring(x,y,r,count=128){return Array.from({length:count+1},(_,i)=>{const a=i/count*Math.PI*2;return[x+Math.cos(a)*r,y+Math.sin(a)*r];});}
 export function rounded(points,radius=20){
@@ -27,7 +28,8 @@ export function between(a,b,startRadius=0,endRadius=0){
 }
 // SVG wires and animated lights share routes derived from the editable grid.
 export const WALL_ROUTES={};
-export function wallRoutes({vlines:v,hlines:h,blocks:b}){
+export function wallRoutes(tune){
+  const {vlines:v,hlines:h,blocks:b}=tune;
   const [upper,middle,lower,bottom]=h;
   const [sensorX,hrvX,leftX,socketX,,rightX,acX,bathX]=v;
   const [hubX]=b.hub;
@@ -47,7 +49,17 @@ export function wallRoutes({vlines:v,hlines:h,blocks:b}){
   };
   return Object.fromEntries(Object.entries(routes).map(([id,points])=>{
     points.push([hubX,middle]);
-    return [id,points.filter((p,i)=>!i||p[0]!==points[i-1][0]||p[1]!==points[i-1][1])];
+    return [id,points.filter((p,i)=>!i||p[0]!==points[i-1][0]||p[1]!==points[i-1][1]).map(p=>warpFramePoint(p,tune))];
   }));
 }
 export const svgPoints=points=>points.map(p=>p.join(',')).join(' ');
+
+export function warpFramePoint([x,y],tune){
+ if(!tune.frame)return [x,y];
+ const [fx,fy,w,h]=tune.frame,[u,v]=warpPoint([(x-fx)/w,(y-fy)/h],tune.frameQuad||identityQuad());
+ return [fx+u*w,fy+v*h];
+}
+export function framePaths(tune){
+ const [x,y,w,h,r]=tune.frame;
+ return [rect(x,y,w,h,r),...tune.vlines.map(v=>[[v,y],[v,y+h]]),...tune.hlines.map(v=>[[x,v],[x+w,v]])].map(points=>points.map(p=>warpFramePoint(p,tune)));
+}

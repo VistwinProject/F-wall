@@ -1,3 +1,4 @@
+import {quadProjection,identityQuad} from './wall-warp.js';
 import * as THREE from 'three';
 import {PARAMS} from './glow-reference/params.js';
 
@@ -5,6 +6,7 @@ import {PARAMS} from './glow-reference/params.js';
 // Composite after bloom so nearby beams cannot amplify the framework halo.
 export function createWallFrameGlow(stage,width,height){
   const uniforms={
+    inverseWarp:{value:new THREE.Matrix3()},
     size:{value:new THREE.Vector2(width,height)},
     frame:{value:new THREE.Vector4(130,50,1610,985)},
     radius:{value:31},halfWidth:{value:13.5},gain:{value:1},
@@ -20,6 +22,7 @@ export function createWallFrameGlow(stage,width,height){
       void main(){uvPoint=uv;gl_Position=vec4(position.xy,0.,1.);}`,
     fragmentShader:`precision highp float;
       varying vec2 uvPoint;
+      uniform mat3 inverseWarp;
       uniform vec2 size;
       uniform vec4 frame;
       uniform float radius,halfWidth,gain,minCore;
@@ -36,6 +39,8 @@ export function createWallFrameGlow(stage,width,height){
       }
       void main(){
         vec2 p=vec2(uvPoint.x,1.-uvPoint.y)*size;
+        vec3 local=inverseWarp*vec3((p-frame.xy)/frame.zw,1.);
+        p=frame.xy+local.xy/local.z*frame.zw;
         vec2 halfBox=frame.zw*.5;
         float r=min(radius,min(halfBox.x,halfBox.y));
         vec2 q=abs(p-frame.xy-halfBox)-halfBox+r;
@@ -70,7 +75,9 @@ export function createWallFrameGlow(stage,width,height){
   const mesh=new THREE.Mesh(geometry,material);mesh.frustumCulled=false;scene.add(mesh);
   let enabled=true;
   return {
-    set({frame,vlines,hlines,lineWidth,frameWidth,minCorePx,showFrame=true}){
+    set({frame,vlines,hlines,lineWidth,frameWidth,minCorePx,showFrame=true,frameQuad}){
+      const [a,b,c,d,e,f,g,h]=quadProjection(frameQuad||identityQuad());
+      uniforms.inverseWarp.value.set(a,b,c,d,e,f,g,h,1).invert();
       enabled=showFrame;
       uniforms.frame.value.set(...frame.slice(0,4));uniforms.radius.value=frame[4];
       uniforms.halfWidth.value=(frameWidth??lineWidth)*width*.5;uniforms.minCore.value=minCorePx;

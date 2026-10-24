@@ -4,13 +4,15 @@
 <table><thead><tr><th>槽位</th><th>Reader</th><th>UID</th><th>家電</th><th>固定對照</th></tr></thead><tbody id="rows"></tbody></table>
 <button id="export" disabled>匯出目前 9 台 reader-map.json</button><p>將匯出檔放進安裝包的 server 資料夾，再 Stop → Start。若重新插拔後 reader 名稱改變，請重新校對位置。</p>
 <p><a href="/ipad">iPad 畫面</a> · <a href="http://localhost:6273/table">主機 Table</a> · <a href="http://localhost:6274/wall">主機 Wall</a></p>
-<h2>最近硬體事件</h2><pre id="events"></pre><h2>錯誤</h2><pre id="errors"></pre>
+<h2>長期運行狀態</h2><p id="runtime">讀取中…</p><p>硬體事件最多保留 100 筆、錯誤 20 筆，會自動淘汰舊資料。不要刪除 uid-map.json、reader-map.json 或瀏覽器校正資料。</p><h2>最近硬體事件</h2><pre id="events"></pre><h2>錯誤</h2><pre id="errors"></pre>
 <script type="module">
 let last;
 const rows=document.querySelector('#rows'),button=document.querySelector('#export');
 async function update(){try{
  const r=await fetch('/health',{cache:'no-store',signal:AbortSignal.timeout(2000)});if(!r.ok)throw Error(r.status);last=await r.json();
  document.querySelector('#status').textContent=`${last.mode==='live'?'實體 NFC':'模擬'}模式｜已連接 ${last.nfc.connected} / 9 台｜已辨識 ${new Set(last.slots.filter(s=>s.data).map(s=>s.data.id)).size} / 9 種家電`;
+ const runtime=last.runtime;
+ document.querySelector('#runtime').textContent=runtime?`服務已運行 ${(runtime.uptimeSeconds/3600).toFixed(1)} 小時｜記憶體 RSS ${(runtime.memory.rss/1048576).toFixed(1)} MB｜WebSocket ${runtime.websocketClients} 條｜三屏 ${last.displayStatus.ready?'已確認':'未全數確認（請檢查各畫面）'}`:'此服務尚未提供長期運行指標，請更新後重啟。';
  rows.replaceChildren();for(let slot=1;slot<=9;slot++){
   const s=last.slots.find(s=>s.slot_index===slot),tr=document.createElement('tr');
   for(const value of [slot,s?.reader||'未連接',s?.uid||'—',s?.data?.label||(s?.known===false?'未登記卡片':'—'),last.nfc.mapped.includes(slot)?'已固定':'尚未固定']){const td=document.createElement('td');td.textContent=value;tr.append(td);}rows.append(tr);

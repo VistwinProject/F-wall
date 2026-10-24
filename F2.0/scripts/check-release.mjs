@@ -24,8 +24,8 @@ async function visit(file){
 }
 await visit(path.join(root,'src/app.js'));
 const html=await read('index.html');
-for(const [,url] of html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^" ]*)?"/g))await access(path.join(root,url));
-for(const f of ['package-lock.json','server/index.mjs','server/uid-map.json','Install-F.cmd','Start-F.cmd','windows/install.ps1','windows/launch.ps1','windows/display.ps1','public/floorplan-lineart-v2.png','public/backgrounds/exhibition-arcs.svg'])await access(path.join(root,f));
+for(const [,url] of html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^" ]*)?"/g))await access(path.join(root,url.startsWith('/src/')?'':'public',url));
+for(const f of ['package-lock.json','server/index.mjs','server/uid-map.json','Install-F.cmd','Start-F.cmd','windows/install.ps1','windows/launch.ps1','windows/display.ps1','windows/runtime.ps1','windows/stop.ps1','Stop-F.cmd','server/led-control.mjs','server/led-settings.example.json','public/graph/index.html','public/graph/source.json','public/floorplan-lineart-v2.png','public/backgrounds/exhibition-arcs.svg'])await access(path.join(root,f));
 for(const d of DEVICES){
   for(const key of ['value','unit','month','target','delta','rows','maintenance'])assert.ok(!(key in d),`${d.id}: unused legacy ${key}`);
   await access(path.join(root,`public/appliances/${d.id}.webp`));

@@ -18,3 +18,12 @@ test('nine PC/SC readers: present, remove, disconnect, reconnect and overflow',(
  readers[4].emit('card',{uid:'FFFF'});assert.equal(events.filter(e=>e[0]==='card').length,9);
  assert.ok(events.some(e=>e[0]==='remove'&&e[1]===5));assert.ok(events.some(e=>e[0]==='disconnect'&&e[1]===5));
 });
+test('duplicate held-card events do not retrigger; read errors clear stale presence',()=>{
+ const nfc=new EventEmitter(),reader=new EventEmitter(),connected=new Map(),cards=[],removed=[];
+ reader.reader={name:'fixed'};
+ attachReaders(nfc,{mapping:{fixed:1},connected,onConnect:()=>{},onCard:(...a)=>cards.push(a),onRemove:s=>removed.push(s),onDisconnect:()=>{},onError:()=>{}});
+ nfc.emit('reader',reader);reader.emit('card',{uid:'ABCD'});reader.emit('card',{uid:'ab:cd'});
+ assert.equal(cards.length,1);reader.emit('error',Error('read failed'));assert.deepEqual(removed,[1]);
+ reader.emit('card',{uid:'ABCD'});assert.equal(cards.length,2);
+ reader.emit('card.off');reader.emit('card',{uid:'ABCD'});assert.equal(cards.length,3);
+});

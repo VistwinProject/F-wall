@@ -51,3 +51,12 @@
 :is(.ipad,.table) .welcome-instruction{color:#c3dff0;text-shadow:0 2px 8px #061032}
 /* Crop the taller iPad welcome artwork past its edges, like the table view. */
 .ipad .welcome::before{transform:scale(1.2);transform-origin:center}
+
+/* Separate artwork, shared calibrated background plane. */
+.table .welcome{background:transparent!important;box-shadow:none}
+.table .welcome::before,.table .welcome::after{display:none}
+.table-projection-surface[data-view="home"] .table-gradient-field{display:none}
+.table-projection-surface[data-view="home"] .table-background-plane::before{
+ content:'';position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 44%,#071334a6 0%,#08143b66 30%,transparent 67%),url('/backgrounds/exhibition-arcs.svg?v=3') center/cover no-repeat,radial-gradient(ellipse at 84% 72%,#123c78 0%,transparent 52%),radial-gradient(ellipse at 15% 15%,#122963 0%,transparent 62%),#081440;
+}

@@ -1,7 +1,7 @@
 import {createRestoredOrb} from './restored-orb.js';
 // One MediaElementAudioSource per media element; reuse across reconnections.
 const audioGraphs = new WeakMap();
-export function mountOrb(container,{createRenderer=createRestoredOrb}={}) {
+export function mountOrb(container,{createRenderer=createRestoredOrb,shortEdge=1600,maxFps=60}={}) {
   const canvas=document.createElement('canvas'), status=document.createElement('div');
   canvas.style.cssText='display:block;width:100%;height:100%;';
   status.hidden=true; status.setAttribute('role','status');
@@ -10,8 +10,8 @@ export function mountOrb(container,{createRenderer=createRestoredOrb}={}) {
   let resolveReady,rejectReady;
   const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
   canvas.dataset.orbHealth='starting';
-  const renderer=createRenderer({canvas,status,onReady:resolveReady,
-    onFrame(){if(!disposed)canvas.dataset.orbHealth='ready';},
+  const renderer=createRenderer({canvas,status,shortEdge,maxFps,onReady:resolveReady,
+    onFrame(){if(!disposed&&canvas.dataset.orbHealth!=='ready')canvas.dataset.orbHealth='ready';},
     onError(error){
       if(disposed)return;
       canvas.dataset.orbHealth='error';canvas.dataset.orbError=error.message;

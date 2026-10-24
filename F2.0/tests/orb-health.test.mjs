@@ -6,7 +6,8 @@ test('late GPU loss after ready remains observable; submitted frame required for
   globalThis.document={createElement:()=>({dataset:{},style:{},setAttribute(){},remove(){}})};
   let callbacks;
   try{
-    const orb=mountOrb({append(){}},{createRenderer:options=>{callbacks=options;return {setState(){},setSpeechLevel(){},dispose(){}};}});
+    const orb=mountOrb({append(){}},{shortEdge:1200,maxFps:30,createRenderer:options=>{callbacks=options;return {setState(){},setSpeechLevel(){},dispose(){}};}});
+    assert.equal(callbacks.shortEdge,1200);assert.equal(callbacks.maxFps,30);
     assert.equal(orb.canvas.dataset.orbHealth,'starting');
     callbacks.onReady();await orb.ready;
     assert.equal(orb.canvas.dataset.orbHealth,'starting','initialization alone is not an output frame');

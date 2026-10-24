@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "transport": "http-json",
+  "url": "",
+  "onPayload": {"power": true, "mode": "steady"},
+  "offPayload": {"power": false}
+}

@@ -18,10 +18,10 @@ export class Glow {
   constructor(container,width,height){
     this.container=container;
     this.width=width;this.height=height;
-    // iPad: ~30 renders per second (?glowfps=60 to compare). Thresholds sit just
+    // Wall and iPad: ~30 glow renders per second (?glowfps=60 to compare). Thresholds sit just
     // below the frame interval so 60/120 Hz displays skip whole frames evenly.
     const fps=Number(new URLSearchParams(location.search).get('glowfps'))||30;
-    this.minFrameMs=container.classList.contains('graph-scene')?(fps>=60?14:1000/fps-3):0;this.lastRender=0;
+    this.minFrameMs=(container.classList.contains('graph-scene')||container.classList.contains('wall-scene'))?(fps>=60?14:1000/fps-3):0;this.lastRender=0;
     this.stableRidge=!container.classList.contains('wall-scene');
     if(new URLSearchParams(location.search).has('nofx')){this.disabled=true;return;}
     const canvas=document.createElement('canvas');canvas.className='glow-canvas';container.prepend(canvas);this.canvas=canvas;
@@ -38,6 +38,8 @@ export class Glow {
   // Move the camera by the inverse offset so light stays aligned with its routes.
   setViewportOffset(x,y,{width=this.width,height=this.height}={}){
     if(!this.stage)return;
+    const viewKey=JSON.stringify([x,y,width,height]);
+    if(viewKey===this.viewportKey)return;this.viewportKey=viewKey;
     const marginX=(width-this.width)/2,marginY=(height-this.height)/2;
     this.canvas.style.width=width+'px';this.canvas.style.height=height+'px';
     this.canvas.style.transform=`translate(${-x-marginX}px, ${-y-marginY}px)`;

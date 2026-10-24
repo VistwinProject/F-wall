@@ -1,3 +1,4 @@
+// User-approved on-site calibration: f2-table-tuning (1).json, 2026-10-13.
 export const tablePreset = {
   "version": 2,
   "view": "table",
@@ -6,8 +7,8 @@ export const tablePreset = {
     "beamWidth": 0.007,
     "minCorePx": 1.5,
     "sensingOffset": [
-      101.39828416059125,
-      -60.4350580824807
+      118.57364993815571,
+      -92.99056390991682
     ],
     "phoneScale": 0.9231556296934783,
     "projection": {
@@ -21,19 +22,38 @@ export const tablePreset = {
         120
       ],
       "maskOn": true,
-      "maskWidth": 220,
-      "maskHeight": 80,
-      "maskX": 0,
+      "maskWidth": 343.85643269868854,
+      "maskHeight": 94.7687762142977,
+      "maskX": 6.267063777657086,
       "maskBottom": 0,
-      "maskRadius": 16
+      "maskRadius": 16,
+      "offsetY": -51,
+      "maskQuad": [
+        [
+          0,
+          0.10340958690697413
+        ],
+        [
+          1,
+          0.04537359425510089
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
     },
     "panelPct": 25.5,
-    "slotSize": 84,
+    "slotSize": 130,
     "hubSize": 240,
     "slots": [
       [
-        614.4,
-        735
+        713.8,
+        744.3
       ],
       [
         844.8,
@@ -64,8 +84,8 @@ export const tablePreset = {
         615
       ],
       [
-        1875.6,
-        735
+        1782.2,
+        744.3
       ]
     ],
     "hub": [
@@ -94,13 +114,41 @@ export const tablePreset = {
           "y": 81.5,
           "color": "#12367d"
         }
+      ],
+      "quad": [
+        [
+          0.0019424460431654677,
+          0.020166666666666666
+        ],
+        [
+          0.988705035971223,
+          0
+        ],
+        [
+          0.9994244604316547,
+          0.968
+        ],
+        [
+          0.001223021582733813,
+          1
+        ]
       ]
+    },
+    "homeCopy": {
+      "title": {
+        "text": "AI 大腦控制塔",
+        "size": 116
+      },
+      "instruction": {
+        "text": "請拿取前方設備裝置，放置相對的感應範圍，\n開始將居家設備連結到 AI 大腦！",
+        "size": 22
+      }
     }
   },
   "positions": {
     "info": [
-      -54.91298847048852,
-      46.58299846185642
+      -47.23978608322546,
+      45.89770564095634
     ]
   }
 };

@@ -35,3 +35,11 @@ F2.0/server/reader-map.json
 .env
 .env.*
 .DS_Store
+
+# Machine-specific deployment state: keep on site, never publish.
+F2.0/windows/settings.json
+F2.0/server/reader-identities.json
+F2.0/server/led-settings.json
+F2.0/.runtime/
+F2.0/runtime/
+F2.0/calibration/browser-storage-backup/

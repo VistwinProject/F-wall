@@ -20,7 +20,13 @@ test('extended Table glow viewport preserves positions beyond the old right edge
     assert.ok(Math.abs(pixelY-(y+offsetY))<1e-8);
     if(x===1850)assert.ok(point.x<1,'rightmost NFC remains inside the extended light canvas');
   }
+  let repeatedCameraUpdates=0;
+  const originalUpdate=camera.updateProjectionMatrix.bind(camera);
+  camera.updateProjectionMatrix=()=>{repeatedCameraUpdates++;originalUpdate();};
+  glow.setViewportOffset(offsetX,offsetY,{width,height});
+  assert.equal(repeatedCameraUpdates,0,'unchanged layout skips camera updates');
   glow.setViewportOffset(160,-30,{width,height});
+  assert.equal(repeatedCameraUpdates,1,'changed layout still updates camera');
   assert.equal(resizes,1,'dragging does not reallocate unchanged render buffers');
   assert.equal(glow.canvas.style.width,width+'px');
 });

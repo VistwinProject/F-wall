@@ -5,13 +5,13 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../',import.meta.url));
 if(process.platform!=='darwin'||process.arch!=='arm64')throw Error('Build on the target Mac arm64 with working NFC dependencies.');
-const name='F-Zone-Mac-arm64-Offline-2026-10-06';
+const name='F-Zone-Mac-arm64-Offline-2026-10-07-r2';
 const releases=path.resolve(root,'../releases');
 await fs.mkdir(releases,{recursive:true});
 const staging=await fs.mkdtemp(path.join(releases,'.f-build-'));
 const output=path.join(staging,name);
 await fs.mkdir(output);
-for(const f of ['src','public','server','offline','node_modules','index.html','package.json','package-lock.json','Start-F.command','Stop-F.command','Mac離線安裝與實測.md','版本紀錄-2026-10-06.md']){
+for(const f of ['src','public','server','offline','node_modules','index.html','package.json','package-lock.json','Start-F.command','Stop-F.command','Mac離線安裝與實測.md','版本紀錄-2026-10-06.md','Mac-M2-20261007.txt']){
  await fs.cp(path.join(root,f),path.join(output,f),{recursive:true,filter:src=>!src.includes('uid-map.backup-')&&!src.endsWith('reader-map.json')});
 }
 await fs.mkdir(path.join(output,'runtime'),{recursive:true});
@@ -22,7 +22,7 @@ for(const f of ['Start-F.command','Stop-F.command'])await fs.chmod(path.join(out
 execFileSync(path.join(output,'runtime/node'),['-e',"require('nfc-pcsc');console.log('Bundled NFC module OK')"],{cwd:output,stdio:'inherit'});
 const inventory=[];
 async function walk(dir){for(const entry of await fs.readdir(dir,{withFileTypes:true})){const f=path.join(dir,entry.name);if(entry.isDirectory())await walk(f);else if(entry.isFile())inventory.push({file:path.relative(output,f),sha256:createHash('sha256').update(await fs.readFile(f)).digest('hex')});}}
-await walk(output);await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify({platform:process.platform,arch:process.arch,node:process.version,files:inventory},null,2));
+await walk(output);await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify({platform:process.platform,arch:process.arch,node:process.version,deployment:{localDisplays:['wall','table'],requiredDisplays:['table','wall','graph'],ipad:'Wi-Fi LAN :6275/ipad',graphEnabled:true,graph:'second iPad over Wi-Fi /graph?ws=ws://HOST:6273'},sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),sourceIncludesLocalChanges:true,files:inventory},null,2));
 const zip=path.join(releases,name+'.zip');await fs.rm(zip,{force:true});
 execFileSync('/usr/bin/ditto',['-c','-k','--keepParent',output,zip]);
 await fs.writeFile(zip+'.sha256',createHash('sha256').update(await fs.readFile(zip)).digest('hex')+'  '+path.basename(zip)+'\n');

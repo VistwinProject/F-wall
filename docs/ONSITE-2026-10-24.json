@@ -1,0 +1,1122 @@
+{
+  "captured_on": "2026-10-24",
+  "main": "00c2961824af5ddc55bf25e2ebab32e4acf271d2",
+  "formal": "ee2480846c6970a8cec57fde2ee36ab1753c5613",
+  "base": "ff6ce46f1955aafd617a2b159f8fc952ddd1fbff",
+  "files": [
+    {
+      "path": "Check-F.cmd",
+      "status": "new",
+      "onsite_sha256": "5fa352bd3e092dc775afd30c975c76d6aa7a7cb5703b2073beac17ca80103bfb",
+      "modified_at": "2026-10-12 01:22:26",
+      "repository_sha256": "694964c4aa8ba6b53739d201049c5fbb1f658eb76c01ab7c90b322bbd1db5268"
+    },
+    {
+      "path": "Diagnose-F.cmd",
+      "status": "new",
+      "onsite_sha256": "443dcbcb00eb3691903b83f6061b3931a2e7dc2bedac0a9550e19466b613d5f9",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "443dcbcb00eb3691903b83f6061b3931a2e7dc2bedac0a9550e19466b613d5f9"
+    },
+    {
+      "path": "index.html",
+      "status": "onsite-only",
+      "onsite_sha256": "878bbebf3caab0acf793d0601294d6e03e38871137a0264c18177a801d6d8ad2",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "878bbebf3caab0acf793d0601294d6e03e38871137a0264c18177a801d6d8ad2"
+    },
+    {
+      "path": "Install-F.cmd",
+      "status": "same",
+      "onsite_sha256": "2320304896f8fb72685005486d1f880fd720146bddd89d731730bd8d7e73eac9",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2320304896f8fb72685005486d1f880fd720146bddd89d731730bd8d7e73eac9"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "same",
+      "onsite_sha256": "ccb111d929df1c1271feaacda7a7104cffd39f75a872ef791d5675af7f2631c5",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ccb111d929df1c1271feaacda7a7104cffd39f75a872ef791d5675af7f2631c5"
+    },
+    {
+      "path": "package.json",
+      "status": "same",
+      "onsite_sha256": "5c832ff00d9fa1f700ac698aa9c577ab15d5b297ba4740d79dcb9b0ed392c59e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "5c832ff00d9fa1f700ac698aa9c577ab15d5b297ba4740d79dcb9b0ed392c59e"
+    },
+    {
+      "path": "public/anlb-orb/demo.html",
+      "status": "same",
+      "onsite_sha256": "1f03153fc03848dda9b443186b1f01d4c79480a1282390e520c474e3f6128754",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "1f03153fc03848dda9b443186b1f01d4c79480a1282390e520c474e3f6128754"
+    },
+    {
+      "path": "public/anlb-orb/demo.js",
+      "status": "same",
+      "onsite_sha256": "3fe092a4e4e3de817209f02f2ca0358083977a8b82dd0875ef1fcb32fe878db3",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3fe092a4e4e3de817209f02f2ca0358083977a8b82dd0875ef1fcb32fe878db3"
+    },
+    {
+      "path": "public/anlb-orb/index.html",
+      "status": "same",
+      "onsite_sha256": "ee43ab8119593abfa55e2dc32bdecd6cc1a1aa81bddc7ee3b673993e53798b1f",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ee43ab8119593abfa55e2dc32bdecd6cc1a1aa81bddc7ee3b673993e53798b1f"
+    },
+    {
+      "path": "public/anlb-orb/LICENSE",
+      "status": "same",
+      "onsite_sha256": "98ac16026ce4c17a38cfba95431704a4a47b7144fd22049a6465c2c594531241",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "98ac16026ce4c17a38cfba95431704a4a47b7144fd22049a6465c2c594531241"
+    },
+    {
+      "path": "public/anlb-orb/orb.js",
+      "status": "onsite-only",
+      "onsite_sha256": "619cf247a3cf99ed6665876dd7f8b8eebaa270ba4b2320f8df9231138982027f",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "619cf247a3cf99ed6665876dd7f8b8eebaa270ba4b2320f8df9231138982027f"
+    },
+    {
+      "path": "public/anlb-orb/restored-orb.js",
+      "status": "onsite-only",
+      "onsite_sha256": "7185864a005a38cce9edebc9bb8a240b7d7d1734321949547baef93c635ec9cd",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7185864a005a38cce9edebc9bb8a240b7d7d1734321949547baef93c635ec9cd"
+    },
+    {
+      "path": "public/anlb-orb/UPSTREAM.txt",
+      "status": "same",
+      "onsite_sha256": "8c849008eba03ff402112c6c88c5faf758ae81701e45c97e02bc58939331a95e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8c849008eba03ff402112c6c88c5faf758ae81701e45c97e02bc58939331a95e"
+    },
+    {
+      "path": "public/anlb-orb/先看這裡.txt",
+      "status": "same",
+      "onsite_sha256": "2825b1db366f425a3a9719393ef8ac55567b15d0f30ac3faa3f2b09471215a74",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2825b1db366f425a3a9719393ef8ac55567b15d0f30ac3faa3f2b09471215a74"
+    },
+    {
+      "path": "public/anlb-orb/給 Astra6 的接入說明.md",
+      "status": "same",
+      "onsite_sha256": "c42fd36c676352d3968afc708b460d3fd6315577b617f630aedda9c0670f6396",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "c42fd36c676352d3968afc708b460d3fd6315577b617f630aedda9c0670f6396"
+    },
+    {
+      "path": "public/anlb-orb/驗證紀錄.md",
+      "status": "same",
+      "onsite_sha256": "56d4eef569d7e5a99a9644f04b0d22ccb1f9288712dcdefce1441b6f9325f201",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "56d4eef569d7e5a99a9644f04b0d22ccb1f9288712dcdefce1441b6f9325f201"
+    },
+    {
+      "path": "public/appliances/ac.webp",
+      "status": "same",
+      "onsite_sha256": "605399a341f4ecd040bdb3bba47f72bacccffc166f3680d9b5feed7f46313def",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "605399a341f4ecd040bdb3bba47f72bacccffc166f3680d9b5feed7f46313def"
+    },
+    {
+      "path": "public/appliances/bathfan.webp",
+      "status": "same",
+      "onsite_sha256": "2a43d6b47cc2eeb786371622aad941d39840ae9dad07c28f09215a23a83de72f",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2a43d6b47cc2eeb786371622aad941d39840ae9dad07c28f09215a23a83de72f"
+    },
+    {
+      "path": "public/appliances/curtain.webp",
+      "status": "same",
+      "onsite_sha256": "88d6c93e2b123e4692722d544fcd831bb6b2d84471b6b43a6f35785cb28bdae1",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "88d6c93e2b123e4692722d544fcd831bb6b2d84471b6b43a6f35785cb28bdae1"
+    },
+    {
+      "path": "public/appliances/dehum.webp",
+      "status": "same",
+      "onsite_sha256": "78f18434776c32b4465ab875eadea171998420cb3579f4225df4d2f68ef3bc85",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "78f18434776c32b4465ab875eadea171998420cb3579f4225df4d2f68ef3bc85"
+    },
+    {
+      "path": "public/appliances/hrv.webp",
+      "status": "same",
+      "onsite_sha256": "f7efbeaf1244a9b8e359b0ca0fc162e7d7815c8112e7571ebe44595e18724566",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "f7efbeaf1244a9b8e359b0ca0fc162e7d7815c8112e7571ebe44595e18724566"
+    },
+    {
+      "path": "public/appliances/light.webp",
+      "status": "same",
+      "onsite_sha256": "fce8204a7c38c24fb711b165c8766138d9a4bd4e589eaf020e4546457546ba86",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "fce8204a7c38c24fb711b165c8766138d9a4bd4e589eaf020e4546457546ba86"
+    },
+    {
+      "path": "public/appliances/purifier.webp",
+      "status": "same",
+      "onsite_sha256": "6e4bf5d47e85af8216be3632e16a6d97a9c0544833a9544ad2532247569e2b6a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6e4bf5d47e85af8216be3632e16a6d97a9c0544833a9544ad2532247569e2b6a"
+    },
+    {
+      "path": "public/appliances/sensor.webp",
+      "status": "same",
+      "onsite_sha256": "314152022a07bb513022068d91aaf46a61cfbfd8884e5784be39969e90b1f751",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "314152022a07bb513022068d91aaf46a61cfbfd8884e5784be39969e90b1f751"
+    },
+    {
+      "path": "public/appliances/socket.webp",
+      "status": "same",
+      "onsite_sha256": "67390eed605bc0e86236f833f7f11566fa86b281dc89a7db5e3125c2a827b270",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "67390eed605bc0e86236f833f7f11566fa86b281dc89a7db5e3125c2a827b270"
+    },
+    {
+      "path": "public/backgrounds/exhibition-arcs.svg",
+      "status": "same",
+      "onsite_sha256": "a5d0e80be9ac1c7db746055a82f41b18497b3d2cec0ad6a57816ef9b53defca9",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "a5d0e80be9ac1c7db746055a82f41b18497b3d2cec0ad6a57816ef9b53defca9"
+    },
+    {
+      "path": "public/device-audio/ac.wav",
+      "status": "same",
+      "onsite_sha256": "03fc92a39ff1b9a18f4917126e658a6447a26df1217eb5f84813950edbc785e0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "03fc92a39ff1b9a18f4917126e658a6447a26df1217eb5f84813950edbc785e0"
+    },
+    {
+      "path": "public/device-audio/bathfan.wav",
+      "status": "same",
+      "onsite_sha256": "fd5a113b1d3cc6ca6ade1959f71351ddbe0b455e57403dda42520ad8abff286e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "fd5a113b1d3cc6ca6ade1959f71351ddbe0b455e57403dda42520ad8abff286e"
+    },
+    {
+      "path": "public/device-audio/curtain.wav",
+      "status": "same",
+      "onsite_sha256": "ca473dd0e68f97a2c241ee088133a5be644b66c924684b6fe2fab1f43b8a30d6",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ca473dd0e68f97a2c241ee088133a5be644b66c924684b6fe2fab1f43b8a30d6"
+    },
+    {
+      "path": "public/device-audio/dehum.wav",
+      "status": "same",
+      "onsite_sha256": "7c24f1c7c4465204f089ff4a08df43da5a3647457a036ffcec82074fc3011d7d",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7c24f1c7c4465204f089ff4a08df43da5a3647457a036ffcec82074fc3011d7d"
+    },
+    {
+      "path": "public/device-audio/hrv.wav",
+      "status": "same",
+      "onsite_sha256": "1caf10e3a36cebc3d76f32739209d1b55e107d32157808da10d1b6fd2244fd45",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "1caf10e3a36cebc3d76f32739209d1b55e107d32157808da10d1b6fd2244fd45"
+    },
+    {
+      "path": "public/device-audio/light.wav",
+      "status": "same",
+      "onsite_sha256": "76a155578d96e78b81fae25dc9f470ed6ee733cf7cb9ba75fe56a8b7e06c1ece",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "76a155578d96e78b81fae25dc9f470ed6ee733cf7cb9ba75fe56a8b7e06c1ece"
+    },
+    {
+      "path": "public/device-audio/purifier.wav",
+      "status": "same",
+      "onsite_sha256": "b26b326d844cd7ee91291cc1a725a24991727d7d6ecf662246776a4010f0e351",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b26b326d844cd7ee91291cc1a725a24991727d7d6ecf662246776a4010f0e351"
+    },
+    {
+      "path": "public/device-audio/sensor.wav",
+      "status": "same",
+      "onsite_sha256": "c4f8eb75d0ac6f23eca2fdd49800345890ea31406741d5aaff5d1a48ff106bd6",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "c4f8eb75d0ac6f23eca2fdd49800345890ea31406741d5aaff5d1a48ff106bd6"
+    },
+    {
+      "path": "public/device-audio/socket.wav",
+      "status": "same",
+      "onsite_sha256": "e61d682c7b8f9c0e78621a081874ec98b92e30ac62317f838f479c308c7e552f",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "e61d682c7b8f9c0e78621a081874ec98b92e30ac62317f838f479c308c7e552f"
+    },
+    {
+      "path": "public/diagnostics.html",
+      "status": "onsite-only",
+      "onsite_sha256": "d1d2ea1dbc4824e13dfe9dd7f13abee22d503bae373395f61c92338a324beaf3",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "d1d2ea1dbc4824e13dfe9dd7f13abee22d503bae373395f61c92338a324beaf3"
+    },
+    {
+      "path": "public/display-fullscreen.js",
+      "status": "new",
+      "onsite_sha256": "50c6e3bae10be603c26eabf0b52c214f8a82c24e197ce1814b9d2205a147803b",
+      "modified_at": "2026-10-12 03:37:20",
+      "repository_sha256": "50c6e3bae10be603c26eabf0b52c214f8a82c24e197ce1814b9d2205a147803b"
+    },
+    {
+      "path": "public/f-completion.wav",
+      "status": "same",
+      "onsite_sha256": "0f4ae404b90c661bac6fed96da7c3b9483aa19a7885662dc9c4575e63b2c216d",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0f4ae404b90c661bac6fed96da7c3b9483aa19a7885662dc9c4575e63b2c216d"
+    },
+    {
+      "path": "public/f-intro.wav",
+      "status": "same",
+      "onsite_sha256": "89d01b9151bfa30e8a6d077240ddb464895fcdb934391b64a5dca7860c6b8001",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "89d01b9151bfa30e8a6d077240ddb464895fcdb934391b64a5dca7860c6b8001"
+    },
+    {
+      "path": "public/floorplan-lineart-v2.png",
+      "status": "same",
+      "onsite_sha256": "b3db4bf406fd88d15ac005d16ad38052338624a2e1fd5e4179d55531dcd31245",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b3db4bf406fd88d15ac005d16ad38052338624a2e1fd5e4179d55531dcd31245"
+    },
+    {
+      "path": "public/floorplan-lineart-v2.prompt.txt",
+      "status": "same",
+      "onsite_sha256": "fb3fe2ed3dceb38135aed87f0dc125cb95ffd54320e2e7d20f13fb4c8a2755b8",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "fb3fe2ed3dceb38135aed87f0dc125cb95ffd54320e2e7d20f13fb4c8a2755b8"
+    },
+    {
+      "path": "public/graph/index.html",
+      "status": "new",
+      "onsite_sha256": "6ba20250573e075424a5f47d474f3dce2f171f697c30349e2a6a38e72446e88c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6ba20250573e075424a5f47d474f3dce2f171f697c30349e2a6a38e72446e88c"
+    },
+    {
+      "path": "public/graph/README.md",
+      "status": "new",
+      "onsite_sha256": "48ced5e939c14ac24866d4d7cdc4a0785ab48fde7a57cca2a95f175cb2b8bebd",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "48ced5e939c14ac24866d4d7cdc4a0785ab48fde7a57cca2a95f175cb2b8bebd"
+    },
+    {
+      "path": "public/graph/source.json",
+      "status": "new",
+      "onsite_sha256": "b7f77490a793b7a52f4bac25b4d50b32feabaa14f038189f76a312a851fb7923",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b7f77490a793b7a52f4bac25b4d50b32feabaa14f038189f76a312a851fb7923"
+    },
+    {
+      "path": "public/manifest.webmanifest",
+      "status": "new",
+      "onsite_sha256": "ef87a0747b525c95fbd3cfa0dc5eeee0bef7a262e7498988d0ef11cd88c1384c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ef87a0747b525c95fbd3cfa0dc5eeee0bef7a262e7498988d0ef11cd88c1384c"
+    },
+    {
+      "path": "public/table-reports/energy.mp4",
+      "status": "same",
+      "onsite_sha256": "0ff851d2166b87cc1c8598b5eff450f397d2a1df69fd9d757876275680871c41",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0ff851d2166b87cc1c8598b5eff450f397d2a1df69fd9d757876275680871c41"
+    },
+    {
+      "path": "public/table-reports/health.mp4",
+      "status": "same",
+      "onsite_sha256": "61ab7146159c75097400d56aa1357a7e74d9dd1506758d17ffcaaba11b16f20c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "61ab7146159c75097400d56aa1357a7e74d9dd1506758d17ffcaaba11b16f20c"
+    },
+    {
+      "path": "public/table-reports/maintenance.mp4",
+      "status": "same",
+      "onsite_sha256": "15b1b18716c01e0c24dac52fe38dd48f46a885a28bcec1a5ec42a847a000201e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "15b1b18716c01e0c24dac52fe38dd48f46a885a28bcec1a5ec42a847a000201e"
+    },
+    {
+      "path": "scripts/build-pages.mjs",
+      "status": "same",
+      "onsite_sha256": "8e48a0f171fe5bad687296705d35d4fc30391ba99b733343cd232d017af9aaa9",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8e48a0f171fe5bad687296705d35d4fc30391ba99b733343cd232d017af9aaa9"
+    },
+    {
+      "path": "scripts/check-release.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "0640ec2cb64ecddc878ec82b8a98c803f9884096007ace019fabe45551414bdf",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0640ec2cb64ecddc878ec82b8a98c803f9884096007ace019fabe45551414bdf"
+    },
+    {
+      "path": "scripts/check-windows.ps1",
+      "status": "new",
+      "onsite_sha256": "7821d3153fbed55f0a2134f0a64c257318f8371460e614917c06c57d25e45a5a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7821d3153fbed55f0a2134f0a64c257318f8371460e614917c06c57d25e45a5a"
+    },
+    {
+      "path": "scripts/package-mac.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "6af26b1c648c89e7ebe01659db6166481d96c13f977108cc1fce7927fc1dba92",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6af26b1c648c89e7ebe01659db6166481d96c13f977108cc1fce7927fc1dba92"
+    },
+    {
+      "path": "scripts/package-windows.mjs",
+      "status": "new",
+      "onsite_sha256": "0b4886331fc61f5b87a3d73de4f2189f205057e8cd037c26966cd99a63b4f0b1",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0b4886331fc61f5b87a3d73de4f2189f205057e8cd037c26966cd99a63b4f0b1"
+    },
+    {
+      "path": "server/display-monitor.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "6d153e4062a3696c5185cbd75aecd4b03a6a8944dc2b487f4b83185322d60e91",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6d153e4062a3696c5185cbd75aecd4b03a6a8944dc2b487f4b83185322d60e91"
+    },
+    {
+      "path": "server/exhibition-exit.mjs",
+      "status": "new",
+      "onsite_sha256": "6bbd005bb86662204e371c3f27d5042ed231a9aabf979510df33504b976f2cec",
+      "modified_at": "2026-10-12 03:44:00",
+      "repository_sha256": "6bbd005bb86662204e371c3f27d5042ed231a9aabf979510df33504b976f2cec"
+    },
+    {
+      "path": "server/index.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "65079f983f3b215397aac666a4d79099fa4f9a8333d6d8632d743a752b9dbeb2",
+      "modified_at": "2026-10-13 20:39:32",
+      "repository_sha256": "65079f983f3b215397aac666a4d79099fa4f9a8333d6d8632d743a752b9dbeb2"
+    },
+    {
+      "path": "server/led-control.mjs",
+      "status": "new",
+      "onsite_sha256": "5cb8bdbdf06422cd75a61d38eacf9603b195bf21946c8a5fb259ee0e88ffdd4e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "5cb8bdbdf06422cd75a61d38eacf9603b195bf21946c8a5fb259ee0e88ffdd4e"
+    },
+    {
+      "path": "server/led-settings.example.json",
+      "status": "new",
+      "onsite_sha256": "2b30b4cb1bcef3643fe3fb09a0bc91c777be0cf96c64b6be3de2b5c892940a05",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2b30b4cb1bcef3643fe3fb09a0bc91c777be0cf96c64b6be3de2b5c892940a05"
+    },
+    {
+      "path": "server/nfc-host.mjs",
+      "status": "new",
+      "onsite_sha256": "809db7a7e8fd80c2d502e8e8b2a04905416194d88a932c0d2d7646a37cb2df0c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "809db7a7e8fd80c2d502e8e8b2a04905416194d88a932c0d2d7646a37cb2df0c"
+    },
+    {
+      "path": "server/nfc-process.mjs",
+      "status": "new",
+      "onsite_sha256": "7cee2899cf94b955104f40ffd5ee8068d00b6a034974472c37cf42ed73bc6c8b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7cee2899cf94b955104f40ffd5ee8068d00b6a034974472c37cf42ed73bc6c8b"
+    },
+    {
+      "path": "server/nfc-readers.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "f2e8e023351a9b957d8881e9c6d2ebefdb931a2c37de66c58d20872943923c38",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "f2e8e023351a9b957d8881e9c6d2ebefdb931a2c37de66c58d20872943923c38"
+    },
+    {
+      "path": "server/reader-map.example.json",
+      "status": "same",
+      "onsite_sha256": "3284090f2ce5ab9568c179b02011976c6d6388707bb1c64b168f88d76c6f2a06",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3284090f2ce5ab9568c179b02011976c6d6388707bb1c64b168f88d76c6f2a06"
+    },
+    {
+      "path": "server/rolling-log.mjs",
+      "status": "new",
+      "onsite_sha256": "896e4dd88ad507476b9159679d93a725189e25d42b1cf9a4005969b5faa569c0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "896e4dd88ad507476b9159679d93a725189e25d42b1cf9a4005969b5faa569c0"
+    },
+    {
+      "path": "server/transport-guard.mjs",
+      "status": "new",
+      "onsite_sha256": "0b6cd5b1a75ddc4874c58e02218ffb9ad16343d40d1a6815e0f05aac92f53a45",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0b6cd5b1a75ddc4874c58e02218ffb9ad16343d40d1a6815e0f05aac92f53a45"
+    },
+    {
+      "path": "server/uid-map.json",
+      "status": "same",
+      "onsite_sha256": "8d0eec7c01ac7cdf222469da2f541e5ac6e97342072353a3c438b16aaf1615ed",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8d0eec7c01ac7cdf222469da2f541e5ac6e97342072353a3c438b16aaf1615ed"
+    },
+    {
+      "path": "server/verify-local.mjs",
+      "status": "same",
+      "onsite_sha256": "757baed3e8b9a5f99959692b34a1f4142561e76d2ddb610cb58208fea61d7e31",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "757baed3e8b9a5f99959692b34a1f4142561e76d2ddb610cb58208fea61d7e31"
+    },
+    {
+      "path": "server/verify-missing-wall.mjs",
+      "status": "same",
+      "onsite_sha256": "76a9393f9d799291c3b684630d679c50701c53ba0c2835d8809e78fed0229503",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "76a9393f9d799291c3b684630d679c50701c53ba0c2835d8809e78fed0229503"
+    },
+    {
+      "path": "server/window-control.mjs",
+      "status": "new",
+      "onsite_sha256": "fb52b19470a7f3d654727ff563faf81cd1c2f99ff235b197bbb4802633d5b57e",
+      "modified_at": "2026-10-12 04:05:14",
+      "repository_sha256": "fb52b19470a7f3d654727ff563faf81cd1c2f99ff235b197bbb4802633d5b57e"
+    },
+    {
+      "path": "server/x-f-adapter.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "3d5833c3f36a1930976e5c3e5c5aa71a66b68ab2b087d9df497dc2f37861ee95",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3d5833c3f36a1930976e5c3e5c5aa71a66b68ab2b087d9df497dc2f37861ee95"
+    },
+    {
+      "path": "src/app.js",
+      "status": "onsite-only",
+      "onsite_sha256": "cb430e283aa9883aa7e4a1deb7d4cf9bf6fbbacce5adf15926e5657ae7cbd5f8",
+      "modified_at": "2026-10-12 04:03:32",
+      "repository_sha256": "cb430e283aa9883aa7e4a1deb7d4cf9bf6fbbacce5adf15926e5657ae7cbd5f8"
+    },
+    {
+      "path": "src/appliance-icons.css",
+      "status": "same",
+      "onsite_sha256": "65c0b440d8a52dad5c9e3f96d946542aa7679405c1b9e24b09d98a76c1615a4a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "65c0b440d8a52dad5c9e3f96d946542aa7679405c1b9e24b09d98a76c1615a4a"
+    },
+    {
+      "path": "src/appliance-icons.js",
+      "status": "same",
+      "onsite_sha256": "7f899e2b2d1c6d5e17bb933743a6922a92df28fd65097a016132529dede5bdec",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7f899e2b2d1c6d5e17bb933743a6922a92df28fd65097a016132529dede5bdec"
+    },
+    {
+      "path": "src/audio-captions.js",
+      "status": "same",
+      "onsite_sha256": "92e53e2fb7f5c16cfbf2530ce48a35b1071733cd82799ec9bccdc34b7ed2088b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "92e53e2fb7f5c16cfbf2530ce48a35b1071733cd82799ec9bccdc34b7ed2088b"
+    },
+    {
+      "path": "src/completion-audio.js",
+      "status": "same",
+      "onsite_sha256": "57904f4a9924f48a856fe699452a5ee1566b6ebba7b218210b1aa6c260ee393f",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "57904f4a9924f48a856fe699452a5ee1566b6ebba7b218210b1aa6c260ee393f"
+    },
+    {
+      "path": "src/device-audio.js",
+      "status": "same",
+      "onsite_sha256": "a7a009a75d5f6fbc79b62e4cbc16f858b66589213e52b187d7ec2b8ec49bf6a0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "a7a009a75d5f6fbc79b62e4cbc16f858b66589213e52b187d7ec2b8ec49bf6a0"
+    },
+    {
+      "path": "src/devices.js",
+      "status": "same",
+      "onsite_sha256": "d5803fa296bbc79da2ae84865e4231727843eca7a7bd7d8f5d2b1ba3e3e24c32",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "d5803fa296bbc79da2ae84865e4231727843eca7a7bd7d8f5d2b1ba3e3e24c32"
+    },
+    {
+      "path": "src/display-report.js",
+      "status": "same",
+      "onsite_sha256": "b1a5c677830b115fcebd9bd673876bcbd6484ee9754f32629290448e62cbde2b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b1a5c677830b115fcebd9bd673876bcbd6484ee9754f32629290448e62cbde2b"
+    },
+    {
+      "path": "src/editor.css",
+      "status": "onsite-only",
+      "onsite_sha256": "cc517623d7029cbfc51622d48fae413239d6029cc588d2319f61bf2a8cddb18b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "cc517623d7029cbfc51622d48fae413239d6029cc588d2319f61bf2a8cddb18b"
+    },
+    {
+      "path": "src/editor.js",
+      "status": "onsite-only",
+      "onsite_sha256": "cb73839e7503ccdf4b1851aa2c92e04ccf3eb5f16b81047e980f5f9bd59d231e",
+      "modified_at": "2026-10-13 17:37:08",
+      "repository_sha256": "cb73839e7503ccdf4b1851aa2c92e04ccf3eb5f16b81047e980f5f9bd59d231e"
+    },
+    {
+      "path": "src/frame-batch.js",
+      "status": "same",
+      "onsite_sha256": "51c8d4c59de66d46fb78eb71156e4fe1d25953e3827d965c73169f34ebf8958a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "51c8d4c59de66d46fb78eb71156e4fe1d25953e3827d965c73169f34ebf8958a"
+    },
+    {
+      "path": "src/geometry.js",
+      "status": "onsite-only",
+      "onsite_sha256": "e2753e7d24ecb6911ce7fa1f2e6d82af922bbd2bd07bc0c5b34e9c4b1c920903",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "e2753e7d24ecb6911ce7fa1f2e6d82af922bbd2bd07bc0c5b34e9c4b1c920903"
+    },
+    {
+      "path": "src/glass-finish.css",
+      "status": "onsite-only",
+      "onsite_sha256": "31364fda032045cb1e0d89a43768895eba7b2c7bdb675beced82e4228aed7521",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "31364fda032045cb1e0d89a43768895eba7b2c7bdb675beced82e4228aed7521"
+    },
+    {
+      "path": "src/glow-reference/params.js",
+      "status": "same",
+      "onsite_sha256": "2ad6167befc6bc63d6f02b2ff1b193f22a52cba954c81d3347d5c2aeb50565f7",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2ad6167befc6bc63d6f02b2ff1b193f22a52cba954c81d3347d5c2aeb50565f7"
+    },
+    {
+      "path": "src/glow-reference/ribbon.js",
+      "status": "same",
+      "onsite_sha256": "8534889e9b568b0f0d006c659dd57ab4eee422c79dc9ccce96f15df4b5a921e7",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8534889e9b568b0f0d006c659dd57ab4eee422c79dc9ccce96f15df4b5a921e7"
+    },
+    {
+      "path": "src/glow-reference/scene.js",
+      "status": "same",
+      "onsite_sha256": "53b548161c3e99a08feaba7050b3ad2f0edf1c779e34e0a9ee6076e07e37b06c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "53b548161c3e99a08feaba7050b3ad2f0edf1c779e34e0a9ee6076e07e37b06c"
+    },
+    {
+      "path": "src/glow-reference/shaders.js",
+      "status": "same",
+      "onsite_sha256": "2a56a23867e807e658bb7379990d1e559fc8f35e447ef9b76df48812f77a0865",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2a56a23867e807e658bb7379990d1e559fc8f35e447ef9b76df48812f77a0865"
+    },
+    {
+      "path": "src/glow-reference/stage.js",
+      "status": "same",
+      "onsite_sha256": "529e0adb6d0fb0afc0ee89c4148553e3ba1215369b19d59ccd15653930400569",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "529e0adb6d0fb0afc0ee89c4148553e3ba1215369b19d59ccd15653930400569"
+    },
+    {
+      "path": "src/glow-reference/wall-route-ribbon.js",
+      "status": "same",
+      "onsite_sha256": "8be7e67b1106a963b923df2b981346a9ce440950a4d94d2c3bc0d62568f3de3d",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8be7e67b1106a963b923df2b981346a9ce440950a4d94d2c3bc0d62568f3de3d"
+    },
+    {
+      "path": "src/glow.js",
+      "status": "onsite-only",
+      "onsite_sha256": "ce95472abe6a09c48cf30053393a3a5df045b16b772c85a6cd4c3fd39bf2ce3c",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ce95472abe6a09c48cf30053393a3a5df045b16b772c85a6cd4c3fd39bf2ce3c"
+    },
+    {
+      "path": "src/intro-quantum.js",
+      "status": "onsite-only",
+      "onsite_sha256": "6d9ee251a3dc5eb8287471195c38707fdb79eff1b09ef3c18ab6462846b6e4d5",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6d9ee251a3dc5eb8287471195c38707fdb79eff1b09ef3c18ab6462846b6e4d5"
+    },
+    {
+      "path": "src/intro.css",
+      "status": "onsite-only",
+      "onsite_sha256": "3ab961129a93f9493ac55bf57d3fa35d901f80cde5ecc25adda40535ce4f2d5a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3ab961129a93f9493ac55bf57d3fa35d901f80cde5ecc25adda40535ce4f2d5a"
+    },
+    {
+      "path": "src/intro.js",
+      "status": "same",
+      "onsite_sha256": "d1d0367355312ae1c887c99946f6e1b8cec573ca234da6079e056c27baa59f92",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "d1d0367355312ae1c887c99946f6e1b8cec573ca234da6079e056c27baa59f92"
+    },
+    {
+      "path": "src/ipad-insights.js",
+      "status": "same",
+      "onsite_sha256": "7d88845aee89c444f393b72ad66b28e8b80b9e0ef0c0f1ea7f83e293aab2f928",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7d88845aee89c444f393b72ad66b28e8b80b9e0ef0c0f1ea7f83e293aab2f928"
+    },
+    {
+      "path": "src/ipad-preset.js",
+      "status": "same",
+      "onsite_sha256": "5eec1253ade99a6e47dd63da0beb48df7232244604b29ac2ee6d7bbc1807bb23",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "5eec1253ade99a6e47dd63da0beb48df7232244604b29ac2ee6d7bbc1807bb23"
+    },
+    {
+      "path": "src/mapping-operations.js",
+      "status": "onsite-only",
+      "onsite_sha256": "33f7fe3ea96b48fd09f03d98ec88a787d755d25a43e55d5652f1ee352fcea299",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "33f7fe3ea96b48fd09f03d98ec88a787d755d25a43e55d5652f1ee352fcea299"
+    },
+    {
+      "path": "src/pages-session.js",
+      "status": "same",
+      "onsite_sha256": "f5961a5128352839faf37e73b2a8823a42b0dc49b5c0a2eb4ded766cee9aafda",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "f5961a5128352839faf37e73b2a8823a42b0dc49b5c0a2eb4ded766cee9aafda"
+    },
+    {
+      "path": "src/panel-content.css",
+      "status": "same",
+      "onsite_sha256": "2249b9c19462b311224249783d5d7de7ecdc86a83a8ae7672f28049621fcfdb1",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2249b9c19462b311224249783d5d7de7ecdc86a83a8ae7672f28049621fcfdb1"
+    },
+    {
+      "path": "src/panel-content.js",
+      "status": "same",
+      "onsite_sha256": "ae18adf58fc67cbdce9aa2053191211a15610b2c64f63f388f0bf6c1cba6bcb2",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ae18adf58fc67cbdce9aa2053191211a15610b2c64f63f388f0bf6c1cba6bcb2"
+    },
+    {
+      "path": "src/session.js",
+      "status": "onsite-only",
+      "onsite_sha256": "8e0d3040b23add5eccc0389e3a698fe36013ab9ba807d85005c4442de9f6863e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8e0d3040b23add5eccc0389e3a698fe36013ab9ba807d85005c4442de9f6863e"
+    },
+    {
+      "path": "src/style.css",
+      "status": "onsite-only",
+      "onsite_sha256": "553d1b15dff27e5d765a8119490e1f72c2f70d5b1235cc6fa288a042351a46cd",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "553d1b15dff27e5d765a8119490e1f72c2f70d5b1235cc6fa288a042351a46cd"
+    },
+    {
+      "path": "src/table-audio.js",
+      "status": "same",
+      "onsite_sha256": "3c532d820ab76887e827836ad84547d9c971e1b3838ad184c6d879cc4898d6fb",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3c532d820ab76887e827836ad84547d9c971e1b3838ad184c6d879cc4898d6fb"
+    },
+    {
+      "path": "src/table-captions.js",
+      "status": "same",
+      "onsite_sha256": "fcb161d2835d287e61699a25a6b7389361c0c78f2c82908ef363d97f3aa45069",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "fcb161d2835d287e61699a25a6b7389361c0c78f2c82908ef363d97f3aa45069"
+    },
+    {
+      "path": "src/table-layout.js",
+      "status": "same",
+      "onsite_sha256": "b28bbe5ef6cf0b2dce75aecd2dcd08ffd6f8fced855fcb04ed7aa4ca1d113225",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b28bbe5ef6cf0b2dce75aecd2dcd08ffd6f8fced855fcb04ed7aa4ca1d113225"
+    },
+    {
+      "path": "src/table-orb.css",
+      "status": "same",
+      "onsite_sha256": "873ae1c05d313cff3adee1c4ed23722c7043054012cf227b1d9f6ff63974960a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "873ae1c05d313cff3adee1c4ed23722c7043054012cf227b1d9f6ff63974960a"
+    },
+    {
+      "path": "src/table-orb.js",
+      "status": "same",
+      "onsite_sha256": "5b20aec9db88a43cf9a94fc36639920d1416e85ca31b77dc292ce3d865cdc878",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "5b20aec9db88a43cf9a94fc36639920d1416e85ca31b77dc292ce3d865cdc878"
+    },
+    {
+      "path": "src/table-preset.js",
+      "status": "onsite-only",
+      "onsite_sha256": "8bc1c3f553b0cddd4521159e8be4b3e447b211bac2a4545f559b7f3e4669324e",
+      "modified_at": "2026-10-13 14:07:36",
+      "repository_sha256": "8bc1c3f553b0cddd4521159e8be4b3e447b211bac2a4545f559b7f3e4669324e"
+    },
+    {
+      "path": "src/table-reports.js",
+      "status": "same",
+      "onsite_sha256": "0b24d329d25241dffc3a6feb295971f7ecee2064daef58a6c0bc3c1f241c2362",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0b24d329d25241dffc3a6feb295971f7ecee2064daef58a6c0bc3c1f241c2362"
+    },
+    {
+      "path": "src/wall-frame-glow.js",
+      "status": "onsite-only",
+      "onsite_sha256": "8e06625fc9355f47e70e89317f429d3d742e56f26cfe9a313c91f2f6df6f398b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8e06625fc9355f47e70e89317f429d3d742e56f26cfe9a313c91f2f6df6f398b"
+    },
+    {
+      "path": "src/wall-mask-glow.js",
+      "status": "same",
+      "onsite_sha256": "2768f3009db90d62427dd6b304a6fcf9fcf940b658efb8ad65c9061921edc853",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "2768f3009db90d62427dd6b304a6fcf9fcf940b658efb8ad65c9061921edc853"
+    },
+    {
+      "path": "src/wall-operations.css",
+      "status": "onsite-only",
+      "onsite_sha256": "3838d1b999850d890f22de2b52f72be05c4d1b467483fc70deaa2ef3374fb0e0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "3838d1b999850d890f22de2b52f72be05c4d1b467483fc70deaa2ef3374fb0e0"
+    },
+    {
+      "path": "src/wall-operations.js",
+      "status": "onsite-only",
+      "onsite_sha256": "6ec2f438911852ad7a0928d3ea976d68dca90882718d344e29abace88a06ae26",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "6ec2f438911852ad7a0928d3ea976d68dca90882718d344e29abace88a06ae26"
+    },
+    {
+      "path": "src/wall-preset.js",
+      "status": "onsite-only",
+      "onsite_sha256": "47dfe43ec9fae91d3f50cbadb958408189431c12e8768344c84223d2f1dbfc7f",
+      "modified_at": "2026-10-13 17:37:08",
+      "repository_sha256": "47dfe43ec9fae91d3f50cbadb958408189431c12e8768344c84223d2f1dbfc7f"
+    },
+    {
+      "path": "src/wall-silhouettes.js",
+      "status": "onsite-only",
+      "onsite_sha256": "c8552ec3c3d7e91250ad3befe30a50dd4cc9962304cb7ea088133352016bdf4e",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "c8552ec3c3d7e91250ad3befe30a50dd4cc9962304cb7ea088133352016bdf4e"
+    },
+    {
+      "path": "src/wall-warp.js",
+      "status": "new",
+      "onsite_sha256": "62ba850f106d13d141587c9d7fbd36941b413636a92ae80c40e856de84a069c2",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "62ba850f106d13d141587c9d7fbd36941b413636a92ae80c40e856de84a069c2"
+    },
+    {
+      "path": "Start-F.cmd",
+      "status": "same",
+      "onsite_sha256": "4adf9e0c70a493d13ba1f44569042a4ea7290f007a77c82f35552f7ebced74dc",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "4adf9e0c70a493d13ba1f44569042a4ea7290f007a77c82f35552f7ebced74dc"
+    },
+    {
+      "path": "Start.cmd",
+      "status": "new",
+      "onsite_sha256": "5c895e4d191d2275885f388bc665a8f1aa7767418906e68488ef75a7e973c2c5",
+      "modified_at": "2026-10-12 03:37:22",
+      "repository_sha256": "5c895e4d191d2275885f388bc665a8f1aa7767418906e68488ef75a7e973c2c5"
+    },
+    {
+      "path": "Stop-F.cmd",
+      "status": "new",
+      "onsite_sha256": "04f06136368e4ffdfd8d9a7202bfab3fd89c3f1d57b5d3f829b3fc8314def531",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b1f9f6cdeba8d245a346f93379232eead15fbc446bd771984ff1671b89783425"
+    },
+    {
+      "path": "Stop.cmd",
+      "status": "new",
+      "onsite_sha256": "7ca7264503282c385410b6af2dfd2255685d93dc4b7c18b0931c9b711508cfab",
+      "modified_at": "2026-10-12 03:37:22",
+      "repository_sha256": "7ca7264503282c385410b6af2dfd2255685d93dc4b7c18b0931c9b711508cfab"
+    },
+    {
+      "path": "tests/display-monitor.test.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "b58d2c5d024aff22adde9fffb5068ca16dd29dcf87b343f23973fb7650d071cc",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b58d2c5d024aff22adde9fffb5068ca16dd29dcf87b343f23973fb7650d071cc"
+    },
+    {
+      "path": "tests/display-routing.test.mjs",
+      "status": "new",
+      "onsite_sha256": "0693d32a7dcfb1fddfb53d8fa260e3d70f9278e3f958dec3728e86e5ef0552dc",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0693d32a7dcfb1fddfb53d8fa260e3d70f9278e3f958dec3728e86e5ef0552dc"
+    },
+    {
+      "path": "tests/exhibition-exit.test.mjs",
+      "status": "new",
+      "onsite_sha256": "899c44e8eddf19b1a75b4777c6a6826d6ec83756db487452adc4c909c671beba",
+      "modified_at": "2026-10-12 03:44:02",
+      "repository_sha256": "899c44e8eddf19b1a75b4777c6a6826d6ec83756db487452adc4c909c671beba"
+    },
+    {
+      "path": "tests/exhibition-reset.test.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "ffb5791e0b359b55e94ff1da87889d4639a7f8c32da86656addfe21176e76dca",
+      "modified_at": "2026-10-12 04:05:52",
+      "repository_sha256": "ffb5791e0b359b55e94ff1da87889d4639a7f8c32da86656addfe21176e76dca"
+    },
+    {
+      "path": "tests/frame-batch.test.mjs",
+      "status": "same",
+      "onsite_sha256": "c43143fff043c248ae89aa99cbb6e6c985ac8637a525258315817d9615807d84",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "c43143fff043c248ae89aa99cbb6e6c985ac8637a525258315817d9615807d84"
+    },
+    {
+      "path": "tests/frame-warp.test.mjs",
+      "status": "new",
+      "onsite_sha256": "b340b37221bb7f8dca714fa796f96363fabbeb8433e04819b07a3ee16be0e03b",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "b340b37221bb7f8dca714fa796f96363fabbeb8433e04819b07a3ee16be0e03b"
+    },
+    {
+      "path": "tests/glow-lifecycle.test.mjs",
+      "status": "same",
+      "onsite_sha256": "64042198b9c6dce7852e5bb43577349f4f93f34342b59f14efa074eef789a020",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "64042198b9c6dce7852e5bb43577349f4f93f34342b59f14efa074eef789a020"
+    },
+    {
+      "path": "tests/glow-viewport.test.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "ec86525c4dc038a96f6fddd4564c310aa6215f769805877065a0fa64779641d9",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "ec86525c4dc038a96f6fddd4564c310aa6215f769805877065a0fa64779641d9"
+    },
+    {
+      "path": "tests/ipad-insights.mjs",
+      "status": "same",
+      "onsite_sha256": "5b81ca09f459abe6224fb0dea7e30c3261419134a1bb7515e20aba87f0441c31",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "5b81ca09f459abe6224fb0dea7e30c3261419134a1bb7515e20aba87f0441c31"
+    },
+    {
+      "path": "tests/led-control.test.mjs",
+      "status": "new",
+      "onsite_sha256": "dfcadcc24a6757e1345ea7f8f6ab26d941ecd3779407bf425a1b1972d2cf0674",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "dfcadcc24a6757e1345ea7f8f6ab26d941ecd3779407bf425a1b1972d2cf0674"
+    },
+    {
+      "path": "tests/long-run.test.mjs",
+      "status": "new",
+      "onsite_sha256": "0fcbc1f68e4f2dcc3ad9adde0bc82d2b98838e65b360a83fcdb76bd8c606f181",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "0fcbc1f68e4f2dcc3ad9adde0bc82d2b98838e65b360a83fcdb76bd8c606f181"
+    },
+    {
+      "path": "tests/mac-adapter.test.mjs",
+      "status": "new",
+      "onsite_sha256": "7fad68e0fdc79f338db1f9f9fd2e20d4c831d36b4ace0734ce3d9a31e550396a",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "7fad68e0fdc79f338db1f9f9fd2e20d4c831d36b4ace0734ce3d9a31e550396a"
+    },
+    {
+      "path": "tests/nfc-process.test.mjs",
+      "status": "new",
+      "onsite_sha256": "070a48173f35aec7752b365d546733c08029ccddfee231c5b60d0a1ec9433a78",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "070a48173f35aec7752b365d546733c08029ccddfee231c5b60d0a1ec9433a78"
+    },
+    {
+      "path": "tests/nfc-readers.test.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "270f77d9b63c0a75f15a508fbfe3946e65a8ab8385db9924a161b81721bb1eb0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "270f77d9b63c0a75f15a508fbfe3946e65a8ab8385db9924a161b81721bb1eb0"
+    },
+    {
+      "path": "tests/orb-health.test.mjs",
+      "status": "onsite-only",
+      "onsite_sha256": "f8f57043ea4c242f4feb10fb9dfd4858462ad6f38359ce08f0c6c970fff95492",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "f8f57043ea4c242f4feb10fb9dfd4858462ad6f38359ce08f0c6c970fff95492"
+    },
+    {
+      "path": "tests/session-recovery.test.mjs",
+      "status": "new",
+      "onsite_sha256": "d4a24b1e476bee316c2f8096a85e3a86873fec356f5cee0032befdf6739f7baa",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "d4a24b1e476bee316c2f8096a85e3a86873fec356f5cee0032befdf6739f7baa"
+    },
+    {
+      "path": "tests/table-layout.test.mjs",
+      "status": "same",
+      "onsite_sha256": "8be4ebcaea73da2d09ad17d3e5c8c34f3a14ee3040cec0f5e721de2a6b80a951",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8be4ebcaea73da2d09ad17d3e5c8c34f3a14ee3040cec0f5e721de2a6b80a951"
+    },
+    {
+      "path": "tests/table-recovery.test.mjs",
+      "status": "new",
+      "onsite_sha256": "64f201a948fd397da72d3d7f4683a328d827d3d726232ade7f5be1449ed4f4fe",
+      "modified_at": "2026-10-12 04:05:36",
+      "repository_sha256": "fd5cce7915a9c0f059ea7e1685361b8ad3d86cbe3827d517b5240838b101b631"
+    },
+    {
+      "path": "tests/wall-warp.test.mjs",
+      "status": "new",
+      "onsite_sha256": "dbb7b0fe0c998fbcc199e35454764778f28d2c059dbad4f2a9132cb0fd4001d2",
+      "modified_at": "2026-10-12 03:31:20",
+      "repository_sha256": "0216385901dc134ba266b03d98c752c4fdd3e334a8ef8102b0db28c2c23eece3"
+    },
+    {
+      "path": "tests/window-control.test.mjs",
+      "status": "new",
+      "onsite_sha256": "f303ba8a075cf9dedff72a4b5ddb1e1be40e462c2373bc03107cbb672d461de3",
+      "modified_at": "2026-10-12 04:05:36",
+      "repository_sha256": "a62868798544019191036740b1a2cc8c935e9d73db923f99b14152c49a0ec0de"
+    },
+    {
+      "path": "tests/windows-health.test.mjs",
+      "status": "new",
+      "onsite_sha256": "8302dd67cfbb01b4739ea54fef4471006dc3b63b842f8bb83d2c5092db279cb7",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8302dd67cfbb01b4739ea54fef4471006dc3b63b842f8bb83d2c5092db279cb7"
+    },
+    {
+      "path": "tests/windows-stop.test.mjs",
+      "status": "new",
+      "onsite_sha256": "92b86c69468af7cf123648d93264c0a81d9b961bd225037808bd6ac07b4cc3f0",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "92b86c69468af7cf123648d93264c0a81d9b961bd225037808bd6ac07b4cc3f0"
+    },
+    {
+      "path": "windows/diagnose.ps1",
+      "status": "new",
+      "onsite_sha256": "44162213376a9581c2e16d773a995b9fc7f86497b022c6bc4079eb0f64109356",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "44162213376a9581c2e16d773a995b9fc7f86497b022c6bc4079eb0f64109356"
+    },
+    {
+      "path": "windows/display.ps1",
+      "status": "onsite-only",
+      "onsite_sha256": "d9b3d082c2092d70a4b6fb1aad4d20f7892311e8564aa177678647779132605e",
+      "modified_at": "2026-10-12 22:03:08",
+      "repository_sha256": "9137d29666728b20200dcffca590a2c620afd5d22d84bf14a6b6e4f7db8983b8"
+    },
+    {
+      "path": "windows/fixed-output.ps1",
+      "status": "new",
+      "onsite_sha256": "1db6ba2c0cfb32ea53e9f9c3a541f226d328f7ac72b41a06a8df11c80b3414ae",
+      "modified_at": "2026-10-12 22:02:40",
+      "repository_sha256": "1db6ba2c0cfb32ea53e9f9c3a541f226d328f7ac72b41a06a8df11c80b3414ae"
+    },
+    {
+      "path": "windows/health-check.mjs",
+      "status": "new",
+      "onsite_sha256": "8db3da10d43b96eed47f81e7d54dcf36ae230778f4eb78c5eae8f496f4c373cd",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "8db3da10d43b96eed47f81e7d54dcf36ae230778f4eb78c5eae8f496f4c373cd"
+    },
+    {
+      "path": "windows/health.ps1",
+      "status": "new",
+      "onsite_sha256": "acd0fc37f7f55067ef94c39ee5b2dbedf023e2477242c1ce119322fa10a5ec91",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "acd0fc37f7f55067ef94c39ee5b2dbedf023e2477242c1ce119322fa10a5ec91"
+    },
+    {
+      "path": "windows/install.ps1",
+      "status": "onsite-only",
+      "onsite_sha256": "fd487626eb3f3d84f1c18cbab5e883171a19e34c568e87b918c02150ea51c734",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "fd487626eb3f3d84f1c18cbab5e883171a19e34c568e87b918c02150ea51c734"
+    },
+    {
+      "path": "windows/launch.ps1",
+      "status": "onsite-only",
+      "onsite_sha256": "f48ea1b9cf11c1df97486e89788723e1636b13d41416f5c42fcac14ec202732f",
+      "modified_at": "2026-10-12 22:03:08",
+      "repository_sha256": "f37ad9446b7ab9b20a6e4be57732147d7f0d55f806d89876df32699357c3b2a3"
+    },
+    {
+      "path": "windows/reader-identity.ps1",
+      "status": "new",
+      "onsite_sha256": "c2545a3b3032a6bb01eb50f3bc6a98dbe85276ade4e7f7ae2ec44d28a0fdea69",
+      "modified_at": "2026-10-12 20:09:20",
+      "repository_sha256": "c2545a3b3032a6bb01eb50f3bc6a98dbe85276ade4e7f7ae2ec44d28a0fdea69"
+    },
+    {
+      "path": "windows/resolve-displays.mjs",
+      "status": "new",
+      "onsite_sha256": "131879d4fd9fc34a54c2dff1a5556b7efebcf718568cb871849ba70c857d12d1",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "131879d4fd9fc34a54c2dff1a5556b7efebcf718568cb871849ba70c857d12d1"
+    },
+    {
+      "path": "windows/runtime.ps1",
+      "status": "new",
+      "onsite_sha256": "9cbb57b2b8318c0910fbd8d885334f3af2b78da53be12f66b654133f97a9f032",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "9cbb57b2b8318c0910fbd8d885334f3af2b78da53be12f66b654133f97a9f032"
+    },
+    {
+      "path": "windows/shortcuts.ps1",
+      "status": "new",
+      "onsite_sha256": "53fd885aa0ee8a215d419b31e61db37e3f8ce46036d8fb920dcd07185de16722",
+      "modified_at": "2026-10-12 01:18:46",
+      "repository_sha256": "53fd885aa0ee8a215d419b31e61db37e3f8ce46036d8fb920dcd07185de16722"
+    },
+    {
+      "path": "windows/stop.ps1",
+      "status": "new",
+      "onsite_sha256": "fa33b21b4ee7815345923f1057f83dc266a282c202bf046fa9b1551570a932bd",
+      "modified_at": "2026-10-12 03:44:02",
+      "repository_sha256": "fa33b21b4ee7815345923f1057f83dc266a282c202bf046fa9b1551570a932bd"
+    }
+  ],
+  "preserved_remote_only_files": [
+    "PAGES.md",
+    "2.0畫面參照/ipad待機頁.png",
+    "字幕時間校正紀錄.json",
+    "2.0畫面參照/table全家電連接.png",
+    "formal-nfc-release-20261008.txt",
+    "Start-F.command",
+    "Windows展場安裝與操作.md",
+    "RELEASE-2026-09-15.md",
+    "Mac離線安裝與實測.md",
+    "offline/settings.json",
+    "業主文案對照.md",
+    "offline/launcher.mjs",
+    "public/TOP.png",
+    "src/stable-bloom.js",
+    "2.0畫面參照/ipad家電連接.png",
+    "2.0畫面參照/ipad_table等待頁面.png",
+    "2.0畫面參照/ipad全家電連接結尾頁.png",
+    "README.md",
+    "版本紀錄-2026-10-06.md",
+    "src/table-insights.js",
+    "2.0畫面參照/wall全家電連接.png",
+    "F區-三端UI.md",
+    "2.0畫面參照/wall待機頁.png",
+    "2.0畫面參照/table部分家電連接.png",
+    "formal-nfc-20261008.json",
+    "2.0畫面參照/table待機頁.png",
+    "F區展演腳本流程.md",
+    "F區-2.0-重現規格.md",
+    "RELEASE-2026-09-15-table-refinement.md",
+    "RELEASE-2026-09-15-exhibition.md",
+    "src/wall-core-glow.js",
+    "Stop-F.command"
+  ],
+  "excluded": [
+    "runtime",
+    "node_modules",
+    "browser profiles",
+    "machine-specific bindings",
+    "logs",
+    "historical patch scripts/backups"
+  ],
+  "repository_only_differences": [
+    {
+      "path": "tests/wall-warp.test.mjs",
+      "reason": "Current preset fixtures and regression test for backup/migration/persistence",
+      "sha256": "ac8e66397a635a20222ea3e9d16be49338e13e2edbea0e2e8cd89ee588079ca8"
+    }
+  ],
+  "hash_note": "onsite_sha256 describes captured archive bytes; repository_sha256 describes committed Git bytes after normal text line-ending normalization. Only wall-warp.test.mjs has an intentional test-only content change."
+}

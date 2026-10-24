@@ -5,11 +5,13 @@ import {mountOrb} from '/anlb-orb/orb.js';
 const hosts=new Set();
 let orb,container,frame=0,engaged=false,ready=false;
 let recoveryAttempts=0,retryAfter=0;
+let lastUpdate=0;
 let lastMotion=0,seenNfc=0,turn=0,turnTarget=0,spin=0,spinSpeed=0;
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
-function update(){
+function update(now=performance.now()){
   frame=requestAnimationFrame(update);
   if(document.hidden){lastMotion=0;return;}
+  if(now-lastUpdate<1000/30-1)return;lastUpdate=now;
   const host=[...hosts].find(item=>item.sphere.isConnected&&item.isVisible());
   if(!host||!orb)return;
   if(orb.canvas.dataset.orbHealth==='error'){
@@ -29,7 +31,7 @@ function update(){
   const active=!!voice.showActive;
   if(active!==engaged){engaged=active;if(active)orb.start();else orb.end();}
   orb.setLevel(active?(voice.orbLevel??0):0);
-  const now=performance.now(),dt=lastMotion?Math.min(.05,(now-lastMotion)/1000):0;
+  const dt=lastMotion?Math.min(.05,(now-lastMotion)/1000):0;
   lastMotion=now;
   if(voice.nfcAt&&voice.nfcAt!==seenNfc){
     seenNfc=voice.nfcAt;turnTarget+=(voice.nfcDirection??1)*.22;
@@ -54,7 +56,7 @@ addEventListener('f-table-view-change',()=>{
 });
 function mountCurrentOrb(){
   delete container.dataset.orbError;
-  orb=mountOrb(container);
+  orb=mountOrb(container,{shortEdge:1200,maxFps:30});
   const instance=orb;
   orb.ready.then(()=>{if(orb===instance)ready=true;}).catch(error=>{
     if(orb!==instance)return;
@@ -76,7 +78,7 @@ export function createIntroQuantum(sphere,getVoice,isVisible){
       cancelAnimationFrame(frame);orb?.dispose();container?.remove();
       orb=null;container=null;engaged=false;ready=false;
       recoveryAttempts=0;retryAfter=0;
-      lastMotion=0;seenNfc=0;turn=0;turnTarget=0;spin=0;spinSpeed=0;
+      lastUpdate=0;lastMotion=0;seenNfc=0;turn=0;turnTarget=0;spin=0;spinSpeed=0;
     }
   };
 }

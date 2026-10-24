@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F 區｜27 吋知識圖譜原型</title>
+  <style>
+    :root{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#eaf7ff;background:#080e18;font-synthesis:none}
+    *{box-sizing:border-box}
+    body{margin:0;overflow:hidden;background:#080e18}
+    button{font:inherit}
+    #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;overflow:hidden;transform-origin:center;background:radial-gradient(ellipse at 48% 47%,#1a3450 0%,#101c2d 38%,#0a121f 74%,#080e18 100%)}
+    #stage:before{content:"";position:absolute;inset:0;opacity:.42;background-image:linear-gradient(rgba(96,181,227,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(96,181,227,.065) 1px,transparent 1px);background-size:82px 82px;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 86%,transparent)}
+    #stage:after{content:"";position:absolute;inset:30px;border:1px solid rgba(151,220,252,.18);border-radius:32px;box-shadow:inset 0 0 34px rgba(92,190,249,.10),0 0 24px rgba(92,190,249,.06);pointer-events:none}
+    .top{height:118px;padding:39px 70px 0;display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:2}
+    .brand{display:flex;align-items:center;gap:18px}
+    .brand-mark{width:54px;height:54px;border-radius:14px;background:linear-gradient(145deg,#b6eaff,#3ca6dc);color:#102236;display:grid;place-items:center;font-size:29px;font-weight:800;box-shadow:0 0 28px #4ebbed77}
+    .brand-text strong{display:block;font-size:29px;font-weight:600;letter-spacing:.12em}
+    .brand-text span{display:block;margin-top:4px;color:#8daac0;font-size:15px;letter-spacing:.18em}
+    .top-right{display:flex;align-items:center;gap:22px;padding-top:11px}
+    .status-pill{display:flex;align-items:center;gap:11px;padding:11px 18px;border:1px solid #456479;border-radius:999px;background:#112536a6;color:#a7c8db;font-size:17px}
+    .status-light{width:10px;height:10px;border-radius:50%;background:#f8bf6a;box-shadow:0 0 14px #f8bf6a}
+    .status-pill.live .status-light{background:#79e4d5;box-shadow:0 0 14px #79e4d5}
+    .counter{font-size:23px;color:#bdd5e4;font-variant-numeric:tabular-nums}
+    .counter b{font-size:31px;color:white}
+    .main{position:relative;margin:6px 54px 0;height:820px;z-index:1}
+    .graph{position:relative;width:100%;height:100%;overflow:hidden;border:1px solid rgba(125,211,248,.19);border-radius:27px;background:radial-gradient(circle at 50% 48%,#1b43604d,transparent 43%),linear-gradient(135deg,#132139a8,#0b1724a5)}
+    .graph:after{content:"";position:absolute;inset:0;border-radius:27px;box-shadow:inset 0 0 52px #58b9f112;pointer-events:none}
+    .graph-kicker{position:absolute;top:30px;left:36px;color:#8fb4c8;letter-spacing:.22em;font-size:16px;z-index:3}
+    .graph-kicker b{color:#dcf6ff;font-weight:600}
+    .graph-note{position:absolute;top:31px;right:36px;color:#668ba4;font-size:15px;z-index:3}
+    #links,#nodes,.hub{display:none}
+    #links,#nodes,.hub{transition:opacity .35s}
+    #kg-scene{position:absolute;inset:0;opacity:0;pointer-events:none;transform-origin:center;transition:opacity .35s,transform 1s cubic-bezier(.2,.8,.2,1);touch-action:none}
+    .graph.focus-mode #kg-scene{opacity:1;pointer-events:auto}
+    #kg-links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    #kg-nodes{position:absolute;inset:0}
+    .kg-edge{stroke:#6acbec;stroke-width:2;opacity:.28;filter:drop-shadow(0 0 5px #5dcdf9);transition:opacity .55s,stroke-width .55s}
+    .kg-edge.is-tour{stroke:#a9eeff;stroke-width:4;opacity:1;filter:drop-shadow(0 0 10px #82dbff)}
+    .kg-edge-label{fill:#8eb8cb;font-size:14px;letter-spacing:.08em;text-anchor:middle}
+    .kg-node{position:absolute;transform:translate(-50%,-50%);width:72px;height:72px;border:2px solid #6ca9c8;border-radius:50%;background:radial-gradient(circle at 35% 30%,#74d8f2,#194760 62%,#102639);box-shadow:0 0 0 8px #68c8ec0c,0 0 23px #54bfea88,inset 0 0 15px #b1eeff66;display:grid;place-items:center;text-align:center;cursor:grab;user-select:none;animation:appear .65s backwards}
+    .kg-node:active{cursor:grabbing}
+    .kg-node.is-tour{z-index:4;filter:brightness(1.25);box-shadow:0 0 0 15px #a9eeff20,0 0 43px #8ae5ff,inset 0 0 24px #ffffff88}
+    .kg-node:not(.is-tour){opacity:.65}
+    .kg-node:before{content:"關";font-size:19px;font-weight:700;color:#e9faff}
+    @keyframes appear{from{opacity:0;filter:blur(8px)}to{filter:blur(0)}}
+    @keyframes breathe{50%{box-shadow:0 0 0 23px #a9e8ff0d,0 0 0 49px #b7e9ff06,0 0 55px #70d8ff,inset 0 0 45px #6acafd44}}
+    .hub{animation:breathe 5s ease-in-out infinite}
+    @media (prefers-reduced-motion:reduce){.hub,.kg-node{animation:none}#kg-scene{transition:none}}
+    .kg-node.asset{width:118px;height:118px;border-color:#b4f7e0;box-shadow:0 0 0 12px #70e9cc0c,0 0 36px #65e2cdac,inset 0 0 25px #9effe866;background:radial-gradient(circle at 35% 30%,#6ff1d7,#157464 60%,#123f3b)}
+    .kg-node.asset:before{content:"資產";font-size:21px}
+    .kg-node.system{width:84px;height:84px;border-color:#83b8ff;background:radial-gradient(circle at 35% 30%,#85bfff,#28528d 64%,#183259)}
+    .kg-node.system:before{content:"系"}
+    .kg-node.space{width:58px;height:58px;border-color:#bba1ff;background:radial-gradient(circle at 35% 30%,#c6adff,#6350a5 65%,#332b5d)}
+    .kg-node.space:before{content:"空";font-size:16px}
+    .kg-node.project{border-color:#f4cf87;background:radial-gradient(circle at 35% 30%,#fbd39a,#9f6735 65%,#503b29)}
+    .kg-node.project:before{content:"案"}
+    .kg-node.document{border-color:#a5b4c0;background:radial-gradient(circle at 35% 30%,#bfced7,#566b78 65%,#2c3c48)}
+    .kg-node.document:before{content:"文"}
+    .kg-node-type{display:none}
+    .kg-node-name{position:absolute;top:100%;left:50%;transform:translateX(-50%);width:210px;margin-top:9px;font-size:18px;line-height:1.25;color:#d8edf7;text-shadow:0 2px 7px #001622;overflow-wrap:anywhere}
+    .kg-node.asset .kg-node-name{font-size:25px;font-weight:600;color:#effffb}
+    .kg-node.space .kg-node-name{font-size:14px;width:145px}
+    .auto-qa{position:absolute;right:28px;bottom:28px;z-index:8;width:780px;pointer-events:none}
+    .auto-qa[hidden]{display:none}
+    .auto-qa-dialog{box-sizing:border-box;width:100%;padding:22px 26px;border:1px solid #8bd9ed;border-radius:22px;background:linear-gradient(145deg,#19364bee,#101d30f2);box-shadow:0 0 35px #62c6ed55,inset 0 1px #ffffff2a;animation:qa-enter .55s ease-out}
+    @keyframes qa-enter{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .auto-qa-top{color:#7ed6eb;font-size:24px;letter-spacing:.1em}
+    .auto-qa-source{display:block;margin-top:7px;color:#91adbd;font-size:20px;letter-spacing:.02em}
+    .auto-qa-question{margin:18px 0 14px;font-size:50px;font-weight:600;line-height:1.25;color:#f0fbff}
+    .auto-qa-answer{font-size:38px;line-height:1.42;color:#d1e7f2;white-space:pre-wrap}
+    .auto-qa-answer:after{content:"";display:inline-block;width:9px;height:37px;margin-left:6px;background:#8ce6f6;vertical-align:-5px;animation:blink .8s steps(1) infinite}
+    @keyframes blink{50%{opacity:0}}
+    .auto-qa-foot{margin-top:16px;color:#81aabe;font-size:20px;letter-spacing:.03em}
+    @media (prefers-reduced-motion:reduce){.auto-qa-dialog,.auto-qa-answer:after{animation:none}}
+    #links{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+    #links path{fill:none;stroke:#64bee8;stroke-width:2;opacity:.20;transition:opacity .45s,stroke-width .45s;filter:drop-shadow(0 0 4px #43c2ed)}
+    #links path.active{opacity:.85;stroke-width:3}
+    #links path.focus{opacity:1;stroke:#a6eafa;stroke-width:5;filter:drop-shadow(0 0 9px #64d5ff)}
+    .hub{position:absolute;left:695px;top:383px;transform:translate(-50%,-50%);width:230px;height:230px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid #9fdbf4;background:radial-gradient(circle,#294a61 0%,#162c41 53%,#0b1b2a 100%);box-shadow:0 0 0 16px #a9e8ff0a,0 0 0 42px #b7e9ff06,0 0 38px #70d8ff, inset 0 0 40px #6acafd30;text-align:center;z-index:2}
+    .hub:before{content:"";position:absolute;inset:-24px;border:1px solid #75cce838;border-radius:50%}
+    .hub-small{font-size:16px;color:#86cbdf;letter-spacing:.22em}
+    .hub-name{font-size:39px;letter-spacing:.12em;font-weight:600;margin:7px 0 2px}
+    .hub-sub{font-size:14px;color:#b4d9e7;letter-spacing:.18em}
+    #nodes{position:absolute;inset:0}
+    .device{position:absolute;width:210px;min-height:88px;padding:16px 17px;transform:translate(-50%,-50%);border:1px solid #5d8297;border-radius:18px;background:linear-gradient(130deg,#233448dd,#121f30ee);box-shadow:0 10px 24px #0008,inset 0 1px #ffffff16;transition:opacity .4s,border-color .4s,box-shadow .4s,transform .4s;z-index:2}
+    .device.is-on{border-color:#9be7fa;box-shadow:0 0 22px #60c9f988,inset 0 0 21px #4bbdea35,0 10px 24px #0008}
+    .device.is-focus{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 0 32px #84dafaad,inset 0 0 26px #56c9f952,0 10px 24px #0008}
+    .device.is-dim{opacity:.33}
+    .device-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .device-name{font-size:23px;font-weight:600;white-space:nowrap}
+    .device-dot{width:17px;height:17px;flex:none;border-radius:50%;border:2px solid #668fa6;background:#314559}
+    .is-on .device-dot{border-color:#cbf7ff;background:#7be1ff;box-shadow:0 0 16px #72ddff}
+    .device-meta{font-size:13px;color:#8eaec0;letter-spacing:.10em;margin-top:8px}
+    .side{display:flex;flex-direction:column;gap:19px}
+    .side-card{border:1px solid #46637b;border-radius:23px;background:linear-gradient(145deg,#1f3044d9,#111e30e8);box-shadow:inset 0 1px #ffffff11,0 16px 33px #0005;padding:26px 28px}
+    .side-card.main-card{height:507px}
+    .side-kicker{color:#73cfe9;letter-spacing:.18em;font-size:15px;font-weight:600}
+    #panel-title{font-size:35px;line-height:1.2;letter-spacing:.05em;margin:18px 0 12px;font-weight:600}
+    #panel-desc{font-size:18px;color:#b8d0df;line-height:1.6;min-height:58px}
+    .relation{padding:17px 0;border-top:1px solid #60839a55}
+    .relation-label{font-size:14px;letter-spacing:.12em;color:#85aabf;margin-bottom:8px}
+    .relation-value{font-size:20px;line-height:1.45;color:#e7f6fc}
+    .relation-code{font-size:13px;color:#8daec0;margin-top:3px;overflow-wrap:anywhere}
+    .hint-card{flex:1;overflow:auto}
+    .hint-card p{font-size:17px;line-height:1.65;color:#b8d0df;margin:15px 0 0}
+    .review-questions{margin-top:14px;display:grid;gap:8px}
+    .review-questions button{display:block;width:100%;padding:11px 13px;border:1px solid #52768a;border-radius:10px;background:#1d384a;color:#d6eef8;text-align:left;font-size:15px;line-height:1.3;cursor:pointer}
+    .review-questions button:hover{border-color:#8bd9ef;background:#28506a}
+    .review-questions[hidden]{display:none}
+    .bottom{position:relative;z-index:2;height:108px;padding:24px 73px 0;display:flex;justify-content:space-between;align-items:flex-start}
+    .story{display:flex;align-items:center;gap:14px}
+    .story-index{width:47px;height:47px;border:1px solid #5ca8c7;border-radius:13px;display:grid;place-items:center;color:#8ce3fa;background:#16364c;font-size:21px}
+    .story-label{font-size:16px;color:#9fbaca;letter-spacing:.10em}
+    #story-text{margin-top:4px;font-size:23px;letter-spacing:.025em}
+    .legend{display:flex;gap:24px;padding-top:13px;color:#8caec2;font-size:15px}
+    .legend span:before{content:"";display:inline-block;width:10px;height:10px;margin-right:7px;border-radius:50%;background:#72d4ed;box-shadow:0 0 10px #72d4ed}
+    .legend span:nth-child(2):before{background:#ad9cff;box-shadow:0 0 10px #ad9cff}
+    .legend span:nth-child(3):before{background:#f7c27d;box-shadow:0 0 10px #f7c27d}
+    .preview{position:absolute;left:72px;right:72px;bottom:13px;display:flex;align-items:center;gap:9px;z-index:5;opacity:.95}
+    .preview[hidden]{display:none}
+    .preview.collapsed{left:auto}
+    .preview.collapsed .preview-controls{display:none}
+    .preview-controls{display:flex;align-items:center;gap:9px;width:100%}
+    .preview-label{font-size:13px;color:#83a6b8;white-space:nowrap;margin-right:4px}
+    .preview button{padding:5px 9px;background:#142b3f;border:1px solid #4a7388;border-radius:8px;color:#bed8e7;font-size:12px;cursor:pointer}
+    .preview button:hover,.preview button[aria-pressed="true"]{background:#276184;color:#fff;border-color:#8bdaef}
+    .preview .reset{margin-left:auto}
+    .source-modal{position:absolute;inset:0;z-index:10;background:#050b14d9;display:flex;align-items:center;justify-content:center}
+    .source-modal[hidden]{display:none}
+    .source-dialog{width:1100px;max-height:920px;display:flex;flex-direction:column;border:1px solid #85c6e0;border-radius:22px;background:#122437;box-shadow:0 0 56px #4baed866;overflow:hidden}
+    .source-head{padding:22px 28px;border-bottom:1px solid #638aa0;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .source-head strong{font-size:24px;line-height:1.35}
+    .source-head button{border:1px solid #638aa0;border-radius:9px;background:#1e3b50;color:white;padding:8px 14px;cursor:pointer}
+    .source-body{padding:22px 30px;overflow:auto;white-space:pre-wrap;font-size:19px;line-height:1.6;color:#d9eaf2}
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <header class="top">
+      <div class="brand"><div class="brand-mark">F</div><div class="brand-text"><strong>AI 大腦控制塔</strong><span>KNOWLEDGE GRAPH · 03F-B</span></div></div>
+      <div class="top-right"><div class="status-pill" id="mode-pill"><span class="status-light"></span><span id="mode-text">關係自動導覽</span></div><div class="counter">類別 <b id="count">01</b> / 09</div></div>
+    </header>
+    <main class="main">
+      <section class="graph" aria-label="設備知識圖譜">
+        <div class="graph-kicker"><b>03F-B</b> · 資產 × 系統 × 空間</div><div class="graph-note" id="graph-note">選定類別後沿關係導覽</div>
+        <div id="kg-scene"><svg id="kg-links" viewBox="0 0 1812 820" preserveAspectRatio="none" aria-hidden="true"></svg><div id="kg-nodes"></div></div>
+        <div class="auto-qa" id="auto-qa" hidden role="status" aria-live="polite"><div class="auto-qa-dialog"><div class="auto-qa-top"><span>AI 大腦 · 知識問答</span><span class="auto-qa-source">原始示範回答 · 非即時 AI 查詢</span></div><div class="auto-qa-question" id="auto-qa-question"></div><div class="auto-qa-answer" id="auto-qa-answer"></div><div class="auto-qa-foot">展示內容可能含歷史數值，展出前請核對；原文保留於預覽操作</div></div></div>
+      </section>
+    </main>
+    <footer class="bottom"><div class="story"><div class="story-index">↗</div><div><div class="story-label" id="story-label">關係導覽</div><div id="story-text">正在載入知識圖譜</div></div></div><div class="legend"><span>資產</span><span>系統</span><span>空間</span></div></footer>
+    <div class="preview collapsed" id="preview"><div class="preview-controls"><span class="preview-label">NFC 預覽</span><span id="preview-buttons"></span><button id="source-qa-button">業主原始問答</button><button id="source-graph-button">完整圖譜資料</button><button class="reset" id="clear-button">全部拿走</button></div><button id="preview-toggle">預覽操作</button></div>
+    <div class="source-modal" id="source-modal" hidden role="dialog" aria-modal="true" aria-label="業主原始問答"><div class="source-dialog"><div class="source-head"><strong id="source-title"></strong><button id="source-close">關閉</button></div><div class="source-body" id="source-body"></div></div></div>
+  </div>
+  <script>
+    const ownerData = {"cache":{"kg":{"smart-outlet":{"nodes":[{"id":"AST-SOC-SPO-03F-B-001","name":"AST-SOC-SPO-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-ELEC-SOC","name":"SYS-MEP-ELEC-SOC","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"A-R-03F-B-04","name":"A-R-03F-B-04","type":"Space","isCenter":false},{"id":"A-R-03F-B-05","name":"A-R-03F-B-05","type":"Space","isCenter":false},{"id":"A-R-03F-B-02","name":"A-R-03F-B-02","type":"Space","isCenter":false},{"id":"A-R-03F-B-03","name":"A-R-03F-B-03","type":"Space","isCenter":false}],"edges":[{"source":"AST-SOC-SPO-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-SOC-SPO-03F-B-001","target":"SYS-MEP-ELEC-SOC","relation":"屬於系統"},{"source":"AST-SOC-SPO-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-SOC-SPO-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-04","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-05","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-03","relation":"服務"}]},"light":{"nodes":[{"id":"AST-LTG-LGT-03F-B-001","name":"AST-LTG-LGT-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-ELEC-LTG","name":"SYS-MEP-ELEC-LTG","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"A-R-03F-B-02","name":"A-R-03F-B-02","type":"Space","isCenter":false},{"id":"A-R-03F-B-03","name":"A-R-03F-B-03","type":"Space","isCenter":false},{"id":"A-R-03F-B-04","name":"A-R-03F-B-04","type":"Space","isCenter":false},{"id":"A-R-03F-B-05","name":"A-R-03F-B-05","type":"Space","isCenter":false},{"id":"A-R-03F-B-06","name":"A-R-03F-B-06","type":"Space","isCenter":false},{"id":"A-R-03F-B-07","name":"A-R-03F-B-07","type":"Space","isCenter":false}],"edges":[{"source":"AST-LTG-LGT-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-LTG-LGT-03F-B-001","target":"SYS-MEP-ELEC-LTG","relation":"屬於系統"},{"source":"AST-LTG-LGT-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-LTG-LGT-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-03","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-04","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-05","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-06","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-07","relation":"服務"}]},"ac":{"nodes":[{"id":"AST-AC-IDU-03F-B-001","name":"AST-AC-IDU-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-HVAC-AC","name":"SYS-MEP-HVAC-AC","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"A-R-03F-B-02","name":"A-R-03F-B-02","type":"Space","isCenter":false},{"id":"A-R-03F-B-05","name":"A-R-03F-B-05","type":"Space","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"A-O-01F-YS-01","name":"A-O-01F-YS-01","type":"Space","isCenter":false},{"id":"A-P-01F-LOB-01","name":"A-P-01F-LOB-01","type":"Space","isCenter":false},{"id":"A-P-01F-LOB-02","name":"A-P-01F-LOB-02","type":"Space","isCenter":false}],"edges":[{"source":"AST-AC-IDU-03F-B-001","target":"SYS-MEP-HVAC-AC","relation":"屬於系統"},{"source":"AST-AC-IDU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-AC-IDU-03F-B-001","target":"A-R-03F-B-02","relation":"位於"},{"source":"AST-AC-IDU-03F-B-001","target":"A-R-03F-B-05","relation":"位於"},{"source":"AST-AC-IDU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HVAC-AC","target":"A-O-01F-YS-01","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-P-01F-LOB-01","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-P-01F-LOB-02","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-R-03F-B-05","relation":"服務"}]},"erv":{"nodes":[{"id":"AST-FA-FAU-03F-B-001","name":"AST-FA-FAU-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"SYS-MEP-HVAC-FA","name":"SYS-MEP-HVAC-FA","type":"System","isCenter":false},{"id":"SYS-MEP-HVAC-ERV","name":"SYS-MEP-HVAC-ERV","type":"System","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"A-R-09F-A-01","name":"A-R-09F-A-01","type":"Space","isCenter":false},{"id":"A-R-14F-B-01","name":"A-R-14F-B-01","type":"Space","isCenter":false}],"edges":[{"source":"AST-FA-FAU-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-FA-FAU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-FA-FAU-03F-B-001","target":"SYS-MEP-HVAC-FA","relation":"屬於系統"},{"source":"AST-FA-FAU-03F-B-001","target":"SYS-MEP-HVAC-ERV","relation":"屬於系統"},{"source":"AST-FA-FAU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HVAC-FA","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-09F-A-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-14F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-03F-B-01","relation":"服務"}]},"bath-heater":{"nodes":[{"id":"AST-EA-BHF-03F-B-001","name":"AST-EA-BHF-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-03","name":"A-R-03F-B-03","type":"Space","isCenter":false},{"id":"SYS-MEP-HVAC-EA","name":"SYS-MEP-HVAC-EA","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"A-R-09F-A-01","name":"A-R-09F-A-01","type":"Space","isCenter":false}],"edges":[{"source":"AST-EA-BHF-03F-B-001","target":"A-R-03F-B-03","relation":"位於"},{"source":"AST-EA-BHF-03F-B-001","target":"SYS-MEP-HVAC-EA","relation":"屬於系統"},{"source":"AST-EA-BHF-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-EA-BHF-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HVAC-EA","target":"A-R-09F-A-01","relation":"服務"},{"source":"SYS-MEP-HVAC-EA","target":"A-R-03F-B-03","relation":"服務"}]},"sensor":{"nodes":[{"id":"AST-IEQ-SEN-03F-B-001","name":"AST-IEQ-SEN-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"SYS-MEP-HLT-IEQ","name":"SYS-MEP-HLT-IEQ","type":"System","isCenter":false},{"id":"SYS-MEP-BMS-IOT","name":"SYS-MEP-BMS-IOT","type":"System","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false}],"edges":[{"source":"AST-IEQ-SEN-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-SEN-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-SEN-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-SEN-03F-B-001","target":"SYS-MEP-BMS-IOT","relation":"屬於系統"},{"source":"AST-IEQ-SEN-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HLT-IEQ","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-BMS-IOT","target":"A-R-03F-B-01","relation":"服務"}]},"dehumidifier":{"nodes":[{"id":"AST-IEQ-DHU-03F-B-001","name":"AST-IEQ-DHU-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-HLT-IEQ","name":"SYS-MEP-HLT-IEQ","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false}],"edges":[{"source":"AST-IEQ-DHU-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-DHU-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-DHU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-DHU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HLT-IEQ","target":"A-R-03F-B-01","relation":"服務"}]},"air-purifier":{"nodes":[{"id":"AST-IEQ-AQP-03F-B-001","name":"AST-IEQ-AQP-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-HLT-IEQ","name":"SYS-MEP-HLT-IEQ","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false}],"edges":[{"source":"AST-IEQ-AQP-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-AQP-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-AQP-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-AQP-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-HLT-IEQ","target":"A-R-03F-B-01","relation":"服務"}]},"curtain":{"nodes":[{"id":"AST-SHM-CUR-03F-B-001","name":"AST-SHM-CUR-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-ELV-SHM","name":"SYS-MEP-ELV-SHM","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false}],"edges":[{"source":"AST-SHM-CUR-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-SHM-CUR-03F-B-001","target":"SYS-MEP-ELV-SHM","relation":"屬於系統"},{"source":"AST-SHM-CUR-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-SHM-CUR-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-ELV-SHM","target":"A-R-03F-B-01","relation":"服務"}]}},"brain":{"nodes":[{"id":"AST-SOC-SPO-03F-B-001","name":"AST-SOC-SPO-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-01","name":"A-R-03F-B-01","type":"Space","isCenter":false},{"id":"SYS-MEP-ELEC-SOC","name":"SYS-MEP-ELEC-SOC","type":"System","isCenter":false},{"id":"BAOPU-2024-ZHIXING","name":"BAOPU-2024-ZHIXING","type":"Project","isCenter":false},{"id":"大安策展120年資產生命週期計畫-專有戶","name":"大安策展120年資產生命週期計畫-專有戶","type":"Document","isCenter":false},{"id":"AST-LTG-LGT-03F-B-001","name":"AST-LTG-LGT-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-ELEC-LTG","name":"SYS-MEP-ELEC-LTG","type":"System","isCenter":false},{"id":"AST-AC-IDU-03F-B-001","name":"AST-AC-IDU-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-HVAC-AC","name":"SYS-MEP-HVAC-AC","type":"System","isCenter":false},{"id":"A-R-03F-B-02","name":"A-R-03F-B-02","type":"Space","isCenter":false},{"id":"A-R-03F-B-05","name":"A-R-03F-B-05","type":"Space","isCenter":false},{"id":"AST-FA-FAU-03F-B-001","name":"AST-FA-FAU-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-HVAC-FA","name":"SYS-MEP-HVAC-FA","type":"System","isCenter":false},{"id":"SYS-MEP-HVAC-ERV","name":"SYS-MEP-HVAC-ERV","type":"System","isCenter":false},{"id":"AST-EA-BHF-03F-B-001","name":"AST-EA-BHF-03F-B-001","type":"Asset","isCenter":true},{"id":"A-R-03F-B-03","name":"A-R-03F-B-03","type":"Space","isCenter":false},{"id":"SYS-MEP-HVAC-EA","name":"SYS-MEP-HVAC-EA","type":"System","isCenter":false},{"id":"AST-IEQ-SEN-03F-B-001","name":"AST-IEQ-SEN-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-HLT-IEQ","name":"SYS-MEP-HLT-IEQ","type":"System","isCenter":false},{"id":"SYS-MEP-BMS-IOT","name":"SYS-MEP-BMS-IOT","type":"System","isCenter":false},{"id":"AST-IEQ-DHU-03F-B-001","name":"AST-IEQ-DHU-03F-B-001","type":"Asset","isCenter":true},{"id":"AST-IEQ-AQP-03F-B-001","name":"AST-IEQ-AQP-03F-B-001","type":"Asset","isCenter":true},{"id":"AST-SHM-CUR-03F-B-001","name":"AST-SHM-CUR-03F-B-001","type":"Asset","isCenter":true},{"id":"SYS-MEP-ELV-SHM","name":"SYS-MEP-ELV-SHM","type":"System","isCenter":false},{"id":"A-R-03F-B-04","name":"A-R-03F-B-04","type":"Space","isCenter":false},{"id":"A-R-03F-B-06","name":"A-R-03F-B-06","type":"Space","isCenter":false},{"id":"A-R-03F-B-07","name":"A-R-03F-B-07","type":"Space","isCenter":false},{"id":"A-R-09F-A-01","name":"A-R-09F-A-01","type":"Space","isCenter":false},{"id":"A-R-14F-B-01","name":"A-R-14F-B-01","type":"Space","isCenter":false},{"id":"A-O-01F-YS-01","name":"A-O-01F-YS-01","type":"Space","isCenter":false},{"id":"A-P-01F-LOB-01","name":"A-P-01F-LOB-01","type":"Space","isCenter":false},{"id":"A-P-01F-LOB-02","name":"A-P-01F-LOB-02","type":"Space","isCenter":false}],"edges":[{"source":"AST-SOC-SPO-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-SOC-SPO-03F-B-001","target":"SYS-MEP-ELEC-SOC","relation":"屬於系統"},{"source":"AST-SOC-SPO-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-SOC-SPO-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-LTG-LGT-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-LTG-LGT-03F-B-001","target":"SYS-MEP-ELEC-LTG","relation":"屬於系統"},{"source":"AST-LTG-LGT-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-LTG-LGT-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-AC-IDU-03F-B-001","target":"SYS-MEP-HVAC-AC","relation":"屬於系統"},{"source":"AST-AC-IDU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-AC-IDU-03F-B-001","target":"A-R-03F-B-02","relation":"位於"},{"source":"AST-AC-IDU-03F-B-001","target":"A-R-03F-B-05","relation":"位於"},{"source":"AST-AC-IDU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-FA-FAU-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-FA-FAU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-FA-FAU-03F-B-001","target":"SYS-MEP-HVAC-FA","relation":"屬於系統"},{"source":"AST-FA-FAU-03F-B-001","target":"SYS-MEP-HVAC-ERV","relation":"屬於系統"},{"source":"AST-FA-FAU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-EA-BHF-03F-B-001","target":"A-R-03F-B-03","relation":"位於"},{"source":"AST-EA-BHF-03F-B-001","target":"SYS-MEP-HVAC-EA","relation":"屬於系統"},{"source":"AST-EA-BHF-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-EA-BHF-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-IEQ-SEN-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-SEN-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-SEN-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-SEN-03F-B-001","target":"SYS-MEP-BMS-IOT","relation":"屬於系統"},{"source":"AST-IEQ-SEN-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-IEQ-DHU-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-DHU-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-DHU-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-DHU-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-IEQ-AQP-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-IEQ-AQP-03F-B-001","target":"SYS-MEP-HLT-IEQ","relation":"屬於系統"},{"source":"AST-IEQ-AQP-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-IEQ-AQP-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"AST-SHM-CUR-03F-B-001","target":"A-R-03F-B-01","relation":"位於"},{"source":"AST-SHM-CUR-03F-B-001","target":"SYS-MEP-ELV-SHM","relation":"屬於系統"},{"source":"AST-SHM-CUR-03F-B-001","target":"BAOPU-2024-ZHIXING","relation":"屬於專案"},{"source":"AST-SHM-CUR-03F-B-001","target":"大安策展120年資產生命週期計畫-專有戶","relation":"關聯"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-03","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-04","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-05","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-06","relation":"服務"},{"source":"SYS-MEP-ELEC-LTG","target":"A-R-03F-B-07","relation":"服務"},{"source":"SYS-MEP-HVAC-EA","target":"A-R-09F-A-01","relation":"服務"},{"source":"SYS-MEP-HVAC-EA","target":"A-R-03F-B-03","relation":"服務"},{"source":"SYS-MEP-HLT-IEQ","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-09F-A-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-14F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-ERV","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELV-SHM","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-FA","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-04","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-05","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-ELEC-SOC","target":"A-R-03F-B-03","relation":"服務"},{"source":"SYS-MEP-BMS-IOT","target":"A-R-03F-B-01","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-O-01F-YS-01","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-P-01F-LOB-01","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-P-01F-LOB-02","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-R-03F-B-02","relation":"服務"},{"source":"SYS-MEP-HVAC-AC","target":"A-R-03F-B-05","relation":"服務"}]},"qa":{"smart-outlet":{"這個月電費比上個月省了嗎？":"我來為您查詢智慧插座的用電趨勢與本月電費比較。根據智慧插座的即時用電數據，以下是這個月的用電分析：\n\n---\n\n## 🔌 AST-SOC-SPO-03F-B-001｜智慧插座（客廳）本月用電分析\n\n| 項目 | 內容 |\n|------|------|\n| **設備名稱** | 智慧插座（客廳） |\n| **所在位置** | 知行案 3F B戶 — 客廳（Space ID：`A-R-03F-B-01`） |\n| **今日耗電** | 1.8 kWh |\n| **本月總用電** | 284 kWh |\n| **較上月** | ⬇️ 下降約 8% |\n\n---\n\n### 💰 這個月電費比上個月省了嗎？\n\n**有省下來！** 本月總用電 **284 kWh**，較上個月**減少約 8%**（約少用 25 kWh），換算電費約可省下 **NT$ 60～90 元**（以每度約 2.6 元估算）。\n\n主要省電來源：\n- 客廳冷氣搭配 12 合 1 感測器自動調溫，減少不必要的運轉\n- 智慧插座偵測待機自動斷電，降低待機耗電\n\n---\n\n### 📊 本月耗電設備排行（Top 3）\n\n| 排名 | 設備 | 用電量 |\n|------|------|--------|\n| 1 | 客廳冷氣 | 162 kWh |\n| 2 | 除濕機 | 48 kWh |\n| 3 | 電暖器 | 36 kWh |\n\n> 💡 客廳冷氣仍是最大耗能來源，佔本月用電逾 5 成。建議搭配定時與溫控排程，可再進一步節省電費。\n\n如需查詢其他設備的用電或維養資訊，歡迎繼續詢問！","這個設備最近耗電正常嗎？":"我來同時查詢這個設備的詳細資訊和維修紀錄。以下是關於這台設備的完整查詢結果：\n\n---\n\n## 🔌 AST-SOC-SPO-03F-B-001｜智慧插座（客廳）\n\n| 項目 | 資訊 |\n|------|------|\n| **設備名稱** | 智慧插座（客廳） |\n| **所在位置** | 知行案 3F B戶 客廳（Space ID：A-R-03F-B-01） |\n| **所屬系統** | SYS-MEP-ELEC-SOC（電力插座系統） |\n| **功能特色** | 支援 Wi-Fi 遠端控制與**用電量監測** |\n| **使用年限** | 15 年 |\n| **更新費用** | 約 800～1,500 元／組 |\n| **維養需求** | 無需定期養護 |\n\n---\n\n## ⚡ 耗電狀況\n\n關於您詢問的「耗電是否正常」，目前資料庫中**查無任何報修或維養紀錄**，代表：\n\n- ✅ **尚無異常耗電的報修案件**\n- ✅ **未有維修或更換紀錄**\n\n---\n\n## ⚠️ 重要說明\n\n這台智慧插座雖然**具備用電量監測功能**，但目前系統中**尚未接入即時用電數據**，因此無法直接比對實際耗電數值是否異常。\n\n若您想確認耗電是否正常，建議：\n1. 透過**智慧家居 App** 查看該插座的即時用電量紀錄\n2. 若發現數值異常（如待機耗電偏高、用電量突增），可進一步提報報修\n\n如需查詢同戶其他智慧插座（如主臥、次臥）的狀況，也歡迎告知！"},"light":{"客廳燈今天開了多久？":"我來幫您查詢知行案 3F-B 戶客廳燈的相關資訊。感謝您的查詢！我已找到 **AST-LTG-LGT-03F-B-001（燈光-客廳）** 的設備資訊，但很抱歉，目前系統**無法提供「今天開了多久」的即時用電/開關時數資料**。\n\n---\n\n### 📋 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-LTG-LGT-03F-B-001 |\n| **設備名稱** | 燈光（客廳） |\n| **所在空間** | A-R-03F-B-01（玄關＋客廳＋廚房） |\n| **建案** | 知行案 3F B戶（BAOPU-2024-ZHIXING） |\n| **系統分類** | 電力－照明（SYS-MEP-ELEC-LTG） |\n| **使用年限** | 10 年 |\n| **更新費用** | 約 2,000～5,000 元／組 |\n| **智慧連動** | 與 12 合 1 感測器連動，可自動調光 |\n| **維養需求** | 無需定期養護 |\n\n---\n\n### ⚠️ 關於「今天開了多久」\n\n目前寶舖AI 所連接的資料庫為**設備資產、維養紀錄與文件知識庫**，**尚未接入即時 IoT 感測器或智慧家庭控制平台的使用時數日誌**（如燈光開關事件記錄、累計亮燈時數等）。\n\n若您需要查詢燈光的即時使用狀態或歷史開關紀錄，建議：\n1. **透過智慧家庭 App**（與 12 合 1 感測器連動的控制介面）查詢\n2. **聯繫家電廠商**，由專人協助調閱 IoT 平台的設備日誌\n\n如有其他關於設備維養或建案資訊的問題，歡迎繼續詢問！","這盞燈還能用多久？":"我來同時查詢這個設備的知識圖譜資訊和維養紀錄，以及相關的維養建議。以下是 **知行案 3F-B 戶客廳燈光（AST-LTG-LGT-03F-B-001）** 的完整評估：\n\n---\n\n## 🔦 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **設備名稱** | 燈光（客廳） |\n| **Asset ID** | AST-LTG-LGT-03F-B-001 |\n| **安裝位置** | A-R-03F-B-01（玄關＋客廳＋廚房） |\n| **所屬系統** | 電力－照明（SYS-MEP-ELEC-LTG） |\n| **設計使用年限** | **10 年** |\n| **更新費用** | 約 2,000～5,000 元／組 |\n| **智慧連動** | 與 12 合 1 感測器連動，可自動調光 |\n\n---\n\n## ⏳ 還能用多久？\n\n目前系統中**尚無此燈具的維修或維養紀錄**，也沒有廠商建議的例行保養週期，因此無法精確計算剩餘壽命。\n\n根據現有資料，可以確認的是：\n\n- 📋 **設計壽命為 10 年**，到期後建議整組更換\n- 🔧 **維養需求：無需例行養護**（屬免維護型燈具）\n- 📊 **使用狀態感測資料**（Well FM）與**氣象資料**目前尚在串接中，待接入後可提供更精確的壽命預測\n\n---\n\n## 📌 建議行動\n\n> **建議於 2026 年 7 月前**安排人員到場進行**首次檢查**，確認：\n> 1. 燈具實際安裝日期（以確定距離 10 年壽命還剩多少時間）\n> 2. 目前運作狀況（有無閃爍、色溫異常、亮度衰退等）\n> 3. 建立基準維養紀錄，作為後續週期排程依據\n\n如需進一步了解同戶其他設備（如冷氣 `AST-AC-IDU-03F-B-001`、新風機 `AST-FA-FAU-03F-B-001`）的壽命評估，歡迎繼續詢問！"},"ac":{"家裡哪一台冷氣最耗電？":"我來同時查詢這台冷氣的詳細資訊以及相關耗電數據！我找到了 `AST-AC-IDU-03F-B-001` 的基本資訊。現在讓我進一步查詢 3F-B 戶所有冷氣設備，以及耗電相關資料。根據目前查詢到的資料，我可以整理出以下結論：\n\n---\n\n## 知行案 3F-B 戶冷氣資訊\n\n### 🔍 查詢結果\n\n根據系統資料，**知行案 3F-B 戶目前登錄的冷氣設備只有一台**：\n\n| Asset ID | 設備名稱 | 類型 | 位置 |\n|---|---|---|---|\n| **AST-AC-IDU-03F-B-001** | 冷氣（主臥） | 空調-冷暖氣 | 3F B戶 主臥室 |\n\n---\n\n### ⚠️ 關於「哪台最耗電」的說明\n\n由於 3F-B 戶在系統中**僅登錄了一台冷氣**（主臥冷氣），目前**無法進行多台比較**。此外，系統資料中**未包含各設備的功率（瓦數）或實際用電量數據**，因此無法判斷耗電排名。\n\n---\n\n### 📋 這台冷氣的維養資訊供參考\n\n- **濾網清洗**：每月自行清洗一次\n- **專業清洗**：每年一次\n- **保養週期**：2 年\n- **檢修週期**：5 年\n- **使用年限**：15 年\n- **智慧連動**：與 12 合 1 感測器連動，可自動調溫\n\n---\n\n如果您想了解各台冷氣的耗電比較，建議：\n1. **確認是否有其他樓層或戶別的冷氣**也屬於您的管理範圍\n2. **查閱設備規格書**，取得各台冷氣的額定功率（kW）進行比較\n3. 若有安裝**智慧電錶或能源監控系統**，可從實際用電數據判斷\n\n如需進一步協助，歡迎告知！","冷氣下一次維養是什麼時候，要維養什麼項目？":"我來同時查詢這台冷氣的維養計畫與相關資訊。已取得設備資訊與歷史紀錄，現在進一步查詢維養動作明細與維養建議。以下是 **知行案 3F-B 主臥冷氣（AST-AC-IDU-03F-B-001）** 的完整維養資訊：\n\n---\n\n## 🕐 下次維養時間\n\n根據歷史紀錄與維養週期推算：\n\n| 項目 | 資訊 |\n|------|------|\n| 上次維養日期 | **2026-03-10** |\n| 過去平均維養間隔 | 約 **7 個月**（207 天） |\n| **預估下次維養時間** | **2026 年 10 月前後** |\n\n> ⚠️ 目前氣象資料與住戶使用狀態尚未串接，若夏季使用頻繁，建議**提前確認**是否需要提早安排。\n\n---\n\n## 🔧 下次維養建議項目\n\n參考上次（2026-03-10）的維養內容，下次應執行以下項目：\n\n| # | 類型 | 維養項目 | 說明 |\n|---|------|----------|------|\n| 1 | 🔄 維養（M） | **濾網清洗 / 更換評估** | 拆下濾網清洗積垢，視髒污程度決定是否更換（年費約 $3,000） |\n| 2 | 🔄 維養（M） | **出風口清潔 & 排水管疏通** | 高壓清洗排水管，確認排水暢通，防止漏水 |\n| 3 | ✅ 檢查（C） | **冷媒壓力檢查** | 確認壓力值在正常範圍內，排除冷媒洩漏風險 |\n\n---\n\n## 📋 設備基本資訊\n\n- **設備名稱**：冷氣（主臥）\n- **Asset ID**：`AST-AC-IDU-03F-B-001`\n- **安裝位置**：空間 `A-R-03F-B-02`（主臥）\n- **所屬系統**：空調-冷暖氣（SYS-MEP-HVAC-AC）\n- **廠商建議保養週期**：每 2 年\n- **設備使用年限**：15 年\n\n---\n\n## 📌 歷史紀錄摘要\n\n| 日期 | 類型 | 事由 | 結果 | 費用 |\n|------|------|------|------|------|\n| 2025-08-15 | 報修 | 出風口異常噪音（風扇葉片鬆動） | 完成 | $2,500 |\n| 2026-03-10 | 定期維養 | 半年例行保養 | 合格 | $3,500 |\n\n如需安排維養，建議聯繫上次執行廠商**瀚頓**，並在 2026 年 10 月前完成排程。"},"erv":{"新風機會很耗電嗎？":"我來同時查詢這台新風機的設備資訊以及相關的耗電知識。Wiki 沒有直接的耗電文章，讓我進一步搜尋新風機耗電相關的文件資料。已取得足夠資訊，以下為您整理完整說明。\n\n---\n\n## 知行案 3F-B 戶新風機（AST-FA-FAU-03F-B-001）耗電分析\n\n### 📋 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-FA-FAU-03F-B-001 |\n| **設備名稱** | 新風機（空調-全熱交換） |\n| **安裝位置** | 知行案 3F B戶（空間 A-R-03F-B-01） |\n| **所屬系統** | SYS-MEP-HVAC-ERV（全熱交換通風系統） |\n\n---\n\n### ⚡ 耗電量低嗎？\n\n根據系統資料中的全熱交換機規格文件，新風機（全熱交換器）的**輸入功率相當低**，以台達全熱交換機為例：\n\n| 型號 | 風量段 | 輸入功率（Watt） |\n|------|--------|----------------|\n| VEB150AT3 | 高速 | **40W** |\n| VEB150AT3 | 中速 | **27W** |\n| VEB150AT3 | 低速 | **17W** |\n| VEB250AT3 | 高速 | **98W** |\n| VEB350AT3 | 高速 | **168W** |\n\n> 以住宅常用的 150 型為例，**最高僅 40W**，相當於一顆傳統燈泡的用電量，長時間運轉一天也僅約 0.96 度電，**耗電量極低**。\n\n[SOURCE: 台達全熱交換機 SPEC DELTA-VTN_VEB150_250_350AT3_UM_TC_20200519.pdf]\n\n---\n\n### 🤖 智慧連動省電設計\n\n知行案 3F-B 戶的新風機還具備智慧節能機制：\n\n- **與 12 合一感測器（AST-IEQ-SEN-03F-B-001）連動**\n- 當室內 **CO₂ 或 PM2.5 超標**時，才自動加大換氣風量\n- 平時維持低速運轉，**按需換氣**，避免不必要的耗電\n\n---\n\n### 💡 總結\n\n> 新風機（全熱交換器）**不耗電**，是住宅設備中用電量最小的機電設備之一。加上知行案採用智慧感測器連動控制，只在空氣品質需要時才提升風量，整體能耗表現相當優異，不需擔心電費問題。\n\n如需進一步了解這台新風機的**維養計畫**或**濾網更換週期**，歡迎繼續詢問！","新風機什麼時候需要保養？":"我來同時查詢這台新風機的設備資訊和維養建議。以下是 **知行案 3F-B 戶新風機（AST-FA-FAU-03F-B-001）** 的完整保養資訊：\n\n---\n\n## 🌬️ 新風機保養時程總覽\n\n| 項目 | 內容 |\n|------|------|\n| **設備位置** | 3F B戶 — 玄關+客廳+廚房（空間 A-R-03F-B-01） |\n| **所屬系統** | 空調-新風系統（SYS-MEP-HVAC-FA） |\n| **上次維養** | 2026-01-10（距今約 5 個月，結果：合格） |\n| **設備使用年限** | 15 年 |\n\n---\n\n## 📅 建議保養時程\n\n### 1️⃣ 濾網更換（每 6～12 個月）⚠️ 優先安排\n- **建議時間：2027-01 前**\n- 需更換：初效濾網、活性碳濾網、HEPA 濾網（三合一）\n- 費用約：**濾網 3,000 元/組 + 工資 3,500 元**，合計約 **6,500 元/年**\n- 上次維養（2026-01-10）已更換初效與活性碳濾網，建議屆滿 1 年前再次評估濾網狀況\n\n### 2️⃣ 例行保養（每 2 年一次）\n- **下次預計：2028-01**\n- 依廠商建議週期，每 2 年進行一次全面例行保養\n\n### 3️⃣ 專業檢修（每 5 年一次）\n- 每 5 年安排一次深度檢修\n\n---\n\n## 💡 智慧連動提醒\n\n此台新風機與 **12 合 1 感測器**連動，當室內 **CO₂ 或 PM2.5 超標**時會自動加大換氣量。若感測器頻繁觸發，代表濾網可能已達使用極限，建議**提前安排濾網檢查**。\n\n---\n\n## ⚠️ 注意事項\n\n目前系統尚有兩項資料待接入：\n- **氣象 API**（外部空氣品質）\n- **Well FM 使用狀態**（家中實際使用頻率）\n\n這兩項資料接入後，可進一步精準調整保養週期。若台北近期空氣品質較差或使用頻率偏高，建議**提前至 2026 年底前**安排濾網檢查。\n\n---\n\n如需安排保養，可進一步協助聯繫廠商或建立維養工單！"},"bath-heater":{"洗完澡後，浴室多久會恢復乾燥？":"我來同時查詢這台設備的資訊和相關維養建議。我已查到這台設備的完整資訊，但關於「洗澡後浴室多久乾燥」的具體時間，資料庫中並無記載。讓我再進一步搜尋設備規格說明。找到相關文件了，讓我再深入搜尋乾燥時間的具體說明。根據所有查詢結果，以下是完整說明：\n\n---\n\n## 🚿 知行案 3F-B 主臥浴室暖風機（AST-EA-BHF-03F-B-001）\n\n### 📍 設備基本資訊\n| 項目 | 內容 |\n|------|------|\n| **設備名稱** | 主臥浴室暖風機 |\n| **Asset ID** | AST-EA-BHF-03F-B-001 |\n| **所在空間** | A-R-03F-B-03（主臥浴室） |\n| **所屬系統** | SYS-MEP-HVAC-EA（空調-排風系統） |\n\n---\n\n### ❓ 洗澡後浴室多久恢復乾燥？\n\n很抱歉，目前資料庫中**並未記載具體的乾燥恢復時間**（如「XX 分鐘」），設備規格頁面與維養文件均未提供此數值。\n\n不過，根據內部知識文件的說明，可以提供以下背景資訊：\n\n> 浴室暖風乾燥機集**暖風、乾燥、換氣**三大功能於一體。若**未開啟乾燥功能**，洗浴後水蒸氣容易積聚，導致浴室長時間處於潮濕狀態，並可能引發霉菌滋生。\n\n[SOURCE: 240106-健康-曾祿-暖風機安裝注意事項(可公開)修改後.docx]\n\n具體的乾燥時間會受到以下因素影響，但這些數值需參照設備廠商規格書：\n- 浴室坪數大小\n- 當下室內溫濕度\n- 暖風機的風量與加熱功率\n- 是否同時搭配換氣排風\n\n---\n\n### 💡 建議\n若您需要確切的乾燥時間，建議：\n1. **查閱設備廠商規格書**，文件中有提供維養參考連結：[浴室暖風機維養](https://docs.google.com/document/d/1gmCCvSaBpKZ7z_qS5CScOOXjdqMWiqQl/edit)\n2. 或直接聯繫家電廠商，由專人查詢該型號的詳細性能規格。\n\n如需進一步查詢此設備的**維養紀錄**或**保養排程**，也歡迎告知！","浴室暖風機下一次維養是什麼時候？":"我來同時查詢設備的維養計畫與相關紀錄。找到維養紀錄了，讓我再查詢維養計畫的詳細週期資訊。以下是 **知行案 3F-B 戶主臥浴室暖風機（AST-EA-BHF-03F-B-001）** 的維養資訊彙整：\n\n---\n\n## 🛁 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **設備名稱** | 主臥浴室暖風機 |\n| **Asset ID** | AST-EA-BHF-03F-B-001 |\n| **安裝位置** | A-R-03F-B-03（3F-B 主臥浴室） |\n| **所屬系統** | SYS-MEP-HVAC-EA（空調-排風） |\n\n---\n\n## 🔧 上次維養紀錄\n\n- **日期：** 2025-12-05\n- **結果：** ✅ 合格\n- **作業內容：**\n  - 風扇模組清潔，檢查葉片磨損狀況，運轉正常\n  - 排風管道檢查，確認管道暢通無阻塞；加熱元件檢查，升溫正常\n\n---\n\n## 📅 下次維養建議\n\n| 項目 | 內容 |\n|------|------|\n| **廠商建議週期** | 每 **2 年** 一次例行保養 |\n| **預計下次維養** | **2027 年 12 月** |\n| **設備設計壽命** | 15 年（更換費用約 NT$12,000） |\n| **目前狀態** | 🟢 尚在週期內，無需立即處理 |\n\n---\n\n## ℹ️ 補充說明\n\n目前有兩項資料尚待串接，待接入後可更精準評估維養需求：\n- **氣象 API**（weather）：尚未接入，無法評估環境條件影響\n- **Well FM 使用狀態**（usage）：串接中，無法掌握實際使用頻率\n\n建議待上述資料接入後，重新評估是否需調整保養頻率或提前執行。"},"sensor":{"梅雨季節到了，最近空氣品質真的好嗎？":"我來同時查詢這個感測器的相關資訊和維養紀錄！再查詢一下這台感測器的詳細維養動作與維養建議！以下是 **知行案 3F-B 戶 12合1感測器（AST-IEQ-SEN-03F-B-001）** 的完整現況報告：\n\n---\n\n## 📍 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-IEQ-SEN-03F-B-001 |\n| **安裝位置** | A-R-03F-B-01（玄關 + 客廳 + 廚房） |\n| **所屬系統** | SYS-MEP-HLT-IEQ（室內環境品質監控） |\n| **設計壽命** | 10 年 |\n\n---\n\n## 🌡️ 最新感測數據（梅雨季節即時狀況）\n\n| 指標 | 最新讀值 | 時間 | 狀態 |\n|------|---------|------|------|\n| **CO₂ 濃度** | 761 ppm | 2026-06-21 | ✅ 正常（\u003c 1000 ppm） |\n| **相對濕度** | 60 % | 2026-06-21 | ⚠️ 偏高，梅雨季需留意 |\n| **PM2.5** | 4.5 μg/m³ | 2026-06-21 | ✅ 優良 |\n| **溫度** | 25.2 °C | 2026-06-21 | ✅ 舒適 |\n\n> 📌 **3天前（6/18）** 的數據顯示 PM2.5 曾飆升至 **16.2 μg/m³**、濕度 57%、溫度 28°C，推測為梅雨間歇晴天、室外空氣擾動所致，目前已回落至正常水準。\n\n---\n\n## 🔧 維養紀錄\n\n**最近一次維養：2025-11-20（距今約 7 個月）**\n\n- **執行廠商**：瀚頓\n- **作業內容**：以校正標準氣體及環境模擬器，對溫度、濕度、CO₂、PM2.5、甲醛等 12 項感測元件進行全面校正\n- **校正結果**：✅ **合格**，偏差值皆在容許範圍內\n- **費用**：NT$ 1,500\n\n---\n\n## 🤖 AI 維養建議\n\n### 1. 📋 例行巡檢（建議時間：2026-09）\n上次維養距今已 7 個月，廠商未提供固定週期建議，系統中目前僅有一筆紀錄。建議於 **2026 年 9 月** 安排下一次巡檢，確認各感測模組讀值準確性與硬體外觀，並建立第二筆紀錄以利未來週期推算。\n\n### 2. 👁️ 持續監控 CO₂（建議時間：2026-07）\n目前 CO₂ 761 ppm 屬正常範圍，但梅雨季節門窗常關閉，換氣量減少，建議持續觀察趨勢。若讀值出現異常飄移或停滯，應提前安排感測器校正。\n\n---\n\n## 💡 梅雨季節特別提醒\n\n- **濕度 60%** 雖在感測器正常讀值範圍，但梅雨期間室內濕度容易持續攀升，建議搭配 **除濕機（AST-IEQ-DHU-03F-B-001）** 維持在 50–60% 以下\n- 感測器與 **新風機（AST-FA-FAU-03F-B-001）** 連動，CO₂ / PM2.5 超標時會自動加大換氣，目前連動機制應正常運作\n- 整體而言，**空氣品質目前是好的** ✅，感測器校正結果合格，數據可信度高\n\n---\n\n如需進一步查詢新風機濾網狀況，或安排下次校正，歡迎告知！","感測器需要維養嗎？":"我來同時查詢這個感測器的設備資訊和維養建議。以下是關於 **知行案 3F-B 戶 12合1感測器（AST-IEQ-SEN-03F-B-001）** 的完整維養說明：\n\n---\n\n## 📍 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-IEQ-SEN-03F-B-001 |\n| **設備名稱** | 12合1感測器（十二合一感知器） |\n| **安裝位置** | 3F-B 戶｜玄關＋客廳＋廚房（空間 A-R-03F-B-01） |\n| **監測項目** | 溫度、濕度、PM2.5、PM10、CO₂、TVOC、甲醛、照度、噪音、氣壓、人體感應、煙霧（共12項） |\n| **連動設備** | 冷氣、新風機、燈光、窗簾 |\n| **使用年限** | 10 年 |\n| **更新費用** | 約 8,000～12,000 元／台 |\n\n---\n\n## 🔧 維養需求\n\n### 日常養護\n> ✅ **無需日常養護**（設備本身免保養）\n\n### 定期校正（重要！）\n> 📅 **每 5 年校正一次**\n> 感測元件需定期以校正標準氣體及環境模擬器進行校驗，確保 12 項量測數值準確。\n\n---\n\n## 📋 維養歷史紀錄\n\n| 日期 | 作業內容 | 結果 | 費用 |\n|------|----------|------|------|\n| 2025-11-20 | 年度校正（溫度、濕度、CO₂、PM2.5、甲醛等12項感測元件校正，偏差值皆在容許範圍內） | ✅ 合格 | 1,500 元 |\n\n---\n\n## 📡 目前感測器即時讀值（2026-06-21）\n\n| 指標 | 數值 | 狀態 |\n|------|------|------|\n| CO₂ | 761 ppm | ✅ 正常 |\n| 溫度 | 25.2 °C | ✅ 正常 |\n| 濕度 | 60 % | ✅ 正常 |\n| PM2.5 | 4.5 μg/m³ | ✅ 正常 |\n\n---\n\n## 🤖 AI 維養建議\n\n**優先等級：一般提醒（Info）**\n\n上次維養為 2025-11-20，距今約 7 個月，目前感測器運作正常、無異常警報。建議於 **2026 年 11～12 月**（即上次維養後約 12 個月）安排一次：\n1. 外觀清潔\n2. 感測元件校驗\n3. 功能確認（連動冷氣、新風機、燈光、窗簾）\n\n> ⚠️ 備註：目前氣象資料與家中使用狀態的 API 尚未完全接入，待串接後可進一步優化保養時程建議。\n\n---\n\n**總結：** 這台感測器本身**無需日常養護**，但每 5 年需安排一次專業校正，以確保 12 項環境監測數值的準確性，進而維持與冷氣、新風機等設備的正確連動。"},"dehumidifier":{"最近除濕機是不是很常開？":"我來同時查詢這台除濕機的設備資訊和維修紀錄。找到設備資訊了，讓我再進一步查詢這台除濕機的詳細維養動作紀錄。根據系統中的資料，以下是關於這台除濕機的完整說明：\n\n---\n\n## 🌡️ 知行案 3F-B 戶除濕機 `AST-IEQ-DHU-03F-B-001`\n\n### 📍 設備基本資訊\n| 項目 | 內容 |\n|------|------|\n| **設備名稱** | 除濕機 |\n| **所屬系統** | 健康防護 - 室內環境品質（IEQ） |\n| **安裝位置** | 玄關＋客廳＋廚房（空間 `A-R-03F-B-01`） |\n| **所屬專案** | 知行案（BAOPU-2024-ZHIXING） |\n\n---\n\n### 📋 維養紀錄摘要\n\n目前系統中僅有 **1 筆維養紀錄**（`DEMO-ZX-006`），為 **2026-02-18** 的定期維養，結果合格，內容包含：\n\n1. **濾網清洗**（M 維養）：拆卸清洗，去除灰塵及毛絮後裝回，結果合格\n2. **集水箱清洗消毒 + 排水管疏通**（M 維養）：確認排水暢通\n\n---\n\n### ⚠️ 關於「最近是否很常開」的說明\n\n目前系統中**沒有除濕機的即時運行數據或開機頻率紀錄**（如感測器數據、運行時數、開關次數等），因此無法從資料庫中判斷這台除濕機近期是否頻繁運作。\n\n若您想進一步了解，建議：\n1. **查閱智慧家居控制面板**或 12 合 1 感測器的濕度歷史數據，確認室內濕度是否持續偏高（導致除濕機頻繁啟動）\n2. **確認集水箱排水狀況**，若集水箱需要頻繁清空，也是除濕機高頻運作的間接指標\n3. 如有異常（如除濕機不停機、噪音增大），可聯繫家電廠商安排進一步檢查\n\n需要我協助查詢其他相關設備（如 12 合 1 感測器 `AST-IEQ-SEN-03F-B-001`）的資訊嗎？","除濕機下一次維養是什麼時候？":"我來同時查詢這台除濕機的維養計畫與相關資訊。找到了維養紀錄，現在讓我進一步查詢這台除濕機的維養動作明細，以及生命週期計畫中的下次維養排程。以下是知行案 3F-B 戶除濕機（**AST-IEQ-DHU-03F-B-001**）的完整維養資訊：\n\n---\n\n## 📍 設備基本資訊\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-IEQ-DHU-03F-B-001 |\n| **安裝位置** | A-R-03F-B-01（3F-B 戶 玄關＋客廳＋廚房） |\n| **所屬系統** | SYS-MEP-HLT-IEQ（健康防護－室內環境品質） |\n| **設備壽命** | 10 年 |\n\n---\n\n## 🔧 上次維養紀錄（DEMO-ZX-006）\n- **日期**：2026-02-18\n- **結果**：✅ 合格\n- **執行內容**：\n  1. **濾網**（M 維養）：拆卸清洗，去除灰塵及毛絮後裝回\n  2. **集水箱**（M 維養）：清洗消毒、排水管疏通，確認排水暢通\n\n---\n\n## 📅 下次維養建議\n\n> **建議於 2026 年 8 月 前安排水箱清潔保養**（優先度：中）\n\n**判斷依據：**\n- 上次維養距今已約 **4 個月**（2026-02-18）\n- 廠商建議依**耗材更換週期**定期保養，主耗材為**水箱清潔**\n- 目前系統僅有一筆維養紀錄，尚無法計算平均週期\n\n⚠️ **注意事項：**\n- 氣象 API 與 Well FM 使用狀態資料目前尚未接入（pending），待接入後可進一步精確排程\n- 台灣夏季梅雨與高濕環境可能加速水箱積水與耗材消耗，若近期室內濕度偏高（最新感測值顯示 **74% RH**，2026-06-21），建議**提前安排**保養\n\n---\n\n## 💡 後續建議\n1. **本次保養後確實登錄維養紀錄**，累積數據以利未來優化排程\n2. 待氣象與使用狀態資料接入後，於 **2026-07** 重新評估維養優先級\n\n如需安排維養工單或查詢廠商聯絡資訊，歡迎進一步告知！"},"air-purifier":{"最近家裡空氣品質好嗎？":"我來同時查詢這台設備的維養紀錄和相關資訊！以下是 **知行案 3F-B 戶空氣清淨機（AST-IEQ-AQP-03F-B-001）** 的最新狀況摘要：\n\n---\n\n## 🌬️ 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-IEQ-AQP-03F-B-001 |\n| **設備名稱** | 空氣清淨機 |\n| **安裝位置** | 3F-B 客廳（空間 A-R-03F-B-01） |\n| **所屬系統** | SYS-MEP-HLT-IEQ（健康防護－室內環境品質） |\n\n---\n\n## ✅ 最近維養紀錄（2026-05-12）\n\n這台空氣清淨機剛完成一次**定期維養**，結果為 **合格**，整體狀況良好！\n\n| 動作 | 項目 | 內容 | 費用 |\n|------|------|------|------|\n| **R（更換）** | 濾網 | HEPA＋活性碳複合濾網 更換新品 1 組 | NT$2,800 |\n| **M（維養）** | 機身清潔 | 外殼、出風口清潔、感測器鏡頭擦拭 | — |\n\n> 維養廠商：**瀚頓**\n\n---\n\n## 📋 小結\n\n根據最新維養紀錄，您家 3F-B 的空氣清淨機狀態相當不錯：\n\n- 🟢 **濾網剛換新**：HEPA＋活性碳複合濾網已於 2026-05-12 更換，過濾效能處於最佳狀態\n- 🟢 **機體清潔完畢**：感測器、出風口均已清潔，偵測與出風效率正常\n- 🟢 **維養結果合格**：無異常或待追蹤項目\n\n目前空氣清淨機運作正常，室內空氣品質防護應有良好保障。若您有感覺到異味、噪音或顯示異常，歡迎隨時回報，我可以協助安排進一步檢查！ 😊","空氣清淨機什麼時候需要換濾網？":"我來同時查詢這台設備的資訊以及空氣清淨機換濾網的相關知識。找到設備基本資訊了，讓我進一步查詢這台設備的維養計畫與維修紀錄，以及相關換濾網規範文件。以下是關於知行案 3F-B 戶空氣清淨機 **AST-IEQ-AQP-03F-B-001** 的完整說明：\n\n---\n\n## 🌬️ 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-IEQ-AQP-03F-B-001 |\n| **安裝位置** | A-R-03F-B-01（3F-B 戶 玄關＋客廳＋廚房） |\n| **所屬系統** | SYS-MEP-HLT-IEQ（健康防護－室內環境品質） |\n| **耗材類型** | HEPA＋活性碳複合濾網 |\n| **設備壽命** | 10 年 |\n\n---\n\n## 🔄 換濾網時機建議\n\n### 1️⃣ 定期更換（年度計畫）\n- **建議週期：約每 12 個月更換一次**\n- 耗材費用約 **NT$2,500 / 年**\n- 上次更換紀錄：**2026-05-12**（HEPA＋活性碳複合濾網更換新品 1 組，結果合格）\n- ➡️ **下次建議更換時間：2027 年 5 月**\n\n### 2️⃣ 提前更換的情境（待資料串接後評估）\n目前以下兩項資料源尚未接入，串接完成後可更精準判斷是否需提前更換：\n- 🌤️ **氣象資料**：高污染季節（如空污嚴重期）濾網耗損較快\n- 🏠 **家中使用狀態（Well FM）**：使用頻率高時，濾網壽命會縮短\n\n---\n\n## 🧹 例行清潔建議\n\n除了換濾網，建議**每季**進行一次機體例行清潔：\n- 機身外殼清潔\n- 進出風口清潔\n- 感測器鏡頭擦拭\n\n➡️ **下次例行清潔建議：2026 年 9 月**\n\n---\n\n## 📋 最近維養紀錄摘要\n\n| 日期 | 類型 | 動作 | 結果 |\n|------|------|------|------|\n| 2026-05-12 | 定期維養 | HEPA＋活性碳濾網更換（R） | ✅ 合格 |\n| 2026-05-12 | 定期維養 | 機身外殼、出風口、感測器清潔（M） | ✅ 合格 |\n\n> 💡 **小提醒**：若設備出現異味、風量明顯下降，或機器顯示濾網警示燈，即使未到年度更換時間，也建議提前更換濾網，以維持最佳的 CASR（潔淨空氣輸出率）效能。"},"curtain":{"今天窗簾有幫我遮陽嗎？":"我來查詢這個設備的相關資訊！感謝您的查詢！不過關於「**今天窗簾有沒有幫您遮陽**」這個問題，我需要誠實說明：\n\n---\n\n## 🪟 AST-SHM-CUR-03F-B-001｜窗簾（客廳）\n\n| 項目 | 資訊 |\n|------|------|\n| **設備名稱** | 窗簾（客廳） |\n| **所在位置** | 知行案 3F B戶・客廳（空間 A-R-03F-B-01） |\n| **所屬系統** | 弱電－智慧家庭（SYS-MEP-ELV-SHM） |\n| **連動感測器** | AST-IEQ-SEN-03F-B-001（12合1感測器） |\n\n---\n\n### ⚠️ 關於「今天有沒有遮陽」\n\n這台窗簾設計上**與12合1感測器連動，可依日照強度自動開合**，具備自動遮陽功能。\n\n但是，**寶舖AI目前並未接入即時設備狀態或感測器數據**，因此無法告訴您：\n- 今天窗簾的實際開合狀態\n- 感測器偵測到的即時照度數值\n- 今天是否有觸發自動遮陽動作\n\n---\n\n### 💡 建議您可以\n\n1. **透過智慧家居 App** 查看窗簾目前的開合狀態與歷史動作紀錄\n2. **確認感測器（AST-IEQ-SEN-03F-B-001）** 的照度數值，判斷是否達到自動關閉條件\n3. 若懷疑窗簾未正常連動，可聯繫家電廠商**提交報修**，我可以協助您記錄問題\n\n需要我幫您查詢這台窗簾的**維養紀錄或報修歷史**嗎？","窗簾馬達需要維養嗎？":"我來同時查詢這個設備的知識圖譜資訊和維養建議。以下是關於 **知行案 3F-B 戶窗簾（AST-SHM-CUR-03F-B-001）** 的完整維養分析：\n\n---\n\n## 🪟 設備基本資訊\n\n| 項目 | 內容 |\n|------|------|\n| **Asset ID** | AST-SHM-CUR-03F-B-001 |\n| **設備名稱** | 窗簾（客廳） |\n| **安裝位置** | A-R-03F-B-01（玄關＋客廳＋廚房） |\n| **所屬系統** | SYS-MEP-ELV-SHM（弱電－智慧家居） |\n| **特殊功能** | 與日照感測器連動，可依日照自動開合 |\n| **設計壽命** | 10 年 |\n| **更新費用** | 約 8,000～15,000 元／組 |\n\n---\n\n## 🔧 維養週期規範\n\n| 類型 | 週期 |\n|------|------|\n| **例行保養**（軌道上潤滑油） | **每 2 年** |\n| **檢修** | 每 5 年 |\n| **汰換** | 每 10 年 |\n\n---\n\n## 📋 最近維養紀錄\n\n- **上次維養日期**：2025-10-22（距今約 8 個月）\n- **維養內容**：窗簾軌道上潤滑油、檢查馬達運轉電流正常、開合行程測試順暢\n- **結果**：✅ 合格\n\n---\n\n## 💡 AI 維養建議\n\n### 1. 目前無需立即行動\n上次維養於 2025-10-22 完成，依廠商建議的 **2 年週期**推算，**下次例行保養預計於 2027 年 10 月**前完成即可，目前仍在週期內。\n\n### 2. 建議持續累積維養紀錄\n系統中目前僅有一筆維養紀錄，建議每次保養後確實登錄作業內容，以利後續進行數據驅動的排程優化。\n\n### ⚠️ 注意事項\n目前**氣象資料**與**家中使用狀態**兩項因素尚未接入（`pending`），待資料串接完成後，建議重新評估保養頻率是否需要調整——例如若日照感測器連動頻繁、馬達使用率高，可能需要縮短保養週期。\n\n---\n\n**總結**：窗簾馬達目前狀態良好，**不需要立即維養**，請於 **2027 年 10 月前**安排下次例行保養（軌道潤滑＋馬達電流檢查）即可。"}}},"deviceDefinitions":{"smart-outlet":{"name":"智慧插座","icon":"ti-plug","assetId":"AST-SOC-SPO-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">設備資訊\u003c/div>\n        \u003cdiv class=\"info-highlight\">智慧插座（客廳）\u003c/div>\n        \u003cdiv class=\"info-detail\">今日耗電 \u003cspan class=\"info-stat\">1.8 kWh\u003c/span>\u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">設備耗電排行\u003c/div>\n        \u003col class=\"rank-list\">\n          \u003cli>\u003cspan>1. 客廳冷氣\u003c/span>\u003cspan class=\"rank-val\">162 kWh\u003c/span>\u003c/li>\n          \u003cli>\u003cspan>2. 除濕機\u003c/span>\u003cspan class=\"rank-val\">48 kWh\u003c/span>\u003c/li>\n          \u003cli>\u003cspan>3. 電暖器\u003c/span>\u003cspan class=\"rank-val\">36 kWh\u003c/span>\u003c/li>\n        \u003c/ol>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">累積耗電量\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          本月總用電 \u003cspan class=\"info-stat\">284 kWh\u003c/span>\u003cbr>\n          較上月下降 8%\u003cbr>\n          最大耗能設備：客廳冷氣\n        \u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">異常耗電紀錄\u003c/div>\n        \u003cdiv class=\"info-detail\">近 7 日無異常耗電紀錄\u003c/div>\n      \u003c/div>\n    ","questions":["這個月電費比上個月省了嗎？","這個設備最近耗電正常嗎？"]},"light":{"name":"燈光","icon":"ti-bulb","assetId":"AST-LTG-LGT-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">開燈狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">客廳燈開啟\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          亮度 \u003cspan class=\"info-stat\">70%\u003c/span>\n          今日使用 \u003cspan class=\"info-stat\">5.2 小時\u003c/span>\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">累積使用時數與壽命\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          已使用 \u003cspan class=\"info-stat\">8,200 / 25,000 小時\u003c/span>\u003cbr>\n          剩餘壽命 67%\u003cbr>\n          預估 2033 年更換\n        \u003c/div>\n      \u003c/div>\n    ","questions":["客廳燈今天開了多久？","這盞燈還能用多久？"]},"ac":{"name":"冷氣","icon":"ti-snowflake","assetId":"AST-AC-IDU-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">運轉狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">客廳降溫中\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          目前 \u003cspan class=\"info-stat\">28°C\u003c/span> → 目標 \u003cspan class=\"info-stat\">25°C\u003c/span>\u003cbr>\n          舒適溫控啟動\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">累積運轉與維養\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          累積運轉 \u003cspan class=\"info-stat\">6,523 小時\u003c/span>\u003cbr>\n          下次維養 \u003cspan class=\"info-stat\">2026/09\u003c/span>\n        \u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">維養項目\u003c/div>\n        \u003cdiv class=\"info-detail\">濾網清洗、出風口清潔、冷媒檢查\u003c/div>\n      \u003c/div>\n    ","questions":["家裡哪一台冷氣最耗電？","冷氣下一次維養是什麼時候，要維養什麼項目？"]},"erv":{"name":"新風機","icon":"ti-wind","assetId":"AST-FA-FAU-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">運轉狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">新風換氣中\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          CO₂ \u003cspan class=\"info-stat\">912 ppm\u003c/span>\n          風量 \u003cspan class=\"info-stat\">中\u003c/span>\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">濾網壽命與運轉\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          濾網壽命 \u003cspan class=\"info-stat\">72%\u003c/span>\u003cbr>\n          累積運轉 \u003cspan class=\"info-stat\">4,320 小時\u003c/span>\u003cbr>\n          預估 124 天後更換濾網\n        \u003c/div>\n      \u003c/div>\n    ","questions":["新風機會很耗電嗎？","新風機什麼時候需要保養？"]},"bath-heater":{"name":"浴室暖風機","icon":"ti-flame","assetId":"AST-EA-BHF-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">運轉狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">浴室預熱中\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          目前 \u003cspan class=\"info-stat\">18°C\u003c/span> → 目標 \u003cspan class=\"info-stat\">24°C\u003c/span>\u003cbr>\n          溫差保護啟動\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">累積運轉與健康度\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          累積運轉 \u003cspan class=\"info-stat\">820 小時\u003c/span>\u003cbr>\n          平均升溫 5.8°C\u003cbr>\n          下次維養 \u003cspan class=\"info-stat\">2027/06\u003c/span>\n        \u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">維養項目\u003c/div>\n        \u003cdiv class=\"info-detail\">加熱模組、排風系統檢查\u003c/div>\n      \u003c/div>\n    ","questions":["洗完澡後，浴室多久會恢復乾燥？","浴室暖風機下一次維養是什麼時候？"]},"sensor":{"name":"12合1感測器","icon":"ti-cpu","assetId":"AST-IEQ-SEN-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">環境品質\u003c/div>\n        \u003cdiv class=\"info-highlight\">空氣品質良好\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          濕度 \u003cspan class=\"info-stat\">72%\u003c/span>\n          PM2.5 \u003cspan class=\"info-stat\">8\u003c/span>\n        \u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">全部感測數據\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          溫度 \u003cspan class=\"info-stat\">26°C\u003c/span>\n          濕度 \u003cspan class=\"info-stat\">72%\u003c/span>\u003cbr>\n          CO₂ \u003cspan class=\"info-stat\">734 ppm\u003c/span>\n          PM2.5 \u003cspan class=\"info-stat\">8\u003c/span>\u003cbr>\n          甲醛 \u003cspan class=\"info-stat\">正常\u003c/span>\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">校正紀錄與設備履歷\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          上次校正 2025/11/20\u003cbr>\n          建議每 12 個月校正一次\u003cbr>\n          距離下次校正約 5 個月\n        \u003c/div>\n      \u003c/div>\n    ","questions":["梅雨季節到了，最近空氣品質真的好嗎？","感測器需要維養嗎？"]},"dehumidifier":{"name":"除濕機","icon":"ti-droplet-off","assetId":"AST-IEQ-DHU-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">運轉狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">除濕中\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          目前 \u003cspan class=\"info-stat\">72%\u003c/span> → 目標 \u003cspan class=\"info-stat\">60%\u003c/span>\u003cbr>\n          濕度控制啟動\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">運轉時數與維養\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          本月運轉 \u003cspan class=\"info-stat\">126 小時\u003c/span>\u003cbr>\n          累積運轉 \u003cspan class=\"info-stat\">1,532 小時\u003c/span>\u003cbr>\n          耗電量 \u003cspan class=\"info-stat\">48 kWh\u003c/span>\u003cbr>\n          下次維養 \u003cspan class=\"info-stat\">2027/03\u003c/span>\n        \u003c/div>\n      \u003c/div>\n      \u003chr class=\"divider\">\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">維養建議\u003c/div>\n        \u003cdiv class=\"info-detail\">建議清潔集水箱與濾網\u003c/div>\n      \u003c/div>\n    ","questions":["最近除濕機是不是很常開？","除濕機下一次維養是什麼時候？"]},"air-purifier":{"name":"空氣清淨機","icon":"ti-plant","assetId":"AST-IEQ-AQP-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">淨化狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">空氣淨化中\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          目前 PM2.5 \u003cspan class=\"info-stat\">18\u003c/span> → 目標 \u003cspan class=\"info-stat\">7.9 以下\u003c/span>\u003cbr>\n          淨化模式啟動\n        \u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">濾網壽命與維養\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          濾網壽命 \u003cspan class=\"info-stat\">63%\u003c/span>\u003cbr>\n          累積運轉 \u003cspan class=\"info-stat\">2,830 小時\u003c/span>\u003cbr>\n          預估 98 天後更換濾網\n        \u003c/div>\n      \u003c/div>\n    ","questions":["最近家裡空氣品質好嗎？","空氣清淨機什麼時候需要換濾網？"]},"curtain":{"name":"窗簾","icon":"ti-layout-bottombar","assetId":"AST-SHM-CUR-03F-B-001","statusA":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">遮陽狀態\u003c/div>\n        \u003cdiv class=\"info-highlight\">客廳窗簾關閉 80%\u003c/div>\n        \u003cdiv class=\"info-detail\">西曬遮陽中\u003c/div>\n      \u003c/div>\n    ","statusB":"\n      \u003cdiv class=\"info-section\">\n        \u003cdiv class=\"info-title\">馬達運轉與維養\u003c/div>\n        \u003cdiv class=\"info-detail\">\n          馬達累積運轉 \u003cspan class=\"info-stat\">8,200 次\u003c/span>\u003cbr>\n          距離下次保養約 1,800 次\n        \u003c/div>\n      \u003c/div>\n    ","questions":["今天窗簾有幫我遮陽嗎？","窗簾馬達需要維養嗎？"]}}};
+    const ownerCache = ownerData?.cache || null;
+    const devices = [
+      {id:'hrv',cacheKey:'erv',name:'新風機',code:'HRV-02',asset:'AST-FA-FAU-03F-B-001',systems:[['新風系統','SYS-MEP-HVAC-FA'],['全熱交換系統','SYS-MEP-HVAC-ERV']],rooms:['A-R-03F-B-01'],x:209,y:204},
+      {id:'ac',cacheKey:'ac',name:'冷氣',code:'AC-07',asset:'AST-AC-IDU-03F-B-001',systems:[['空調系統','SYS-MEP-HVAC-AC']],rooms:['A-R-03F-B-02','A-R-03F-B-05'],x:482,y:167},
+      {id:'dehum',cacheKey:'dehumidifier',name:'除濕機',code:'DH-01',asset:'AST-IEQ-DHU-03F-B-001',systems:[['室內環境系統','SYS-MEP-HLT-IEQ']],rooms:['A-R-03F-B-01'],x:190,y:385},
+      {id:'purifier',cacheKey:'air-purifier',name:'空氣清淨機',code:'AP-06',asset:'AST-IEQ-AQP-03F-B-001',systems:[['室內環境系統','SYS-MEP-HLT-IEQ']],rooms:['A-R-03F-B-01'],x:225,y:591},
+      {id:'sensor',cacheKey:'sensor',name:'12合一感測器',code:'SEN-09',asset:'AST-IEQ-SEN-03F-B-001',systems:[['室內環境系統','SYS-MEP-HLT-IEQ'],['物聯網系統','SYS-MEP-BMS-IOT']],rooms:['A-R-03F-B-01'],x:518,y:637},
+      {id:'light',cacheKey:'light',name:'燈',code:'LT-03',asset:'AST-LTG-LGT-03F-B-001',systems:[['照明系統','SYS-MEP-ELEC-LTG']],rooms:['A-R-03F-B-01'],x:874,y:638},
+      {id:'socket',cacheKey:'smart-outlet',name:'智慧插座',code:'PG-04',asset:'AST-SOC-SPO-03F-B-001',systems:[['插座系統','SYS-MEP-ELEC-SOC']],rooms:['A-R-03F-B-01'],x:1172,y:592},
+      {id:'curtain',cacheKey:'curtain',name:'窗簾',code:'CT-05',asset:'AST-SHM-CUR-03F-B-001',systems:[['智慧遮陽系統','SYS-MEP-ELV-SHM']],rooms:['A-R-03F-B-01'],x:1196,y:385},
+      {id:'bathfan',cacheKey:'bath-heater',name:'浴室暖風機',code:'BF-08',asset:'AST-EA-BHF-03F-B-001',systems:[['浴室暖風系統','SYS-MEP-HVAC-EA']],rooms:['A-R-03F-B-03'],x:1140,y:187}
+    ];
+    const byId = Object.fromEntries(devices.map(device => [device.id,device]));
+    const slots = new Map();
+    let cycleIndex = 0;
+    let currentId = devices[0].id;
+    let socket = null;
+    let retryTimer = null;
+    const requestedSocket = new URLSearchParams(location.search).get('ws');
+    const preview = document.getElementById('preview');
+    const previewButtons = document.getElementById('preview-buttons');
+    const graph = document.querySelector('.graph');
+    const kgScene = document.getElementById('kg-scene');
+    const kgLinks = document.getElementById('kg-links');
+    const kgNodes = document.getElementById('kg-nodes');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let graphFrame = 0;
+    let renderedGraphKey = null;
+    let movingNodes = [];
+    let movingEdges = [];
+    let tourOrder = [];
+    let tourIndex = 0;
+    let tourDeadline = 0;
+    let tourStepsSinceQa = 2;
+    let manualHoldUntil = 0;
+    let qaVisible = false;
+    let qaThinkTimer = 0;
+    let qaTypingTimer = 0;
+    let qaCloseTimer = 0;
+    const qaAlternation = new Map();
+    let graphZoom = 1;
+    let graphPan = {x:0,y:0};
+    const sourceModal = document.getElementById('source-modal');
+    const autoQa = document.getElementById('auto-qa');
+    const autoQaQuestion = document.getElementById('auto-qa-question');
+    const autoQaAnswer = document.getElementById('auto-qa-answer');
+    const elements = Object.fromEntries(['count','mode-pill','mode-text','graph-note','story-label','story-text'].map(id => [id,document.getElementById(id)]));
+
+    function fit() {
+      const scale = Math.min(innerWidth / 1920, innerHeight / 1080);
+      document.getElementById('stage').style.transform = `translate(-50%,-50%) scale(${scale})`;
+    }
+    addEventListener('resize',fit);
+    fit();
+
+    for (const device of devices) {
+      const button = document.createElement('button');
+      button.textContent = device.name;
+      button.dataset.id = device.id;
+      button.setAttribute('aria-pressed','false');
+      previewButtons.append(button);
+    }
+
+    function activeIds() {
+      return [...new Set([...slots.values()].filter(entry => entry.known !== false).map(entry => entry.data?.id).filter(id => byId[id]))];
+    }
+
+    function setText(key,value) { elements[key].textContent = value; }
+
+    function graphLabel(node,device) {
+      if (node.type === 'Asset') return device.name;
+      if (node.type === 'System') return devices.flatMap(item => item.systems).find(system => system[1] === node.id)?.[0] || node.name;
+      if (node.type === 'Project') return '建案';
+      if (node.type === 'Document') return '資產生命週期計畫';
+      return node.name;
+    }
+
+    function graphPositions(nodes) {
+      const groups = {Asset:[],System:[],Space:[],Project:[],Document:[],concept:[]};
+      for (const node of nodes) (groups[node.type] || groups.concept).push(node);
+      const positions = new Map();
+      const distribute = (group,x,start,end) => group.forEach((node,index) => positions.set(node.id,{x,y:group.length === 1 ? (start + end) / 2 : start + index * (end - start) / (group.length - 1)}));
+      distribute(groups.Asset,875,410,410);
+      distribute(groups.System,1170,225,555);
+      distribute(groups.Space,1500,135,690);
+      distribute(groups.Project,365,250,250);
+      distribute(groups.Document,365,555,555);
+      distribute(groups.concept,535,380,590);
+      return positions;
+    }
+
+    function updateGraphGeometry() {
+      for (const node of movingNodes) {
+        node.element.style.left = `${node.x}px`;
+        node.element.style.top = `${node.y}px`;
+      }
+      for (const edge of movingEdges) {
+        edge.line.setAttribute('x1',String(edge.source.x));
+        edge.line.setAttribute('y1',String(edge.source.y));
+        edge.line.setAttribute('x2',String(edge.target.x));
+        edge.line.setAttribute('y2',String(edge.target.y));
+        if (edge.label) {
+          edge.label.setAttribute('x',String((edge.source.x + edge.target.x) / 2));
+          edge.label.setAttribute('y',String((edge.source.y + edge.target.y) / 2 - 11));
+        }
+      }
+    }
+
+    function animateGraph(time) {
+      for (let index=0;index<movingNodes.length;index++) {
+        const node = movingNodes[index];
+        if (node.dragged) continue;
+        let forceX = (node.anchorX + Math.sin(time * 0.00065 + node.phase) * 7 - node.x) * 0.025;
+        let forceY = (node.anchorY + Math.cos(time * 0.00052 + node.phase) * 7 - node.y) * 0.025;
+        for (let otherIndex=0;otherIndex<movingNodes.length;otherIndex++) {
+          if (index === otherIndex) continue;
+          const other = movingNodes[otherIndex];
+          const distanceX = node.x - other.x;
+          const distanceY = node.y - other.y;
+          if (Math.abs(distanceX) < 210 && Math.abs(distanceY) < 82) {
+            forceX += Math.sign(distanceX || (index - otherIndex)) * (210 - Math.abs(distanceX)) * 0.0015;
+            forceY += Math.sign(distanceY || (index - otherIndex)) * (82 - Math.abs(distanceY)) * 0.0015;
+          }
+        }
+        node.vx = (node.vx + forceX) * 0.83;
+        node.vy = (node.vy + forceY) * 0.83;
+        node.x = Math.max(140,Math.min(1670,node.x + node.vx));
+        node.y = Math.max(110,Math.min(720,node.y + node.vy));
+      }
+      updateGraphGeometry();
+      graphFrame = requestAnimationFrame(animateGraph);
+    }
+
+    function graphPoint(event) {
+      const bounds = graph.getBoundingClientRect();
+      const localX = (event.clientX - bounds.left) * 1812 / bounds.width;
+      const localY = (event.clientY - bounds.top) * 820 / bounds.height;
+      return {x:(localX - 906 - graphPan.x) / graphZoom + 906,y:(localY - 410 - graphPan.y) / graphZoom + 410};
+    }
+
+    function updateGraphTransform() {
+      kgScene.style.transform = `translate(${graphPan.x}px,${graphPan.y}px) scale(${graphZoom})`;
+    }
+
+    function showTourStep() {
+      const node = tourOrder[tourIndex];
+      if (!node) return;
+      const typeLabel = {Asset:'資產',System:'系統',Space:'空間',Project:'建案',Document:'文件'}[node.type] || '關聯';
+      for (const item of movingNodes) item.element.classList.toggle('is-tour',item.id === node.id);
+      for (const edge of movingEdges) edge.line.classList.toggle('is-tour',edge.source.id === node.id || edge.target.id === node.id);
+      graphZoom = node.type === 'Asset' ? 1.06 : 1.14;
+      graphPan.x = Math.max(-560,Math.min(560,(906 - node.x) * graphZoom));
+      graphPan.y = Math.max(-180,Math.min(180,(410 - node.y) * graphZoom));
+      updateGraphTransform();
+      setText('story-label',`關係節點 ${String(tourIndex + 1).padStart(2,'0')} / ${String(tourOrder.length).padStart(2,'0')}`);
+      setText('story-text',`${byId[currentId].name} → ${typeLabel}：${node.name}`);
+      setText('graph-note',`${byId[currentId].name} · ${typeLabel}`);
+      tourDeadline = Date.now() + 3000;
+    }
+
+    function advanceTour() {
+      if (!tourOrder.length || qaVisible || Date.now() < tourDeadline || Date.now() < manualHoldUntil || !sourceModal.hidden) return;
+      tourStepsSinceQa += 1;
+      if (tourStepsSinceQa >= 3) {
+        tourStepsSinceQa = 0;
+        showAutoQa();
+        return;
+      }
+      tourIndex = (tourIndex + 1) % tourOrder.length;
+      showTourStep();
+    }
+
+    function answerExcerpt(answer) {
+      const paragraphs = answer.split(/\n\s*\n/).map(paragraph => paragraph.split('\n').filter(line => !/^\s*(?:\||\[SOURCE:|#{1,6}\s|---)/.test(line)).join(' ').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/[`*_>#]/g,'').replace(/\s+/g,' ').trim()).filter(paragraph => paragraph.length >= 35 && !/^(?:我來|感謝|找到|以下是|根據所有查詢|如需|需要我)/.test(paragraph));
+      let excerpt = paragraphs[0] || answer.replace(/[`*_#]/g,'').replace(/\s+/g,' ').trim();
+      if (/[：:]$/.test(excerpt) && paragraphs[1]) excerpt += ` ${paragraphs[1]}`;
+      if (excerpt.length <= 92) return excerpt;
+      const shortened = excerpt.slice(0,92);
+      const sentenceEnd = Math.max(shortened.lastIndexOf('。'),shortened.lastIndexOf('！'),shortened.lastIndexOf('？'));
+      return sentenceEnd >= 45 ? shortened.slice(0,sentenceEnd + 1) : `${shortened.trimEnd()}…`;
+    }
+
+    function closeAutoQa(restartTour = false) {
+      clearTimeout(qaThinkTimer);
+      clearInterval(qaTypingTimer);
+      clearTimeout(qaCloseTimer);
+      qaVisible = false;
+      autoQa.hidden = true;
+      if (restartTour && tourOrder.length) {
+        tourIndex = (tourIndex + 1) % tourOrder.length;
+        showTourStep();
+      }
+    }
+
+    function showAutoQa() {
+      const device = byId[currentId];
+      const entries = Object.entries(ownerCache?.qa?.[device.cacheKey] || {});
+      if (!entries.length) {tourIndex = 0;showTourStep();return;}
+      const nextIndex = qaAlternation.get(device.id) || 0;
+      qaAlternation.set(device.id,(nextIndex + 1) % entries.length);
+      const [question,answer] = entries[nextIndex];
+      qaVisible = true;
+      autoQaQuestion.textContent = question;
+      autoQaAnswer.textContent = '正在整理關聯資料…';
+      autoQa.hidden = false;
+      setText('story-label','AI 知識問答');
+      setText('story-text',`${device.name} · 原始示範回答`);
+      qaThinkTimer = setTimeout(() => {
+        const excerpt = answerExcerpt(answer);
+        if (reduceMotion) autoQaAnswer.textContent = excerpt;
+        else {
+          autoQaAnswer.textContent = '';
+          let position = 0;
+          qaTypingTimer = setInterval(() => {
+            position = Math.min(position + 6,excerpt.length);
+            autoQaAnswer.textContent = excerpt.slice(0,position);
+            if (position === excerpt.length) clearInterval(qaTypingTimer);
+          },32);
+        }
+      },650);
+      qaCloseTimer = setTimeout(() => closeAutoQa(true),13500);
+    }
+
+    let panStart = null;
+    kgScene.addEventListener('wheel',event => {
+      event.preventDefault();
+      manualHoldUntil = Date.now() + 12000;
+      graphZoom = Math.max(0.75,Math.min(1.6,graphZoom * (event.deltaY < 0 ? 1.08 : 0.92)));
+      updateGraphTransform();
+    },{passive:false});
+    kgScene.addEventListener('pointerdown',event => {
+      if (event.target.closest('.kg-node')) return;
+      manualHoldUntil = Date.now() + 12000;
+      panStart = {x:event.clientX,y:event.clientY,panX:graphPan.x,panY:graphPan.y};
+      kgScene.setPointerCapture(event.pointerId);
+    });
+    kgScene.addEventListener('pointermove',event => {
+      if (!panStart) return;
+      manualHoldUntil = Date.now() + 12000;
+      const bounds = graph.getBoundingClientRect();
+      graphPan.x = panStart.panX + (event.clientX - panStart.x) * 1812 / bounds.width;
+      graphPan.y = panStart.panY + (event.clientY - panStart.y) * 820 / bounds.height;
+      updateGraphTransform();
+    });
+    const stopPan = () => {panStart = null;};
+    kgScene.addEventListener('pointerup',stopPan);
+    kgScene.addEventListener('pointercancel',stopPan);
+    kgScene.addEventListener('dblclick',() => {
+      manualHoldUntil = Date.now() + 12000;
+      graphZoom = 1;graphPan = {x:0,y:0};updateGraphTransform();
+    });
+
+    function renderKnowledgeGraph(device) {
+      const nextKey = device?.cacheKey || null;
+      graph.classList.toggle('focus-mode',!!nextKey && !!ownerCache);
+      if (nextKey === renderedGraphKey) return;
+      renderedGraphKey = nextKey;
+      cancelAnimationFrame(graphFrame);
+      graphFrame = 0;
+      movingNodes = [];
+      movingEdges = [];
+      tourOrder = [];
+      tourIndex = 0;
+      tourStepsSinceQa = 2;
+      manualHoldUntil = 0;
+      kgNodes.replaceChildren();
+      kgLinks.replaceChildren();
+      graphZoom = 1;
+      graphPan = {x:0,y:0};
+      updateGraphTransform();
+      if (!device || !ownerCache) return;
+      const cached = ownerCache.kg?.[device.cacheKey];
+      if (!cached) return;
+      const nodes = cached.nodes.filter(node => node.type !== 'Space' || node.id.includes('03F-B'));
+      const positions = graphPositions(nodes);
+      const movingById = new Map();
+      for (const [index,node] of nodes.entries()) {
+        const position = positions.get(node.id);
+        if (!position) continue;
+        const element = document.createElement('div');
+        element.className = `kg-node ${String(node.type || 'concept').toLowerCase()}`;
+        element.title = node.name;
+        element.style.animationDelay = `${Math.min(index * 55,400)}ms`;
+        const type = document.createElement('div');type.className = 'kg-node-type';type.textContent = {Asset:'資產',System:'系統',Space:'空間',Project:'建案',Document:'文件'}[node.type] || '關聯';
+        const name = document.createElement('div');name.className = 'kg-node-name';name.textContent = graphLabel(node,device);
+        element.append(type,name);
+        kgNodes.append(element);
+        const moving = {id:node.id,type:node.type,name:graphLabel(node,device),element,anchorX:position.x,anchorY:position.y,x:reduceMotion ? position.x : 906 + (position.x - 906) * 0.66,y:reduceMotion ? position.y : 410 + (position.y - 410) * 0.66,vx:0,vy:0,phase:index * 1.7,dragged:false};
+        movingNodes.push(moving);
+        movingById.set(node.id,moving);
+        element.addEventListener('pointerdown',event => {
+          event.stopPropagation();
+          manualHoldUntil = Date.now() + 12000;
+          moving.dragged = true;
+          moving.vx = 0;moving.vy = 0;
+          element.setPointerCapture(event.pointerId);
+        });
+        element.addEventListener('pointermove',event => {
+          if (!moving.dragged) return;
+          manualHoldUntil = Date.now() + 12000;
+          const point = graphPoint(event);
+          moving.x = Math.max(140,Math.min(1670,point.x));
+          moving.y = Math.max(110,Math.min(720,point.y));
+          moving.anchorX = moving.x;
+          moving.anchorY = moving.y;
+          updateGraphGeometry();
+        });
+        const release = () => {moving.dragged = false;};
+        element.addEventListener('pointerup',release);
+        element.addEventListener('pointercancel',release);
+      }
+      for (const edge of cached.edges) {
+        const source = movingById.get(edge.source);
+        const target = movingById.get(edge.target);
+        if (!source || !target) continue;
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('class','kg-edge');
+        kgLinks.append(line);
+        let label = null;
+        if (edge.source === device.asset && edge.relation !== '屬於專案' && edge.relation !== '關聯') {
+          label = document.createElementNS('http://www.w3.org/2000/svg','text');
+          label.setAttribute('class','kg-edge-label');
+          label.textContent = edge.relation;
+          kgLinks.append(label);
+        }
+        movingEdges.push({source,target,line,label});
+      }
+      updateGraphGeometry();
+      const typeOrder = {Asset:0,System:1,Space:2,Project:3,Document:4,concept:5};
+      tourOrder = [...movingNodes].sort((first,second) => (typeOrder[first.type] ?? 5) - (typeOrder[second.type] ?? 5));
+      showTourStep();
+      if (!reduceMotion) graphFrame = requestAnimationFrame(animateGraph);
+    }
+
+    function showSource(title,content) {
+      document.getElementById('source-title').textContent = title;
+      document.getElementById('source-body').textContent = content;
+      sourceModal.hidden = false;
+    }
+
+    function render() {
+      const selected = byId[currentId] || devices[0];
+      const active = activeIds();
+      renderKnowledgeGraph(selected);
+      setText('count',String(cycleIndex + 1).padStart(2,'0'));
+      document.querySelectorAll('#preview-buttons button').forEach(button => button.setAttribute('aria-pressed',String(active.includes(button.dataset.id))));
+    }
+
+    function prioritize(id) {
+      const index = devices.findIndex(device => device.id === id);
+      if (index < 0) return;
+      closeAutoQa();
+      const changed = currentId !== id;
+      tourStepsSinceQa = 2;
+      cycleIndex = index;
+      currentId = id;
+      render();
+      if (!changed && tourOrder.length) {tourIndex = 0;showTourStep();}
+    }
+
+    let renderedRevision=0,receivedSnapshot=false,graphSession=false;
+    function reportGraph(){if(socket?.readyState===1&&receivedSnapshot)socket.send(JSON.stringify({type:'f-render',revision:renderedRevision,active:activeIds(),session:graphSession,muted:true,visible:!document.hidden,output:{nodes:document.querySelectorAll('.kg-node').length,selected:currentId}}));}
+    setInterval(reportGraph,2000);
+    function receive(event) {
+      if (!event || typeof event !== 'object') return;
+      if(Number.isInteger(event.revision))renderedRevision=event.revision;
+      if (event.type === 'snapshot' && Array.isArray(event.slots)) {
+        receivedSnapshot=true;graphSession=!!event.session;slots.clear();
+        for (const entry of event.slots) if (Number.isInteger(entry.slot_index) && entry.slot_index >= 1 && entry.slot_index <= 9) slots.set(entry.slot_index,entry);
+        const lastActive = activeIds().at(-1);
+        if (lastActive) prioritize(lastActive);
+      } else if (event.type === 'tag-present' && Number.isInteger(event.slot_index)) {
+        slots.set(event.slot_index,{known:event.known,data:event.data});
+        if (event.known !== false && byId[event.data?.id]) prioritize(event.data.id);
+      } else if (event.type === 'tag-remove' && Number.isInteger(event.slot_index)) {
+        slots.delete(event.slot_index);
+      } else if (event.type === 'reader-disconnected' && Number.isInteger(event.slot_index)) {
+        slots.delete(event.slot_index);
+      } else if (event.type === 'session-start') {
+        graphSession=true;
+      } else if (event.type === 'session-end') {
+        graphSession=false;
+        slots.clear();
+      } else {reportGraph();return;}
+      render();
+      if(socket?.readyState===1)setMode(activeIds().length?'NFC 即時連線':'等待感應 · 保留圖譜',true);
+      reportGraph();
+    }
+
+    function setMode(label,connected) {
+      setText('mode-text',label);
+      elements['mode-pill'].classList.toggle('live',connected);
+    }
+
+    function connect() {
+      if (!requestedSocket) return;
+      try {
+        const address = new URL(requestedSocket);
+        if (!['ws:','wss:'].includes(address.protocol)) throw new Error('Invalid WebSocket URL');
+        address.searchParams.set('role','graph');
+        socket = new WebSocket(address);
+        socket.addEventListener('open',() => setMode('NFC 即時連線',true));
+        socket.addEventListener('message',message => {
+          try { receive(JSON.parse(message.data)); } catch {}
+        });
+        socket.addEventListener('close',() => {
+          receivedSnapshot=false;setMode('NFC 連線中斷',false);
+          slots.clear();render();
+          retryTimer = setTimeout(connect,2500);
+        });
+        socket.addEventListener('error',() => socket.close());
+      } catch { setMode('NFC 位址無效',false); }
+    }
+
+    previewButtons.addEventListener('click',event => {
+      const button = event.target.closest('button[data-id]');
+      if (!button) return;
+      const index = devices.findIndex(device => device.id === button.dataset.id) + 1;
+      if (slots.has(index)) receive({type:'tag-remove',slot_index:index});
+      else receive({type:'tag-present',slot_index:index,known:true,data:{id:button.dataset.id}});
+    });
+    document.getElementById('clear-button').addEventListener('click',() => receive({type:'session-end'}));
+    document.getElementById('preview-toggle').addEventListener('click',() => preview.classList.toggle('collapsed'));
+    document.getElementById('source-qa-button').addEventListener('click',() => {
+      const device = byId[currentId];
+      if (!device || !ownerCache) return;
+      const answers = Object.entries(ownerCache.qa?.[device.cacheKey] || {}).map(([question,answer]) => `${question}\n\n${answer}`).join('\n\n──────────\n\n');
+      showSource(`${device.name} · 業主原始問答`,answers);
+    });
+    document.getElementById('source-graph-button').addEventListener('click',() => {
+      if (!ownerCache) return;
+      const nodes = ownerCache.brain.nodes.map(node => `${node.type} · ${node.name}`).join('\n');
+      const edges = ownerCache.brain.edges.map(edge => `${edge.source} —${edge.relation}→ ${edge.target}`).join('\n');
+      showSource('業主原始圖譜 · 32 節點／65 關係',`節點\n${nodes}\n\n關係\n${edges}`);
+    });
+    document.getElementById('source-close').addEventListener('click',() => {sourceModal.hidden = true;});
+    sourceModal.addEventListener('click',event => {if (event.target === sourceModal) sourceModal.hidden = true;});
+    addEventListener('keydown',event => {if (event.key === 'Escape') sourceModal.hidden = true;});
+    if (requestedSocket) { preview.hidden = true;setMode('等待 NFC 連線',false);connect(); }
+    setInterval(advanceTour,250);
+    render();
+    if(new URLSearchParams(location.search).has('mute')){const badge=document.createElement('div');badge.textContent='F 本機驗證 · 靜音（無音訊）';badge.style.cssText='position:fixed;top:4px;left:4px;color:white;background:#234;z-index:9999;font:12px sans-serif;padding:5px';document.body.append(badge);}
+  </script>
+</body>
+</html>

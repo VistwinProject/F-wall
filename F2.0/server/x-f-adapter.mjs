@@ -3,26 +3,29 @@ import {randomUUID} from 'node:crypto';
 // Drop-in X adapter. Only F uses this factory; no shared ws adapter changes.
 export function makeFAdapter(zone,{onStatus,log=()=>{}}){
   let ws,timer,stopped=false,pending=null;
+  let required=['table','wall','graph'];
   const observed={displays:{},outputs:[],phase:null,revision:null,scope:'F-table / FWALL / F-knowledge-graph-27'};
   function fail(error){if(pending){clearTimeout(pending.timer);pending.reject(new Error(error));pending=null;}}
   function check(){
     if(!pending||pending.revision===undefined)return;
-    const missing=['table','wall','graph'].filter(role=>!observed.displays[role]?.ready||observed.displays[role].revision<pending.revision);
-    if(!missing.length){const p=pending;pending=null;clearTimeout(p.timer);p.resolve(`F 三屏 rendered ack revision ${p.revision}`);}
+    const missing=required.filter(role=>!observed.displays[role]?.ready||observed.displays[role].revision<pending.revision);
+    if(!missing.length){const p=pending;pending=null;clearTimeout(p.timer);p.resolve(`F 必要畫面 rendered ack revision ${p.revision}`);}
   }
   function connect(){
     if(stopped)return;
     ws=new WebSocket(zone.transport.url);
-    ws.on('open',()=>{onStatus(false,'F 服務已連線，等待三屏 ready');ws.send(JSON.stringify({type:'f-status-request'}));});
+    ws.on('open',()=>{onStatus(false,'F 服務已連線，等待必要畫面 ready');ws.send(JSON.stringify({type:'f-status-request'}));});
     ws.on('message',raw=>{
       let m;try{m=JSON.parse(String(raw));}catch{return;}
       if(m.type==='f-command-accepted'&&m.requestId===pending?.id){pending.revision=m.revision;check();}
       if(m.type==='f-command-error'&&m.requestId===pending?.id)fail(m.error);
       if(m.type==='f-status'){
+        required=Array.isArray(m.required)&&m.required.includes('table')&&m.required.includes('wall')&&m.required.every(r=>['table','wall','graph','ipad'].includes(r))?[...new Set(m.required)]:['table','wall','graph'];
+        observed.required=[...required];
         observed.displays=m.displays;observed.revision=m.revision;
         observed.outputs=Object.entries(m.displays).map(([id,d])=>({id,...d}));
         observed.phase=m.displays.table?.session?'live':'welcome';
-        onStatus(m.ready,['table','wall','graph'].map(r=>`${r}: ${m.displays[r]?.ready?'ready r'+m.displays[r].revision+' ('+(m.displays[r].active?.length||0)+')':m.displays[r]?.connected?'等待渲染':'離線'}`).join(' · '));check();
+        onStatus(m.ready,required.map(r=>`${r}: ${m.displays[r]?.ready?'ready r'+m.displays[r].revision+' ('+(m.displays[r].active?.length||0)+')':m.displays[r]?.connected?'等待渲染':'離線'}`).join(' · '));check();
       }
     });
     ws.on('error',e=>log('warn',e.message));
@@ -33,6 +36,6 @@ export function makeFAdapter(zone,{onStatus,log=()=>{}}){
     if(ws?.readyState!==WebSocket.OPEN)return Promise.reject(new Error('F 未連線'));
     if(pending)return Promise.reject(new Error('F 上一指令尚未確認'));
     const command=option&&action.sendFor?action.sendFor(option):action.send;
-    return new Promise((resolve,reject)=>{const id=randomUUID();pending={id,resolve,reject,timer:setTimeout(()=>fail('F 三屏 rendered ack 逾時；請查看各屏狀態'),10000)};ws.send(JSON.stringify({type:'f-command',requestId:id,command}));});
+    return new Promise((resolve,reject)=>{const id=randomUUID();pending={id,resolve,reject,timer:setTimeout(()=>fail('F 必要畫面 rendered ack 逾時；請查看各屏狀態'),10000)};ws.send(JSON.stringify({type:'f-command',requestId:id,command}));});
   }};
 }
