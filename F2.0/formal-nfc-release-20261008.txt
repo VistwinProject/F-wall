@@ -1,0 +1,13 @@
+2026-10-08 正式 NFC 卡片交付
+
+F2.0/server/uid-map.json 為本次逐張登記的九張正式卡，現已納入版本管理。
+F2.0/formal-nfc-20261008.json 保存 Mac 單台 ACR122U、正式服務重啟後的九張複驗紀錄。
+讀卡機位置 reader-map.json 仍為現場設定，不納入版本管理。
+
+Windows 完整離線包統一由 VistwinProject/F-table 的 GitHub Release 提供：
+https://github.com/VistwinProject/F-table/releases/tag/f-zone-windows-20261008-r2-formal-nfc
+F-wall / F-Ipad 本次只同步卡片資料與紀錄；不要用各 repo 舊版打包流程重建 Windows 交付包。
+
+更新先停止程式並備份原安裝目錄。保留現場 reader-map.json、windows/settings.json、led-settings.json 與瀏覽器校正。
+採用新版 uid-map.json，不要將舊 UID 映射覆蓋回來。重新啟動才會載入新映射。
+尚未代表 Windows 現場、九讀卡機同時感應、三屏投影、音訊、重置或燈條驗收。

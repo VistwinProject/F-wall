@@ -30,7 +30,7 @@ wall-export.txt
 
 F2.0/node_modules/
 F2.0/dist/
-F2.0/server/uid-map.json
+# Formal card UIDs are versioned; reader positions remain site-local.
 F2.0/server/reader-map.json
 .env
 .env.*

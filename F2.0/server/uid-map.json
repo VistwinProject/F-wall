@@ -1,0 +1,38 @@
+{
+  "04ABBAA5772681": {
+    "id": "hrv",
+    "label": "新風機"
+  },
+  "04BDBAA5772681": {
+    "id": "ac",
+    "label": "冷氣"
+  },
+  "04ACBAA5772681": {
+    "id": "dehum",
+    "label": "除濕機"
+  },
+  "04B6BAA5772681": {
+    "id": "purifier",
+    "label": "空氣清淨機"
+  },
+  "04BCBAA5772681": {
+    "id": "sensor",
+    "label": "12 合 1 感測器"
+  },
+  "04ADBAA5772681": {
+    "id": "light",
+    "label": "燈光"
+  },
+  "04B7BAA5772681": {
+    "id": "socket",
+    "label": "智慧插座"
+  },
+  "04B5BAA5772681": {
+    "id": "curtain",
+    "label": "窗簾"
+  },
+  "04B4BAA5772681": {
+    "id": "bathfan",
+    "label": "浴室暖風機"
+  }
+}
