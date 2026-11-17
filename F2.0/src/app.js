@@ -4,7 +4,7 @@ import {batchFrame} from './frame-batch.js';
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS} from './devices.js';
 import {Session} from './session.js';
 import {PANEL_CONTENT,panelFacts} from './panel-content.js';
-import {tableReports} from './table-reports.js';
+import {tableReports,playReportVideo} from './table-reports.js';
 import {ipadDetail,insightPanel} from './ipad-insights.js';
 import {applianceIcon} from './appliance-icons.js';
 import {wallOperation} from './wall-operations.js';
@@ -188,14 +188,14 @@ function updateFocus(id){
   incoming.style.opacity=outgoing?'0':'1';
   panel.append(incoming);
   const video=incoming.querySelector('video');
+  if(video){incoming.style.opacity='0';playReportVideo(video);}
   video?.addEventListener('ended',()=>{
     if(!video.isConnected||focused!==id)return;
     const active=state.active;
     if(!active.length){updateFocus(null);return;}
     const next=active[(active.indexOf(id)+1)%active.length];
     if(next!==id){updateFocus(next);return;}
-    video.currentTime=0;
-    video.play().catch(()=>{});
+    playReportVideo(video);
   });
   const controller=new AbortController();
   let animations=[],timer=null,started=false,cancelled=false;
@@ -226,10 +226,10 @@ function updateFocus(id){
     }).catch(()=>{});
   };
   // Hold the previous frame until the replacement video has an image to show.
-  if(video&&video.readyState<2){
-    video.addEventListener('loadeddata',reveal,{once:true,signal:controller.signal});
+  if(video){
+    video.addEventListener('playing',reveal,{once:true,signal:controller.signal});
     video.addEventListener('error',reveal,{once:true,signal:controller.signal});
-    timer=setTimeout(reveal,1800);
+    // Reveal only after the seek has completed and playback actually starts.
   }else reveal();
 }
 addEventListener('pagehide',()=>{focusCleanup();stage.querySelectorAll('#info-panel>.table-reports').forEach(releaseReportLayer);},{once:true});

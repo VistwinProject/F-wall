@@ -1,4 +1,6 @@
+import {parseByteRange} from './video-byte-range.mjs';
 import {toggleDisplays,reloadDisplay} from './window-control.mjs';
+import {installWebVolume} from './web-volume.mjs';
 import {createExhibitionExit,isLocalExitRequest} from './exhibition-exit.mjs';
 import {guardTransport,sendBounded} from './transport-guard.mjs';
 import {installRollingLog} from './rolling-log.mjs';
@@ -59,7 +61,7 @@ async function serve(req,res) {
       try{const result=await toggleDisplays();res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(result));}
       catch(error){res.writeHead(503);res.end(error.message);}return;
     }
-    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),displayStatus:displayMonitor.status(),app:'f-control-tower',mode:live?'live':'sim',instance:process.env.F_INSTANCE_ID||null,graphBundled:true,runtime:{uptimeSeconds:Math.floor(process.uptime()),memory:process.memoryUsage(),websocketClients:wss.clients.size,nfcEventLimit:100,nfcErrorLimit:20},led:ledControl.status(),nfc:{...nfcStatus,connected:connectedReaders.size}}));return;}
+    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),displayStatus:displayMonitor.status(),audioControl:webVolume.snapshot(),app:'f-control-tower',mode:live?'live':'sim',instance:process.env.F_INSTANCE_ID||null,graphBundled:true,runtime:{uptimeSeconds:Math.floor(process.uptime()),memory:process.memoryUsage(),websocketClients:wss.clients.size,nfcEventLimit:100,nfcErrorLimit:20},led:ledControl.status(),nfc:{...nfcStatus,connected:connectedReaders.size}}));return;}
     const p = decodeURIComponent(url.pathname);
     let file;
     if(p==='/graph'){const graph=await readFile(path.join(process.env.F_GRAPH_ROOT||path.join(root,'public/graph'),'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(graph.toString().replace('</body>','<script src="/display-fullscreen.js"></script></body>'));return;}
@@ -71,8 +73,15 @@ async function serve(req,res) {
     const allowed=[path.join(contentRoot,'src')+path.sep,path.join(contentRoot,'public')+path.sep,path.join(root,'node_modules/three/build')+path.sep,path.join(root,'node_modules/three/examples/jsm')+path.sep];
     if(file!==path.join(contentRoot,'index.html')&&!allowed.some(a=>file.startsWith(a))){res.writeHead(403);res.end();return;}
     const s=await stat(file);if(!s.isFile())throw Error('not a file');
-    res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
-    const stream=createReadStream(file);
+    const headers={'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store','Content-Length':s.size};
+    const video=path.extname(file)==='.mp4';
+    if(video)headers['Accept-Ranges']='bytes';
+    const range=video?parseByteRange(req.headers.range,s.size):null;
+    if(range===false){res.writeHead(416,{'Content-Range':'bytes */'+s.size,'Content-Length':0});res.end();return;}
+    if(range){headers['Content-Range']='bytes '+range.start+'-'+range.end+'/'+s.size;headers['Content-Length']=range.end-range.start+1;}
+    res.writeHead(range?206:200,headers);
+    if(req.method==='HEAD'){res.end();return;}
+    const stream=createReadStream(file,range||undefined);
     res.once('close',()=>stream.destroy());
     stream.on('error',error=>{console.error('Asset stream:',error.message);res.destroy();});
     stream.pipe(res);
@@ -80,6 +89,7 @@ async function serve(req,res) {
 }
 const wss = new WebSocketServer({noServer:true,maxPayload:8192});
 const transportGuard=guardTransport(wss);
+const webVolume=installWebVolume(wss);
 const displayMonitor=monitorDisplays(wss,snapshot,process.env.F_REQUIRED_DISPLAYS?.split(',').map(role=>role.trim()));
 function broadcast(event) {
   ledControl.sync(slots);

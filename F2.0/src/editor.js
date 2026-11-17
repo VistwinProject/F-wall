@@ -35,6 +35,8 @@ defaults.wall.iconQuads=clone(defaults.wall.maskQuads);
 defaults.wall.frameQuad=identityQuad();
 defaults.wall.photoQuads=clone(defaults.wall.maskQuads);
 Object.assign(defaults.wall,clone(wallPreset.tuning));
+// Older calibration exports omit body size; preserve their existing 12px appearance.
+defaults.wall.panelText={body:12,...defaults.wall.panelText};
 for(const layer of ['maskQuads','photoQuads','iconQuads'])for(const id of ['hub','screen'])defaults.wall[layer][id]=identityQuad();
 Object.assign(defaults.ipad,clone(ipadPreset.tuning));
 Object.assign(defaults.table,clone(tablePreset.tuning));
@@ -56,7 +58,7 @@ function merge(base,raw){
 }
 export function loadTuning(role){
  if(role==='table'){
-  const revision='2026-10-13-table-tuning-recalibrated';
+  const revision='2026-11-17-table-tuning-2';
   try{
    if(localStorage.getItem('f2-table-preset-revision')!==revision){
     const tuning=localStorage.getItem('f2-tuning-table'),positions=localStorage.getItem('f2-layout-table');
@@ -68,7 +70,7 @@ export function loadTuning(role){
   }catch{}
  }
  if(role==='wall'){
-  const revision='2026-10-13-wall-tuning-5';
+  const revision='2026-11-17-wall-tuning-8';
   try{
    if(localStorage.getItem('f2-wall-preset-revision')!==revision){
     const tuning=localStorage.getItem('f2-tuning-wall'),positions=localStorage.getItem('f2-layout-wall');
@@ -92,6 +94,7 @@ export function loadTuning(role){
   if(!raw?.iconQuads?.[id])t.iconQuads[id]=clone(t.maskQuads[id]);
   else if(!validQuad(t.iconQuads[id]))t.iconQuads[id]=identityQuad();
  }
+ if(role==='wall')t.panelText.body=clamp(t.panelText.body,8,36);
  if(role==='wall')t.imageOpacity=clamp(t.imageOpacity,0,100);
  if(role==='wall'&&!validQuad(t.frameQuad))t.frameQuad=identityQuad();
  if(role==='wall')t.frameWidth=clamp(Number.isFinite(raw?.frameWidth)?raw.frameWidth:defaults.wall.frameWidth,0,.04);
@@ -153,7 +156,7 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
    else if(WARP_DEVICES.includes(id))body+=`<h3>分層四角變形</h3><label class="tune-select">變形圖層<select data-warp-layer aria-label="變形圖層"><option value="maskQuads" ${warpLayer==='maskQuads'?'selected':''}>家電遮罩</option><option value="photoQuads" ${warpLayer==='photoQuads'?'selected':''}>家電圖片</option><option value="iconQuads" ${warpLayer==='iconQuads'?'selected':''}>動態 icon</option></select></label><p>目前調整：${warpLayer==='maskQuads'?'家電遮罩（青色）':warpLayer==='photoQuads'?'家電圖片（橘色）':'動態 icon（紫色）'}。拖曳四角只改變此層；其他兩層保持不動。Alt 取消吸附。原本虛線框的移動／尺寸仍共同調整整台。</p><button data-cmd="reset-quad">還原此層四角</button>${warpLayer!=='maskQuads'?'<button data-cmd="align-layer">此層對齊遮罩</button>':''}`;
   }
   if(tab==='frame')body+=`<p>拖曳四角紅色十字，只校正框架與框架連接光線，不移動家電及資料面板。</p><button data-cmd="reset-frame-quad">還原框架四角</button>`+`<label><input type="checkbox" data-setting-flag="showFrame" ${tune.showFrame?'checked':''}>顯示外框格線</label>`+num('frameWidth','背景框架粗細',0,.04,.0005)+num('frame.4','外框圓角',0,200)+`<p>拖曳外框四邊可分別調整寬高，對邊保持不動；拖曳框內移動整個外框，右下角同時調整寬高。橘色格線可個別移動。背景粗細只影響外框與格線。</p>`;
-  if(tab==='panel')body+=`<div class="tune-actions"><button data-cmd="add">新增面板</button><button data-cmd="delete">刪除選取</button><button data-cmd="restore">還原刪除</button><button data-cmd="unify">統一為選取尺寸</button><button data-cmd="common">統一為常用尺寸</button></div>`+num('panelText.title','標題字級',6,30)+num('panelText.rowGap','資料列間距',10,60)+['上','右','下','左'].map((s,i)=>num('panelPad.'+i,s+'內距',0,60)).join('');
+  if(tab==='panel')body+=`<div class="tune-actions"><button data-cmd="add">新增面板</button><button data-cmd="delete">刪除選取</button><button data-cmd="restore">還原刪除</button><button data-cmd="unify">統一為選取尺寸</button><button data-cmd="common">統一為常用尺寸</button></div>`+num('panelText.title','標題字級',6,30)+num('panelText.body','內文字級',8,36)+num('panelText.rowGap','資料列間距',10,60)+num('panelPad.0','邊緣間距',0,60);
  }else if(role==='table'){
  body+=`<h3>整體畫面位置</h3><p>負值往上、正值往下；背景、內容、感應圈與遮罩一起移動。超出投影畫面的部分會被裁切。</p>`+num('projection.offsetY','整體上下位移',-2000,2000,.1)+`<button data-cmd="reset-table-offset">還原上下位置</button><h3>投影範圍與 iPad 遮罩</h3><p>拖曳感應區框線移動整區；框內可拖曳 NFC 與核心。NFC 1↔9、2↔8、3↔7、4↔6 以 5 號為中線鏡像移動。以 1390 × 600 為基準；保留物件原始比例，向外延伸背景。黑塊固定貼底，拖曳內部可左右移動，上下邊調整高度、左右邊調整寬度。尺寸與圓角使用相同基準單位。</p>`+num('projection.width','投影寬度',400,4000,.1)+num('projection.height','投影高度',200,2000,.1)+num('projection.corners.0','圓角大小',0,300,.1)+`<label><input type="checkbox" data-setting-flag="projection.maskOn" ${tune.projection.maskOn?'checked':''}>啟用底部黑色遮罩</label>`+`<h3>底部遮罩四角校正</h3><button data-cmd="mask-warp" aria-pressed="${maskWarp}">${maskWarp?'結束遮罩四角校正':'編輯遮罩四角'}</button><button data-cmd="reset-mask-warp">還原遮罩四角</button><p>拖曳四角向內調整黑色遮罩；僅影響遮罩。最小單位 0.1。</p>${maskWarp?tune.projection.maskQuad.map((p,i)=>`<div class="tune-coordinates"><span>${['左上','右上','右下','左下'][i]}</span>${p.map((v,a)=>`<label>${a?'Y':'X'}<input type="number" aria-label="遮罩${['左上','右上','右下','左下'][i]}${a?'Y':'X'}" data-table-mask-corner="${i}" data-mask-axis="${a}" min="0" max="${a?tune.projection.maskHeight:tune.projection.maskWidth}" step="0.1" value="${Math.round(v*(a?tune.projection.maskHeight:tune.projection.maskWidth)*10)/10}"></label>`).join('')}</div>`).join(''):''}`+num('phoneScale','手機畫面倍率',.25,2,.01)+num('slotSize','九個 NFC 圈統一直徑',40,200,.1)+num('hubSize','中樞直徑',100,600,.1)+`<button data-cmd="orbit">恢復感應圈與中樞位置</button><h3>背景梯形校正</h3><button data-cmd="background-warp" aria-pressed="${backgroundWarp}">${backgroundWarp?'結束背景四角校正':'編輯背景四角'}</button><button data-cmd="reset-background-warp">還原背景四角</button><p>拖曳青色四角，僅校正漸層背景。內容、感應圈與底部遮罩保持原樣；數值單位與投影寬高一致。</p>${backgroundWarp?tune.bg.quad.map((p,i)=>`<div class="tune-coordinates"><span>${['左上','右上','右下','左下'][i]}</span>${p.map((v,a)=>`<label>${a?'Y':'X'}<input type="number" aria-label="背景${['左上','右上','右下','左下'][i]}${a?'Y':'X'}" data-bg-corner="${i}" data-bg-axis="${a}" min="0" max="${a?tune.projection.height:tune.projection.width}" step="0.1" value="${Math.round(v*(a?tune.projection.height:tune.projection.width)*10)/10}"></label>`).join('')}</div>`).join(''):''}<h3>背景漸層</h3><label><input data-bg-on type="checkbox" ${tune.bg.on?'checked':''}>啟用漸層</label>`+num('bg.spread','擴散半徑',20,160)+num('bg.strength','濃度',0,1,.01)+`<p>背景為靜態漸層，僅在調整色點時更新。</p>`+tune.bg.points.map((p,i)=>`<label class="tune-color">色點 ${i+1}<input type="color" data-color="${i}" value="${p.color}"></label>`+num(`bg.points.${i}.x`,'X %',0,100,.5)+num(`bg.points.${i}.y`,'Y %',0,100,.5)).join('');
  }else body+=num('ringR','節點外圈半徑',4,40)+num('hubR','中樞環半徑',8,100)+num('dotSize','節點白點直徑',4,40);
@@ -227,7 +230,7 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
  }
  function setOpen(v){if(v&&!open&&role==='table')document.body.classList.toggle('editing-home',!!stage.querySelector('#welcome'));open=v;if(!v)document.body.classList.remove('editing-home');panel.hidden=!open;overlay.hidden=!open;if(backgroundOverlay)backgroundOverlay.hidden=!open;document.body.classList.toggle('editing',open);document.body.classList.remove('tuning-peek');if(role==='table')refresh();ui();drawHandles();if(role==='ipad')scene.querySelectorAll('.graph-node').forEach(n=>n.disabled=!open&&!n.classList.contains('active'));}
  panel.addEventListener('input',e=>{
-  const el=e.target;if(el.dataset.homeText){tune.homeCopy[el.dataset.homeText].text=el.value.slice(0,2000);dispatchEvent(new Event('f-home-copy'));save();return;}if(el.dataset.path){if(el.value===''||!Number.isFinite(+el.value))return;const value=clamp(+el.value,+el.min,+el.max);set(el.dataset.path,value);if(el.dataset.path==='projection.corners.0')tune.projection.corners.fill(value);panel.querySelectorAll(`[data-path="${el.dataset.path}"]`).forEach(n=>{if(n!==el)n.value=value;});}
+  const el=e.target;if(el.dataset.homeText){tune.homeCopy[el.dataset.homeText].text=el.value.slice(0,2000);dispatchEvent(new Event('f-home-copy'));save();return;}if(el.dataset.path){if(el.value===''||!Number.isFinite(+el.value))return;const value=clamp(+el.value,+el.min,+el.max);set(el.dataset.path,value);if(el.dataset.path==='panelPad.0')tune.panelPad.fill(value);if(el.dataset.path==='projection.corners.0')tune.projection.corners.fill(value);panel.querySelectorAll(`[data-path="${el.dataset.path}"]`).forEach(n=>{if(n!==el)n.value=value;});}
   else if(el.dataset.tableMaskCorner!==undefined){
    if(el.value===''||!Number.isFinite(+el.value))return;
    const q=clone(tune.projection.maskQuad),a=+el.dataset.maskAxis,size=a?tune.projection.maskHeight:tune.projection.maskWidth;
@@ -421,7 +424,7 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
    for(const el of scene.querySelectorAll('[data-panel]'))if(!tune.panels[el.dataset.panel])el.remove();
    for(const[id,p]of Object.entries(tune.panels)){
     let el=scene.querySelector(`[data-panel="${id}"]`);if(!el){const source=scene.querySelector(`[data-panel="${p.source}"]`);el=source.cloneNode(true);el.dataset.panel=id;delete el.dataset.move;scene.append(el);}
-    const[x,y,w,h]=p.box;el.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;padding:${tune.panelPad.map(n=>n+'px').join(' ')};${p.hidden?'display:none;':''}`;el.querySelector('h2').style.fontSize=tune.panelText.title+'px';el.querySelector('dl').style.lineHeight=tune.panelText.rowGap+'px';
+    const[x,y,w,h]=p.box;el.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;padding:${tune.panelPad.map(n=>n+'px').join(' ')};${p.hidden?'display:none;':''}`;el.querySelector('h2').style.fontSize=tune.panelText.title+'px';el.querySelector('dl').style.fontSize=tune.panelText.body+'px';el.querySelector('dl').style.lineHeight=Math.max(tune.panelText.rowGap,tune.panelText.body*1.25)+'px';
    }
   }else if(role==='table'){
    tune.slots.forEach((p,i)=>SLOTS[i].splice(0,2,...p));TABLE_HUB.splice(0,2,...tune.hub);

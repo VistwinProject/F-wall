@@ -1,13 +1,22 @@
 import {createTableCaptions} from './table-captions.js';
 export const tableVoice={level:0,orbLevel:0,showActive:false,pitch:.4,speaking:false,nfcAt:0,nfcDirection:1,active:false,activeCount:0,completionReady:false};
 const tracks=new Map();
-let context,analyser,samples,frame,last=0,updateCaption=()=>{};
+let context,analyser,masterGain,samples,frame,last=0,updateCaption=()=>{};
+let webVolume=100,volumeAppliedId=null;
+try{const raw=localStorage.getItem('x-web-volume-F'),n=Number(raw);if(raw!==null&&Number.isInteger(n)&&n>=0&&n<=100)webVolume=n}catch{}
+export function webAudioControl(){return {protocol:'web-volume-v1',supported:!!masterGain,volume:masterGain?Math.round(masterGain.gain.value*100):null,muted:!!masterGain&&masterGain.gain.value===0,appliedId:volumeAppliedId}}
+export function applyWebVolume(value,id){
+ if(!masterGain||!Number.isInteger(value)||value<0||value>100||typeof id!=='string')return false;
+ masterGain.gain.value=value/100;webVolume=Math.round(masterGain.gain.value*100);volumeAppliedId=id;
+ try{localStorage.setItem('x-web-volume-F',String(webVolume))}catch{}
+ return true;
+}
 function connect(){
   if(!context){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
     context=new AC();analyser=context.createAnalyser();analyser.fftSize=2048;
-    analyser.connect(context.destination);samples=new Float32Array(2048);
+    masterGain=context.createGain();masterGain.gain.value=webVolume/100;analyser.connect(masterGain);masterGain.connect(context.destination);samples=new Float32Array(2048);
   }
   for(const [audio,track]of tracks)if(!track.source){
     track.source=context.createMediaElementSource(audio);track.source.connect(analyser);
@@ -33,6 +42,11 @@ export function registerVoiceAudio(audio,kind){tracks.set(audio,{kind});if(conte
 export async function prepareVoiceAudio(){connect();await context?.resume();}
 export function claimVoice(kind){dispatchEvent(new CustomEvent('f-audio-claim',{detail:kind}));}
 export function setupTableAudio({session,notify}){
+ const reportVolume=()=>{const a=webAudioControl();if(a.supported)session.send('f-volume-report',a)};
+ const applyVolume=({detail:m})=>{if(m.protocol==='web-volume-v1'&&applyWebVolume(m.value,m.reqId))reportVolume()};
+ session.addEventListener('web-volume',applyVolume);
+ const volumeTimer=setInterval(reportVolume,700);
+ addEventListener('pagehide',()=>{clearInterval(volumeTimer);session.removeEventListener('web-volume',applyVolume)},{once:true});
   updateCaption=createTableCaptions();
   const button=document.createElement('button');button.className='device-audio-unlock';button.textContent='啟用 Table 語音';document.querySelector('#app').append(button);
   button.addEventListener('click',async()=>{
