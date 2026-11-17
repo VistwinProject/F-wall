@@ -1,4 +1,4 @@
-// User-approved on-site calibration: f2-table-tuning (1).json, 2026-10-13.
+// User-approved Table calibration: f2-table-tuning (2).json, 2026-11-17.
 export const tablePreset = {
   "version": 2,
   "view": "table",
@@ -10,7 +10,7 @@ export const tablePreset = {
       118.57364993815571,
       -92.99056390991682
     ],
-    "phoneScale": 0.9231556296934783,
+    "phoneScale": 1.0592630968895265,
     "projection": {
       "on": true,
       "width": 1390,
@@ -22,9 +22,9 @@ export const tablePreset = {
         120
       ],
       "maskOn": true,
-      "maskWidth": 343.85643269868854,
+      "maskWidth": 342.11892474500826,
       "maskHeight": 94.7687762142977,
-      "maskX": 6.267063777657086,
+      "maskX": 10.610833661857441,
       "maskBottom": 0,
       "maskRadius": 16,
       "offsetY": -51,
@@ -147,8 +147,8 @@ export const tablePreset = {
   },
   "positions": {
     "info": [
-      -47.23978608322546,
-      45.89770564095634
+      -49.11434168980026,
+      11.81153160669173
     ]
   }
 };

@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-17",
+  "repository": "https://github.com/VistwinProject/F-wall.git",
+  "baseBranch": "main",
+  "baseCommit": "af658326efb9332ddd4277c1681a63d6262bd058",
+  "branch": "codex/onsite-20261117",
+  "source": "Desktop final_f snapshot, user reviewed 2026-11-17",
+  "xAdapterSha256": "ed9ba3cadfbfef1c135344e567d8cc869e3e425d2f7cc73b411ea165691256d6",
+  "xCompatibility": "Existing f-command/revision/rendered-ack retained; web-volume-v1 uses separate epoch and renderer acknowledgement.",
+  "files": [
+    {
+      "path": "F2.0/server/index.mjs",
+      "sha256": "2aab3020dd5d7be2195237960ef1b6301f6f67ab12ca5679c4160364c6293ba2"
+    },
+    {
+      "path": "F2.0/src/app.js",
+      "sha256": "caee3c2ad46d918efa6dda25c5ec16e7ad3d218b7b0e99f5e67e11f0b4effbd7"
+    },
+    {
+      "path": "F2.0/src/editor.js",
+      "sha256": "c0ede681e8a91abfc7166fd794862fb5aca69f09401f78d99f2d0cdbeca6bbb3"
+    },
+    {
+      "path": "F2.0/src/session.js",
+      "sha256": "7f0130d2962a66dff876a3c69e7f4d0ca8ea44a204eb90bb90dc9b7ded439641"
+    },
+    {
+      "path": "F2.0/src/table-audio.js",
+      "sha256": "0d9749b48eabc9722d0a0118d6e209fb8c9498c6257bc954257c50be50a7670c"
+    },
+    {
+      "path": "F2.0/src/table-preset.js",
+      "sha256": "2e85b7c205a725b56d3c34166023fba1ba1922caebc2f7a7760d74acbbb3267e"
+    },
+    {
+      "path": "F2.0/src/table-reports.js",
+      "sha256": "242c02afd35abf90153225433ac92c3afc3ab9e0c579ea4fbbecb31ab39ad7ba"
+    },
+    {
+      "path": "F2.0/src/wall-preset.js",
+      "sha256": "434d3f5c302495e19b69fe9aa06024ee3fd695e246b710820222b74983370b6b"
+    },
+    {
+      "path": "F2.0/tests/wall-warp.test.mjs",
+      "sha256": "a6052391a5b2db06d94240a1a36f536aad9e0e7271fcb4465a1dfcb4c28056c8"
+    },
+    {
+      "path": "F2.0/server/video-byte-range.mjs",
+      "sha256": "341138efa279d8caa60cc11140ebe65bb7583d7a1fcaeeba98196ed919a06d33"
+    },
+    {
+      "path": "F2.0/server/web-volume.mjs",
+      "sha256": "ff695c86c5091db21190857bb6df3979e7efe38bb369dbf1d35b9f6c11852987"
+    },
+    {
+      "path": "F2.0/public/table-reports/health-from-3s.mp4",
+      "sha256": "66542463eb4e0229af2758f9a1fc6a600639a80ecf874f00bd4f684cdc1d19fc"
+    },
+    {
+      "path": "F2.0/tests/onsite-20261117.test.mjs",
+      "sha256": "b751155c64cb4948596fb8d297c04aea83c284d60efb6e7948a6adc26fa2996c"
+    }
+  ],
+  "threeWay": [
+    {
+      "repo": "F-wall",
+      "file": "server/index.mjs",
+      "status": 4,
+      "equalsLocal": false,
+      "resolution": "Retain reviewed later onsite hunks; all nonconflicting remote hunks retained; output matches onsite."
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/app.js",
+      "status": 0,
+      "equalsLocal": true
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/editor.js",
+      "status": 6,
+      "equalsLocal": false,
+      "resolution": "Retain reviewed later onsite hunks; all nonconflicting remote hunks retained; output matches onsite."
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/session.js",
+      "status": 1,
+      "equalsLocal": false,
+      "resolution": "Retain reviewed later onsite hunks; all nonconflicting remote hunks retained; output matches onsite."
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/table-audio.js",
+      "status": 0,
+      "equalsLocal": true
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/table-preset.js",
+      "status": 3,
+      "equalsLocal": false,
+      "resolution": "Retain reviewed later onsite hunks; all nonconflicting remote hunks retained; output matches onsite."
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/table-reports.js",
+      "status": 0,
+      "equalsLocal": true
+    },
+    {
+      "repo": "F-wall",
+      "file": "src/wall-preset.js",
+      "status": 45,
+      "equalsLocal": false,
+      "resolution": "Retain reviewed later onsite hunks; all nonconflicting remote hunks retained; output matches onsite."
+    }
+  ]
+}

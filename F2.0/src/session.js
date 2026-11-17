@@ -58,7 +58,7 @@ export class Session extends EventTarget{
     socket.onmessage=({data})=>{
       if(this.socket!==socket)return;
       this.lastMessage=Date.now();
-      try{const event=JSON.parse(data);if(!event||typeof event!=='object')return;if(event.type==='pong')return;this.state=reduce(this.state,event);this.emit(event.type,event);}catch(error){console.warn('Ignored malformed state message',error);}
+      try{const event=JSON.parse(data);if(!event||typeof event!=='object')return;if(event.type==='pong')return;if(event.type==='f-volume-apply'){this.dispatchEvent(new CustomEvent('web-volume',{detail:event}));return;}this.state=reduce(this.state,event);this.emit(event.type,event);}catch(error){console.warn('Ignored malformed state message',error);}
     };
     socket.onclose=()=>this.disconnect(socket);
     socket.onerror=()=>this.disconnect(socket);

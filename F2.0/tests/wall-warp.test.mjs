@@ -17,7 +17,7 @@ test('reject folded, collapsed and nonfinite masks',()=>{
  assert.equal(validQuad([[NaN,0],[1,0],[1,1],[0,1]]),false);
 });
 test('current calibration loads unchanged and new quads round trip',()=>{
- const saved=new Map([['f2-wall-preset-revision','2026-10-13-wall-tuning-5']]);
+ const saved=new Map([['f2-wall-preset-revision','2026-11-17-wall-tuning-8']]);
  globalThis.localStorage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
  const t=loadTuning('wall');assert.ok(validQuad(t.maskQuads.hrv));
  t.maskQuads.hrv[0]=[-.2,.1];saved.set('f2-tuning-wall',JSON.stringify(t));
@@ -40,7 +40,7 @@ test('photo and animated icon CSS agree with mask projection, including interior
 
 test('legacy warp migrates to independent photo and icon layers and all three persist',()=>{
  const mask=identityQuad();mask[0]=[-.2,.1];
- const saved=new Map([['f2-wall-preset-revision','2026-10-13-wall-tuning-5'],['f2-tuning-wall',JSON.stringify({maskQuads:{hrv:mask}})]]);
+ const saved=new Map([['f2-wall-preset-revision','2026-11-17-wall-tuning-8'],['f2-tuning-wall',JSON.stringify({maskQuads:{hrv:mask}})]]);
  globalThis.localStorage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
  try{
   const t=loadTuning('wall');assert.deepEqual(t.iconQuads.hrv,mask);assert.deepEqual(t.photoQuads.hrv,mask);
@@ -83,10 +83,10 @@ test('core and TV rectangular masks support independent persisted corner calibra
  }finally{delete globalThis.localStorage;}
 });
 
-test('October 13 migration backs up old calibration once and preserves subsequent edits',()=>{
+test('November 17 migration backs up old calibration once and preserves subsequent edits',()=>{
  for(const [role,revision,preset] of [
-  ['table','2026-10-13-table-tuning-recalibrated',tablePreset],
-  ['wall','2026-10-13-wall-tuning-5',wallPreset]
+  ['table','2026-11-17-table-tuning-2',tablePreset],
+  ['wall','2026-11-17-wall-tuning-8',wallPreset]
  ]){
   const oldTuning=JSON.stringify({legacy:true}),oldPositions=JSON.stringify({legacy:[1,2]});
   const saved=new Map([[`f2-${role}-preset-revision`,'previous'],[`f2-tuning-${role}`,oldTuning],[`f2-layout-${role}`,oldPositions]]);
